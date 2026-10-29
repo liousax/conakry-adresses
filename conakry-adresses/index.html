@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-HlHVFuCKc5nm4jYhwJldvo6iueiGedw3e1KYv36epMM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f7a46">
+<title>Conakry Adresses</title>
+<meta name="description" content="Plan d'adressage provisoire de Conakry : l'adresse de chaque porte, un code postal par quartier, des itinéraires. Pour les services de livraison et de transport.">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+<script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
+<style>
+html,body{height:100%;overflow:hidden}
+#map{position:fixed;inset:0;background:var(--paper)}
+.top{position:fixed;z-index:20;top:calc(env(safe-area-inset-top,0px) + 12px);left:max(12px,env(safe-area-inset-left,0px));width:min(420px,calc(100vw - 24px))}
+.find{display:flex;align-items:center;gap:4px;background:var(--panel);border-radius:999px;box-shadow:0 2px 12px rgba(0,0,0,.25);padding:4px 4px 4px 16px;height:52px}
+.find input{border:0;background:transparent;min-height:44px;padding:0;font-size:16px;flex:1;min-width:0;outline-offset:-2px}
+.find .btn{border-radius:999px;min-height:44px}
+.sugg{list-style:none;margin:8px 0 0;padding:6px;background:var(--panel);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.22);max-height:min(60vh,420px);overflow:auto}
+.sugg li button{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:1px;width:100%;padding:9px 10px;border-radius:10px;cursor:pointer}
+.sugg li button:hover,.sugg li button[aria-selected="true"]{background:var(--green-soft)}
+.sugg b{font-weight:600}.sugg small{color:var(--muted);font-size:12px}
+.sugg .empty{padding:10px;color:var(--muted);font-size:14px}
+.card{position:fixed;z-index:15;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(420px,calc(100vw - 24px));max-height:min(58vh,560px);overflow:auto;background:var(--panel);border-radius:18px;box-shadow:0 6px 28px rgba(0,0,0,.28);padding:16px}
+.eyebrow{font:700 11px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.card h1{font:800 24px/1.15 var(--display);margin:2px 0 4px;text-wrap:balance}
+.card h2{font:800 21px/1.2 var(--display);margin:2px 0 4px}
+.l2{font-size:15px;color:var(--fg)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.chip{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;padding:4px 8px;border-radius:7px;background:var(--green-soft);color:var(--green);border:0;cursor:pointer}
+.chip.pc{background:var(--soft);color:var(--fg)}
+.st{font-size:13px;color:var(--muted);margin:6px 0 0}
+.st.prov{color:var(--warn)}
+.ded{margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--quartier);background:color-mix(in srgb,var(--quartier) 7%,transparent);border-radius:0 8px 8px 0;font-size:13px;line-height:1.4;color:var(--fg)}
+.ded b{font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.row .btn{flex:1 1 auto}
+.villes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}.villes a{font:600 13px var(--body);padding:6px 11px;border-radius:999px;border:1px solid var(--line);color:var(--fg);text-decoration:none;background:var(--panel)}.villes a[aria-current="page"]{background:var(--green);border-color:var(--green);color:#fff}
+.stats{display:flex;gap:18px;margin:10px 0 2px}.stats b{font:800 20px var(--display);display:block}.stats span{font-size:12px;color:var(--muted)}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--soft);padding:4px;border-radius:12px;margin:10px 0}
+.modes button{all:unset;text-align:center;padding:9px 4px;border-radius:9px;font:600 14px var(--body);cursor:pointer;color:var(--muted)}
+.modes button[aria-pressed="true"]{background:var(--panel);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.sum{display:flex;gap:14px;align-items:baseline}.sum b{font:800 26px var(--display)}.sum span{color:var(--muted);font-size:14px}
+.pts{display:grid;grid-template-columns:14px 1fr;gap:6px 10px;align-items:center;font-size:14px;margin:6px 0}
+.pts i{width:12px;height:12px;border-radius:50%;display:block}.pts .a{background:var(--blue)}.pts .b{background:var(--red)}
+.steps{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
+.steps li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.steps li span:last-child{color:var(--muted);white-space:nowrap}
+.fabs{position:fixed;z-index:15;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;gap:10px}
+.fab{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;border:0;background:var(--panel);color:var(--fg);box-shadow:0 2px 10px rgba(0,0,0,.28);cursor:pointer;font:700 12px var(--body)}
+.fab[aria-pressed="true"]{background:var(--green);color:#fff}
+.toast{position:fixed;z-index:40;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.status{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);padding:24px;text-align:center}
+.status div{max-width:440px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
+.status h3{font:800 19px var(--display);margin:0 0 6px}
+.pin{width:30px;height:42px;margin:-42px 0 0 -15px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
+.me{width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#2a7de1;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,125,225,.25)}
+.pick{position:fixed;z-index:25;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--panel);border:2px solid var(--blue);border-radius:12px;padding:8px 12px;font-weight:600;display:flex;gap:10px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:calc(100% - 24px)}
+.maplibregl-ctrl-bottom-right{bottom:calc(env(safe-area-inset-bottom,0px) + 4px)}
+.maplibregl-ctrl-attrib,.maplibregl-ctrl-attrib.maplibregl-compact{background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--fg)}.maplibregl-ctrl-attrib a{color:var(--fg)}
+.k-north .maplibregl-ctrl-compass{display:none}
+.maplibregl-ctrl-top-right{top:calc(env(safe-area-inset-top,0px) + 190px)}
+@media (max-width:640px){
+  .card{left:0;right:0;width:auto;bottom:0;border-radius:18px 18px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));max-height:52vh}
+  .maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{bottom:calc(var(--card,140px) + 4px)}
+  .maplibregl-ctrl-zoom-in,.maplibregl-ctrl-zoom-out{display:none!important}
+  .maplibregl-ctrl-top-right{top:calc(env(safe-area-inset-top,0px) + 190px)}
+}
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Carte de Conakry : touchez une porte pour obtenir son adresse"></div>
+<header class="top">
+  <form class="find" id="find" role="search" autocomplete="off">
+    <input type="search" id="q" placeholder="Adresse, quartier ou Plus Code" aria-label="Chercher une adresse" aria-controls="sugg" maxlength="120" enterkeyhint="search">
+    <button class="btn primary" type="submit">Chercher</button>
+  </form>
+  <ul class="sugg" id="sugg" role="listbox" hidden></ul>
+</header>
+<div class="fabs">
+  <button class="fab" type="button" id="fabLoc" aria-label="Ma position"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+  <button class="fab" type="button" id="fabSat" aria-label="Vue satellite" aria-pressed="false">SAT</button>
+</div>
+<div class="pick" id="pick" hidden><span id="pickTxt">Touchez la carte pour choisir le départ</span><button class="btn" type="button" id="pickNo">Annuler</button></div>
+<section class="card" id="card" aria-live="polite"></section>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="status" id="status"><div><h3>Chargement du plan…</h3><p class="hint">Les rues et les quartiers arrivent.</p></div></div>
+<script src="lib/maplibre-gl.js"></script>
+<script src="sdk/conakry-adresses.js"></script>
+<script src="sdk/guidage.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),CA=window.ConakryAdresses;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let toastT;const toast=m=>{const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},3200)};
+const fmtD=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1).replace('.',',')+' km';
+const fmtT=s=>s<60?'moins d\'1 min':s<3600?Math.round(s/60)+' min':Math.floor(s/3600)+' h '+String(Math.round(s%3600/60)).padStart(2,'0');
+const glyphOk=c=>{const n=c.codePointAt(0);return n<1024||(n>=7680&&n<7936)||(n>=8192&&n<8448)};
+const safe=t=>[...String(t||'')].map(c=>glyphOk(c)?c:[...c.normalize('NFD')].filter(glyphOk).join('')).join('');
+/* ville : ?ville=labe, ou d'après le code postal d'un identifiant partagé (#GN-85002-…), sinon Conakry */
+const VILLES={conakry:{nom:'Conakry',dossier:'data/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
+const PREFIXES=[['834','siguiri'],['840','kindia'],['850','labe'],['860','mamou'],['870','nzerekore'],['88','conakry'],['89','conakry']];
+const villeDuCode=id=>{const m=String(id||'').match(/^GN-(\d{5})-/i);if(!m)return null;const p=PREFIXES.find(([x])=>m[1].startsWith(x));return p?p[1]:null};
+let VILLE=new URLSearchParams(location.search).get('ville');
+if(!VILLES[VILLE])VILLE=villeDuCode(decodeURIComponent(location.hash.slice(1)))||'conakry';
+const VI=VILLES[VILLE],SUFFIXE=VILLE==='conakry'?'':'?ville='+VILLE;
+$('status').querySelector('h3').textContent='Chargement du plan de '+VI.nom+'…';
+let VLIST=null;
+if(!window.maplibregl||!CA){$('status').innerHTML='<div><h3>La carte ne peut pas démarrer</h3><p class="hint">Vérifiez la connexion internet et utilisez un navigateur récent (Chrome, Safari, Edge).</p></div>';return}
+
+/* ---------- carte ---------- */
+const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/';
+const dark=()=>matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light';
+const CLE_VUE='conakry-carte-vue'+(VILLE==='conakry'?'':'-'+VILLE);
+let vue=null;try{vue=JSON.parse(localStorage.getItem(CLE_VUE)||'null')}catch(e){}
+const map=new maplibregl.Map({container:'map',attributionControl:false,maxPitch:60,
+  style:{version:8,glyphs:new URL('glyphs/{fontstack}/{range}.pbf',location.href).href.replace('%7Bfontstack%7D','{fontstack}').replace('%7Brange%7D','{range}'),
+    sources:{plan:{type:'raster',tiles:[ESRI+'Canvas/'+(dark()?'World_Dark_Gray_Base':'World_Light_Gray_Base')+'/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:16,attribution:'Fond © Esri'},
+      sat:{type:'raster',tiles:[ESRI+'World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:18,attribution:'Images © Esri, Maxar'}},
+    layers:[{id:'bg',type:'background',paint:{'background-color':css('--paper')}},{id:'plan',type:'raster',source:'plan',paint:{'raster-opacity':.55}},{id:'sat',type:'raster',source:'sat',layout:{visibility:'none'}}]},
+  center:vue?[vue.lng,vue.lat]:[-13.62,9.60],zoom:vue?vue.z:11,bearing:vue?vue.b:0,pitch:vue?vue.p:0,
+  locale:{'NavigationControl.ZoomIn':'Zoomer','NavigationControl.ZoomOut':'Dézoomer','NavigationControl.ResetBearing':'Remettre le nord en haut','AttributionControl.ToggleAttribution':'Sources','Popup.Close':'Fermer'}});
+map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'Rues © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · plan provisoire'}),'bottom-right');
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+map.addControl(new maplibregl.ScaleControl({unit:'metric',maxWidth:90}),'bottom-left');
+const north=()=>map.getContainer().classList.toggle('k-north',Math.abs(map.getBearing())<.5&&map.getPitch()<.5);map.on('rotate',north);map.on('pitch',north);north();
+let saveT;map.on('moveend',()=>{clearTimeout(saveT);saveT=setTimeout(()=>{const c=map.getCenter();try{localStorage.setItem(CLE_VUE,JSON.stringify({lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),z:+map.getZoom().toFixed(2),b:+map.getBearing().toFixed(1),p:+map.getPitch().toFixed(1)}))}catch(e){}},400)});
+$('fabSat').onclick=()=>{const on=$('fabSat').getAttribute('aria-pressed')!=='true';$('fabSat').setAttribute('aria-pressed',on?'true':'false');map.setLayoutProperty('sat','visibility',on?'visible':'none');map.setLayoutProperty('plan','visibility',on?'none':'visible');map.setPaintProperty('bg','background-color',on?'#20251f':css('--paper'))};
+
+/* ---------- données ---------- */
+let ref=null,pin=null,me=null,mePos=null,mePosT=0,route=null,picking=false;
+const FC=f=>({type:'FeatureCollection',features:f||[]});
+function addLayers(){
+  const z=['interpolate',['exponential',1.6],['zoom']];
+  /* largeur des rues selon le zoom : [zoom, grande voie, petite rue] */
+  const W=[[10,.8,.2],[11,1.2,.4],[12,2,.7],[13,2.8,1.2],[14,4,2],[15,6,3.2],[16,9,6],[17,14,10],[18,22,16]];
+  const width=add=>[...z,...W.flatMap(([zz,M,m])=>[zz,['case',['==',['get','m'],1],M+add,m+add]])];
+  map.addSource('zones',{type:'geojson',data:zonesFC()});
+  map.addSource('voies',{type:'geojson',data:voiesFC(),tolerance:.25,buffer:64});
+  map.addSource('noms',{type:'geojson',data:FC()});map.addSource('route',{type:'geojson',data:FC()});
+  map.addSource('quartiers',{type:'geojson',data:quartiersFC()});map.addSource('communes',{type:'geojson',data:communesFC()});map.addSource('nums',{type:'geojson',data:FC()});
+  map.addLayer({id:'zones',type:'line',source:'zones',paint:{'line-color':css('--quartier'),'line-width':[...z,10,1,15,2.4],'line-dasharray':[4,2,1,2],'line-opacity':.7}});
+  map.addLayer({id:'casing',type:'line',source:'voies',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['case',['==',['get','m'],1],css('--major-casing'),css('--casing')],'line-width':width(2.2),'line-opacity':['interpolate',['linear'],['zoom'],11,0,12.5,1]}});
+  map.addLayer({id:'voies',type:'line',source:'voies',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],'#efe9dd',css('--street')],'line-width':width(0)}});
+  map.addLayer({id:'route-c',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':[...z,11,5,16,12,18,20]}});
+  map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':css('--blue'),'line-width':[...z,11,3,16,7,18,13]}});
+/* numéros sous les noms : les noms de rues passent en priorité */
+  map.addLayer({id:'nums',type:'symbol',source:'nums',minzoom:17.3,layout:{'text-field':['get','t'],'text-font':['NotoSansMedium'],'text-size':10.5,'text-padding':1},paint:{'text-color':['case',['==',['get','i'],1],css('--quartier'),css('--text')],'text-halo-color':css('--halo'),'text-halo-width':1.4}});
+  const lab=(id,filter,minz,size,color,ls)=>map.addLayer({id,type:'symbol',source:'voies',minzoom:minz,filter,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':size,'symbol-placement':'line','text-max-angle':38,'symbol-spacing':280,'text-padding':2,'text-rotation-alignment':'map','text-pitch-alignment':'viewport','text-letter-spacing':ls||0},paint:{'text-color':color,'text-halo-color':css('--halo'),'text-halo-width':1.6}});
+  lab('noms-p',['==',['get','p'],1],16.3,['interpolate',['linear'],['zoom'],16,9.5,18,12],css('--provisoire'));
+  lab('noms',['all',['==',['get','p'],0],['==',['get','m'],0]],14.8,['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14],css('--text'));
+  lab('noms-m',['all',['==',['get','p'],0],['==',['get','m'],1]],12.5,['interpolate',['linear'],['zoom'],12.5,10,15,12,18,15],css('--text'),.05);
+  map.addLayer({id:'quartiers',type:'symbol',source:'quartiers',minzoom:13,maxzoom:17.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],13,10.5,16,13],'text-transform':'uppercase','text-letter-spacing':.18,'text-max-width':9,'text-padding':6},paint:{'text-color':css('--quartier'),'text-halo-color':css('--halo'),'text-halo-width':1.8,'text-opacity':.9}});
+  map.addLayer({id:'communes',type:'symbol',source:'communes',maxzoom:13.2,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],9,11,12,15],'text-transform':'uppercase','text-letter-spacing':.22},paint:{'text-color':css('--fg'),'text-halo-color':css('--halo'),'text-halo-width':2}});
+}
+function voiesFC(){return FC(ref.voies.map(v=>({type:'Feature',id:v.k,properties:{c:v.code,n:safe(v.nom),m:CA._interne.MAJEUR[v.highway]?1:0,p:v.statut==='a_nommer'||v.statut==='provisoire'||v.lien?1:0,t:v.highway==='track'?1:0},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(p=>[p.lon,p.lat]))}})))}
+function zonesFC(){return FC(ref.zones.flatMap(z=>z.rings.map(r=>({type:'Feature',properties:{n:z.nom},geometry:{type:'LineString',coordinates:r.concat([r[0]])}}))))}
+function quartiersFC(){return FC(ref.quartiers.map(q=>({type:'Feature',properties:{n:safe(q.nom)+'\n'+q.cp},geometry:{type:'Point',coordinates:[q.lng,q.lat]}})))}
+function communesFC(){return FC(ref.communes.map(c=>{const qs=ref.quartiers.filter(q=>q.commune===c.code);if(!qs.length)return null;return{type:'Feature',properties:{n:safe(c.nom)},geometry:{type:'Point',coordinates:[qs.reduce((a,q)=>a+q.lng,0)/qs.length,qs.reduce((a,q)=>a+q.lat,0)/qs.length]}}}).filter(Boolean))}
+function drawNums(){
+  if(!ref||!map.getSource('nums'))return;
+  if(map.getZoom()<17.3){map.getSource('nums').setData(FC());return}
+  const b=map.getBounds();const n=ref.numerosDans(b.getSouth(),b.getWest(),b.getNorth(),b.getEast(),1500);
+  map.getSource('nums').setData(FC(n.map(x=>({type:'Feature',properties:{t:String(x.numero),i:x.impair?1:0},geometry:{type:'Point',coordinates:[x.lng,x.lat]}}))));
+}
+map.on('moveend',()=>setTimeout(drawNums,0));
+
+/* ---------- fiche ---------- */
+const card=$('card');
+const setCardH=()=>document.documentElement.style.setProperty('--card',card.offsetHeight+'px');
+new ResizeObserver(setCardH).observe(card);
+function accueil(){
+  route=null;map.getSource('route')&&map.getSource('route').setData(FC());
+  card.dataset.vue='accueil';
+  card.innerHTML=`<div class="eyebrow">Plan d'adressage provisoire</div><h1>${esc(ref?ref.info.nom:VI.nom+' Adresses')}</h1>
+  ${VLIST&&VLIST.length>1?`<nav class="villes" aria-label="Villes">${VLIST.map(v=>`<a href="./${v.code==='conakry'?'':'?ville='+encodeURIComponent(v.code)}"${v.code===VILLE?' aria-current="page"':''}>${esc(v.nom)}</a>`).join('')}</nav>`:''}<p class="l2" style="margin:0">Touchez la carte pour obtenir l'adresse d'une porte, ou cherchez une adresse.</p>
+  ${ref?(()=>{const nv=ref.voies.length,nq=ref.quartiers.length,nc=new Set(ref.quartiers.map(q=>q.commune)).size,pl=(n,m)=>n>1?m+'s':m;
+    return `<div class="stats"><div><b>${nv.toLocaleString('fr-FR')}</b><span>${pl(nv,'voie')}</span></div><div><b>${nq}</b><span>${pl(nq,'quartier')}</span></div><div><b>${nc}</b><span>${pl(nc,'commune')}</span></div></div>`})():''}
+  <p class="st">${ref?esc(ref.info.avertissement||''):''}</p>
+  <div class="row"><a class="btn" href="developpeurs.html${SUFFIXE}">Pour les applis</a><a class="btn" href="choisir.html${SUFFIXE}">Choisir une adresse</a></div>`;
+}
+const STAT={officiel:'Nom officiel',propose:'Nom proposé, en attendant le choix de la commune',usage:'Nom d\'usage (OpenStreetMap)',a_nommer:'Rue à nommer (plan de Kaloum)',provisoire:'Code provisoire'};
+const statut=a=>a.voie.statut==='propose'&&a.commune&&a.commune.code==='KAL'?'Nom proposé par le plan de Kaloum':STAT[a.voie.statut]||'';
+/* « Rue du Bembeya Jazz » → « Bembeya Jazz » : à qui la rue est dédiée */
+const honore=n=>String(n).replace(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Passage|Allée)\s+/,'').replace(/^(du|des|de la|de l'|de|d')\s*/,'').replace(/^./,c=>c.toUpperCase());
+function showAddress(a,from){
+  if(!a){toast('Hors de la zone de Conakry.');return}
+  placePin(a.position);
+  card.dataset.vue='';
+  card.innerHTML=`<div class="eyebrow">${a.precision==='porte'?'Adresse':'Lieu sans rue proche'}</div>
+    <h1>${esc(a.ligne1)}</h1><div class="l2">${esc(a.ligne2)}</div>
+    ${a.voie?`<p class="st${a.voie.statut==='a_nommer'?' prov':''}">${esc(statut(a))}${a.voie.nomUsuel?' · connue comme « '+esc(a.voie.nomUsuel)+' »':''}${a.distanceRue>25?' · à '+a.distanceRue+' m de la rue':''}</p>${a.voie.dedicace?`<p class="ded"><b>${esc(honore(a.voie.nom))}</b> · ${esc(a.voie.dedicace)}</p>`:''}`:'<p class="st">Aucune rue à moins de 60 m : le Plus Code situe la porte à 3 m près.</p>'}
+    <div class="chips">${a.id?`<button class="chip" type="button" data-copy="${esc(a.id)}" title="Copier l'identifiant">${esc(a.id)}</button>`:''}<button class="chip pc" type="button" data-copy="${esc(a.plusCodeCourt)}" title="Copier le Plus Code">${esc(a.plusCodeCourt)}</button></div>
+    <div class="row"><button class="btn primary" type="button" id="goHere">Y aller</button><button class="btn" type="button" id="share">Partager</button></div>`;
+  card.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
+  $('goHere').onclick=()=>startRoute(a);
+  $('share').onclick=()=>share(a);
+  const h='#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));if(location.hash!==h)history.replaceState(null,'',h);
+  if(from!=='tap'){map.easeTo({center:[a.position.lng,a.position.lat],zoom:Math.max(map.getZoom(),17.2),duration:600})}
+}
+function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copié : '+t)).catch(()=>toast(t))}
+function share(a){
+  const url=location.origin+location.pathname+SUFFIXE+'#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));
+  const text=a.texte+'\nPlus Code : '+a.plusCodeCourt;
+  if(navigator.share)navigator.share({title:'Adresse',text,url}).catch(()=>{});
+  else window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank','noopener,noreferrer');
+}
+function placePin(p){
+  if(!pin){const el=document.createElement('div');el.innerHTML='<svg class="pin" viewBox="0 0 30 42" aria-hidden="true"><path d="M15 41C15 41 28 25 28 14.5A13 13 0 0 0 2 14.5C2 25 15 41 15 41z" fill="#c8312a" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14.5" r="5" fill="#fff"/></svg>';pin=new maplibregl.Marker({element:el,anchor:'top-left'})}
+  pin.setLngLat([p.lng,p.lat]).addTo(map);
+}
+
+/* ---------- itinéraire ---------- */
+let RT={de:null,deTxt:'',a:null,mode:'voiture'};
+function startRoute(a){
+  RT.a=a;RT.de=null;
+  const choisir=m=>{if(m)toast(m);picking=true;$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false};
+  const depuis=p=>{RT.de=p;RT.deTxt='Ma position';computeRoute()};
+  if(mePos&&Date.now()-mePosT<120000&&ref.quartierDe(mePos.lat,mePos.lng))return depuis(mePos);
+  if(!navigator.geolocation)return choisir();
+  toast('Recherche de votre position…');
+  navigator.geolocation.getCurrentPosition(p=>{setMe(p);$('toast').hidden=true;
+    if(ref.quartierDe(mePos.lat,mePos.lng))depuis(mePos);else choisir('Vous n\'êtes pas à Conakry : touchez la carte pour choisir le départ.')},
+    ()=>choisir('Position introuvable : touchez la carte pour choisir le départ.'),{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
+$('pickNo').onclick=()=>{picking=false;$('pick').hidden=true};
+function computeRoute(){
+  const r=ref.itineraire(RT.de,RT.a.position,{mode:RT.mode});route=r;
+  map.getSource('route').setData(FC(r?[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:r.ligne.map(p=>[p[1],p[0]])}}]:[]));
+  card.dataset.vue='';
+  card.innerHTML=`<div class="eyebrow">Itinéraire</div><h2>${esc(RT.a.ligne1)}</h2>
+    <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
+    <div class="modes" role="group" aria-label="Mode de transport">${[['voiture','Voiture'],['moto','Moto'],['pied','À pied']].map(([k,t])=>`<button type="button" data-m="${k}" aria-pressed="${RT.mode===k}">${t}</button>`).join('')}</div>
+    ${r?`<div class="sum"><b>${fmtT(r.duree)}</b><span>${fmtD(r.distance)} · estimation sans bouchons</span></div>`:'<p class="st">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques bloquent le passage.</p>'}
+    <div class="row">${r?'<button class="btn primary" type="button" id="rGo">Démarrer le guidage</button>':''}<button class="btn" type="button" id="rBack">Retour</button></div>
+    ${r?`<ol class="steps">${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol>`:''}`;
+  card.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;computeRoute()});
+  if(r)$('rGo').onclick=guider;
+  $('rBack').onclick=()=>{map.getSource('route').setData(FC());showAddress(RT.a,'tap')};
+  if(r){const xs=r.ligne.map(p=>p[1]),ys=r.ligne.map(p=>p[0]);map.fitBounds([[Math.min(...xs),Math.min(...ys)],[Math.max(...xs),Math.max(...ys)]],{padding:{top:90,bottom:matchMedia('(max-width:640px)').matches?card.offsetHeight+30:40,left:matchMedia('(max-width:640px)').matches?30:460,right:60},maxZoom:17,duration:600})}
+}
+
+/* ---------- guidage pas à pas, sur cette carte ---------- */
+let guide=null;
+function guider(){
+  if(guide)return;
+  if(!window.GuidageConakry){toast('Guidage indisponible : rechargez la page.');return}
+  const box=document.createElement('div');document.body.appendChild(box);
+  try{
+    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:route,
+      surFin:raison=>{guide=null;box.remove();if(raison==='arrive')showAddress(RT.a,'tap');else computeRoute()}});
+  }catch(e){guide=null;box.remove();toast('Le guidage ne peut pas démarrer : '+e.message)}
+}
+
+/* ---------- interactions ---------- */
+map.on('click',e=>{
+  if(!ref)return;
+  const ll=e.lngLat;
+  if(picking){picking=false;$('pick').hidden=true;const a=ref.adresse(ll.lat,ll.lng);RT.de={lat:ll.lat,lng:ll.lng};RT.deTxt=a?a.ligne1:'Point choisi';computeRoute();return}
+  showAddress(ref.adresse(ll.lat,ll.lng),'tap');
+});
+function setMe(p){
+  mePos={lat:p.coords.latitude,lng:p.coords.longitude};mePosT=Date.now();
+  if(!me){const el=document.createElement('div');el.className='me';me=new maplibregl.Marker({element:el})}
+  me.setLngLat([mePos.lng,mePos.lat]).addTo(map);
+}
+$('fabLoc').onclick=()=>{
+  if(!navigator.geolocation){toast('Ce navigateur ne donne pas la position.');return}
+  toast('Recherche de votre position…');
+  navigator.geolocation.getCurrentPosition(p=>{
+    setMe(p);
+    const a=ref&&ref.adresse(mePos.lat,mePos.lng);
+    if(!a){toast('Vous n\'êtes pas à Conakry : touchez la carte pour obtenir une adresse.');return}
+    $('toast').hidden=true;showAddress(a);
+  },()=>toast('Position introuvable : autorisez la localisation.'),{enableHighAccuracy:true,timeout:15000});
+};
+/* recherche avec suggestions */
+let sel=-1,last=[];
+const sugg=$('sugg');
+function renderSugg(list){
+  last=list;sel=-1;
+  if(!$('q').value.trim()){sugg.hidden=true;return}
+  sugg.hidden=false;
+  sugg.innerHTML=list.length?list.map((r,i)=>`<li><button type="button" role="option" data-i="${i}"><b>${esc(r.adresse?r.adresse.ligne1:r.libelle.split(' · ')[0])}</b><small>${esc(r.adresse?r.adresse.ligne2:r.libelle.split(' · ').slice(1).join(' · ')||r.type)}${r.limite?' · la rue s\'arrête au n° '+r.limite:''}</small></button></li>`).join(''):'<li class="empty">Aucun résultat. Essayez « 12 Avenue de la République », un quartier ou un Plus Code.</li>';
+  sugg.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>pick(+b.dataset.i));
+}
+function pick(i){const r=last[i];if(!r)return;sugg.hidden=true;$('q').blur();
+  const a=r.adresse||ref.adresse(r.lat,r.lng);
+  if(r.type==='quartier'||r.type==='commune'){map.flyTo({center:[r.lng,r.lat],zoom:r.type==='commune'?13.5:15.5});return}
+  if(a)showAddress(a);else map.flyTo({center:[r.lng,r.lat],zoom:16});
+}
+let qT;$('q').addEventListener('input',()=>{clearTimeout(qT);qT=setTimeout(()=>{if(ref)renderSugg(ref.chercher($('q').value,{max:7}))},160)});
+$('q').addEventListener('keydown',e=>{
+  const items=sugg.querySelectorAll('[data-i]');if(!items.length)return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();sel=(sel+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;items.forEach((b,i)=>b.setAttribute('aria-selected',i===sel?'true':'false'))}
+  if(e.key==='Escape')sugg.hidden=true;
+});
+$('find').addEventListener('submit',e=>{e.preventDefault();if(!ref)return;if(sel>=0)return pick(sel);const r=ref.chercher($('q').value,{max:7});if(r.length===1||(r[0]&&r[0].score>=1))pick(0);else renderSugg(r)});
+document.addEventListener('click',e=>{if(!e.target.closest('.top'))sugg.hidden=true});
+function openHash(){
+  const h=decodeURIComponent(location.hash.slice(1));if(!h||!ref)return false;
+  let a=null;
+  if(/^GN-/i.test(h)){a=ref.position(h);const autre=villeDuCode(h);if(!a&&autre&&autre!==VILLE){location.href='./'+(autre==='conakry'?'':'?ville='+autre)+location.hash;return true}}
+  else{const m=h.match(/^(-?\d+\.\d+),(-?\d+\.\d+)$/);if(m)a=ref.adresse(+m[1],+m[2]);else if(/^q=/.test(h)){const r=ref.chercher(h.slice(2));if(r[0])a=r[0].adresse||ref.adresse(r[0].lat,r[0].lng)}}
+  if(a){map.jumpTo({center:[a.position.lng,a.position.lat],zoom:17.5});showAddress(a,'hash');return true}
+  return false;
+}
+window.addEventListener('hashchange',openHash);
+
+/* ---------- démarrage ---------- */
+accueil();
+fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;if(card.dataset.vue==='accueil')accueil()}).catch(()=>{});
+CA.charger({base:VI.dossier}).then(r=>{
+  ref=r;window.__ref=r;
+  const go=()=>{addLayers();$('status').hidden=true;accueil();
+    if(!openHash()&&!vue){const b=ref.bbox,tel=matchMedia('(max-width:640px)').matches;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,left:30,right:tel?30:70,bottom:tel?card.offsetHeight+20:40},duration:0})}
+    drawNums()};
+  if(map.isStyleLoaded())go();else map.once('load',go);
+}).catch(e=>{$('status').innerHTML='<div><h3>Plan de '+esc(VI.nom)+' pas encore publié</h3><p class="hint">Le référentiel n\'est pas dans le dossier <code>'+esc(VI.dossier)+'</code>. Ouvrez l\'<a href="atelier.html'+SUFFIXE+'">atelier</a> pour le fabriquer'+(VILLE==='conakry'?'':', ou revenez à la <a href="./">carte de Conakry</a>')+'.</p><p class="hint">'+esc(e.message)+'</p></div>'});
+})();
+</script>
+</body>
+</html>

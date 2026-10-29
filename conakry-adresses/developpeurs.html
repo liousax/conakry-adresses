@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-z4+cJ2VeMaAAX7JDkdNSr8ZLWEkkb85ANed6r/gJovw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pour les applis · Conakry Adresses</title>
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
+<style>
+.wrap{max-width:900px;margin:0 auto;padding:24px 18px 70px}
+h1{font:800 34px/1.1 var(--display);margin:8px 0 8px}
+h2{font:800 22px var(--display);margin:34px 0 8px}
+h3{font:700 16px var(--body);margin:18px 0 6px}
+.lead{font-size:17px;color:var(--muted);max-width:720px}
+pre{background:#14201a;color:#e7eee9;border-radius:12px;padding:14px 16px;overflow:auto;font:500 13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre .c{color:#8fb59d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.box b{display:block;font:800 16px var(--display);margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td code{white-space:nowrap}
+.demo{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px}
+.demo label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+.wrap>ul{padding-left:20px;margin:8px 0}.wrap>ul li{margin:7px 0}
+.ac{position:relative}.ac ul{position:absolute;z-index:5;left:0;right:0;top:100%;list-style:none;margin:4px 0 0;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.15);max-height:260px;overflow:auto}
+.ac button{all:unset;box-sizing:border-box;display:block;width:100%;padding:8px 10px;border-radius:8px;cursor:pointer}.ac button:hover{background:var(--green-soft)}.ac small{display:block;color:var(--muted);font-size:12px}
+.res{margin-top:12px;font-size:15px}.res b{font:800 24px var(--display)}
+.warn{background:#fff6d6;color:#4d3f00;border-radius:12px;padding:12px 14px;font-size:14px}
+@media (prefers-color-scheme:dark){.warn{background:#3a3214;color:#f6e7b0}}
+.modes{display:flex;gap:6px;margin-top:10px}.modes .btn[aria-pressed="true"]{background:var(--green);color:#fff;border-color:var(--green)}
+</style>
+</head>
+<body>
+<div class="flag" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="wrap">
+  <a class="back" href="./">← Carte de Conakry</a>
+  <h1>Utiliser Conakry Adresses dans une appli</h1>
+  <p class="lead">Pour les applis de livraison et de VTC : l'adresse d'une porte à partir du GPS, la recherche d'une adresse tapée par le client, un identifiant unique par porte et l'itinéraire. Gratuit, sans clé, et ça marche avant la validation officielle des plans d'adressage.</p>
+  <p class="warn"><b>Plan provisoire.</b> Kaloum reprend le plan de Kaloum à l'identique. Ailleurs, les rues gardent leur nom d'usage ; celles qui n'ont pas de nom, ou seulement un numéro (« Rue DI 501 »), reçoivent un nom proposé, comme à Kaloum, en attendant les noms officiels. Les noms et les identifiants restent stables d'une mise à jour à l'autre.</p>
+
+  <h2>Essayer</h2>
+  <div class="demo">
+    <div class="ac"><label for="dA">Départ (prise en charge)</label><input type="search" id="dA" placeholder="ex. 98 Avenue du 3 Avril 1984" autocomplete="off"><ul id="sA" hidden></ul></div>
+    <div class="ac"><label for="dB">Arrivée</label><input type="search" id="dB" placeholder="ex. Boulevard de la Nation, ou un Plus Code" autocomplete="off"><ul id="sB" hidden></ul></div>
+    <div class="modes" role="group" aria-label="Mode"><button class="btn" type="button" data-m="voiture" aria-pressed="true">Voiture</button><button class="btn" type="button" data-m="moto" aria-pressed="false">Moto</button><button class="btn" type="button" data-m="pied" aria-pressed="false">À pied</button></div>
+    <div class="res" id="res" aria-live="polite"><span class="hint">Choisissez un départ et une arrivée.</span></div>
+    <h3>Ce que votre appli reçoit pour l'arrivée</h3>
+    <pre id="json">—</pre>
+  </div>
+
+  <h2>Trois façons de l'intégrer</h2>
+  <div class="grid">
+    <div class="box"><b>1. Page « choisir une adresse »</b>Le client place un repère sur la carte, votre appli reçoit l'adresse. Le plus simple : aucune donnée à gérer.</div>
+    <div class="box"><b>2. Bibliothèque JavaScript</b>Adresse d'un point, recherche, identifiant, Plus Code, itinéraire, directement dans votre appli web, Blazor ou React.</div>
+    <div class="box"><b>3. Fichiers de données</b>Les rues et la numérotation en JSON, pour votre serveur ou vos outils (licence ODbL).</div>
+  </div>
+
+  <h3>1. Page « choisir une adresse »</h3>
+  <p>Dans une page web (iframe) :</p>
+<pre>&lt;iframe src="https://liousax.github.io/conakry-adresses/choisir.html?titre=Prise%20en%20charge&amp;origine=https://mon-appli.example"
+        style="width:100%;height:600px;border:0" allow="geolocation"&gt;&lt;/iframe&gt;
+&lt;script&gt;
+window.addEventListener('message', e =&gt; {
+  if (e.origin !== 'https://liousax.github.io') return;          <span class="c">// on n'écoute que la page d'adresses</span>
+  if (e.data.type === 'conakry-adresse') {
+    const a = e.data.adresse;   <span class="c">// a.texte, a.id, a.position.lat, a.position.lng, a.plusCodeCourt…</span>
+  }
+});
+&lt;/script&gt;</pre>
+  <p>Dans une appli mobile (.NET MAUI, Flutter…) : ouvrez la page dans une WebView avec <code>&amp;retour=monappli://adresse</code>. À la validation, la page ouvre <code>monappli://adresse?statut=ok&amp;adresse={…}</code> : l'appli intercepte cette navigation.</p>
+<pre><span class="c">// .NET MAUI (C#)</span>
+webView.Source = "https://liousax.github.io/conakry-adresses/choisir.html?titre=Destination&amp;retour=itina://adresse";
+webView.Navigating += (s, e) =&gt; {
+    if (!e.Url.StartsWith("itina://adresse")) return;
+    e.Cancel = true;
+    var q = System.Web.HttpUtility.ParseQueryString(new Uri(e.Url).Query);
+    if (q["statut"] == "ok") {
+        var adresse = System.Text.Json.JsonDocument.Parse(q["adresse"]!).RootElement;
+        string texte = adresse.GetProperty("texte").GetString()!;
+        double lat = adresse.GetProperty("position").GetProperty("lat").GetDouble();
+    }
+};</pre>
+  <p>Paramètres : <code>titre</code> (texte au-dessus de l'adresse), <code>origine</code> (adresse de votre site, pour l'iframe), <code>retour</code> (schéma de votre appli), <code>lat</code> et <code>lng</code> ou <code>adresse=GN-…</code> (point de départ de la carte).</p>
+
+  <h3>2. Bibliothèque JavaScript</h3>
+<pre>&lt;script src="https://liousax.github.io/conakry-adresses/sdk/conakry-adresses.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+const ca = await ConakryAdresses.charger();                 <span class="c">// environ 1 à 3 Mo, une fois</span>
+const a  = ca.adresse(9.5095, -13.7105);                     <span class="c">// adresse de la porte la plus proche</span>
+a.texte   <span class="c">// "98, Avenue du 3 Avril 1984, 88001 Almamiya, Kaloum, Conakry"</span>
+a.id      <span class="c">// "GN-88001-3AVRIL1984-98" (identifiant unique de la porte)</span>
+ca.chercher('12 Boulevard de la Nation');                   <span class="c">// suggestions pour une saisie</span>
+ca.position('GN-88001-3AVRIL1984-98');                      <span class="c">// retrouver la porte d'un identifiant</span>
+ca.itineraire({lat:9.5095,lng:-13.7105}, {lat:9.5185,lng:-13.7025}, {mode:'moto'});
+ConakryAdresses.plusCodeCourt(9.5095, -13.7105);            <span class="c">// "G75Q+RR2 Conakry", lisible par Google Maps</span>
+&lt;/script&gt;</pre>
+  <table>
+    <thead><tr><th>Fonction</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>charger({base})</code></td><td>Charge le référentiel (par défaut celui du site). Renvoie l'objet <code>ca</code>.</td></tr>
+      <tr><td><code>ca.adresse(lat, lng)</code></td><td>Adresse de la porte la plus proche (rue à moins de 60 m). Sinon : quartier, commune et Plus Code (<code>precision: 'quartier'</code>). <code>null</code> hors de la ville.</td></tr>
+      <tr><td><code>ca.chercher(texte, {max})</code></td><td>Suggestions pour « 12 bis Rue … Ratoma », un quartier, une commune, un Plus Code, un identifiant <code>GN-…</code> ou des coordonnées.</td></tr>
+      <tr><td><code>ca.position(id)</code></td><td>Adresse et position d'un identifiant <code>GN-88001-3AVRIL1984-98</code>.</td></tr>
+      <tr><td><code>ca.itineraire(de, a, {mode})</code></td><td>Trajet (<code>voiture</code>, <code>moto</code>, <code>pied</code>) : distance en m, durée en s sans bouchons, tracé et étapes. Respecte les sens uniques en voiture et à moto.</td></tr>
+      <tr><td><code>ca.quartierDe(lat, lng)</code></td><td>Quartier et code postal d'un point.</td></tr>
+      <tr><td><code>ca.voie(code)</code></td><td>Une voie : nom, statut, dédicace, longueur, numéro maximum, tracé.</td></tr>
+      <tr><td><code>ca.numerosDans(s, o, n, e)</code></td><td>Numéros de porte d'un rectangle (pour les afficher sur votre carte).</td></tr>
+      <tr><td><code>charger({base: '…/data/labe/'})</code></td><td>Autres villes, chacune dans son dossier : <code>data/kindia/</code>, <code>data/labe/</code>, <code>data/mamou/</code>, <code>data/siguiri/</code>, <code>data/nzerekore/</code>. Les villes en ligne sont listées dans <code>data/villes.json</code>. Codes postaux par région : 81 Boké, 82 Faranah, 83 Kankan (Siguiri 83400), 84 Kindia, 85 Labé, 86 Mamou, 87 N'Zérékoré, 88 Conakry.</td></tr>
+      <tr><td><code>GuidageConakry.ouvrir(conteneur, ca, adresse, {mode})</code></td><td>Guidage pas à pas sur la carte du plan, en plein écran, avec la voix en français : script <code>sdk/guidage.js</code>, avec MapLibre GL. Sans Google Maps et sans fond de carte à télécharger. Option <code>positions: 'externe'</code> pour donner vous-même les positions GPS du téléphone (<code>guidage.position({lat, lng, precision, cap, vitesse})</code>).</td></tr>
+    </tbody>
+  </table>
+  <p><b>.NET MAUI Blazor Hybrid</b> (appli Itina) : la bibliothèque tourne dans la vue web de l'appli. Dans <code>wwwroot/index.html</code> :</p>
+<pre>&lt;script src="https://liousax.github.io/conakry-adresses/sdk/conakry-adresses.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  window.conakry = {
+    pret: ConakryAdresses.charger(),
+    adresse: async (lat, lng) =&gt; (await window.conakry.pret).adresse(lat, lng),
+    chercher: async (texte) =&gt; (await window.conakry.pret).chercher(texte, { max: 6 }),
+    itineraire: async (de, a, mode) =&gt; (await window.conakry.pret).itineraire(de, a, { mode })
+  };
+&lt;/script&gt;</pre>
+<pre><span class="c">// Composant Razor (C#)</span>
+@inject IJSRuntime JS
+var adresse = await JS.InvokeAsync&lt;JsonElement&gt;("conakry.adresse", 9.5095, -13.7105);
+string texte = adresse.GetProperty("texte").GetString();
+var trajet = await JS.InvokeAsync&lt;JsonElement&gt;("conakry.itineraire",
+    new { lat = 9.5095, lng = -13.7105 }, new { lat = 9.5185, lng = -13.7025 }, "moto");
+int metres = trajet.GetProperty("distance").GetInt32();</pre>
+  <p class="hint">Noms anglais aussi disponibles : <code>load</code>, <code>reverse</code>, <code>search</code>, <code>locate</code>, <code>route</code>. La bibliothèque marche aussi côté serveur avec Node.js 18 ou plus : <code>const CA = require('./conakry-adresses.js'); const ca = await CA.charger({base:'https://liousax.github.io/conakry-adresses/data/'})</code>.</p>
+
+  <h3>Format d'une adresse</h3>
+  <table>
+    <tbody>
+      <tr><td><code>id</code></td><td>Identifiant de la porte : <code>GN-</code> code postal du quartier, code de la voie, numéro. <code>null</code> si aucune rue n'est proche.</td></tr>
+      <tr><td><code>ligne1</code>, <code>ligne2</code>, <code>texte</code></td><td>Lignes à afficher, et l'adresse complète sur une ligne.</td></tr>
+      <tr><td><code>numero</code>, <code>cote</code></td><td>Numéro (impair à gauche, pair à droite, un tous les 10 m depuis le début de la rue).</td></tr>
+      <tr><td><code>voie</code></td><td><code>code</code>, <code>nom</code>, <code>nomUsuel</code> (ancien nom ou numéro que les gens connaissent, s'il diffère : « Rue DI 501 »), <code>statut</code> : <code>officiel</code>, <code>usage</code> (nom OpenStreetMap), <code>propose</code> (nom proposé, en attendant la décision de la commune) ou <code>a_nommer</code> (8 petites rues du plan de Kaloum), <code>statutTexte</code> (le statut en clair) et <code>dedicace</code> (qui était la personnalité dont la rue porte le nom, sinon <code>null</code>).</td></tr>
+      <tr><td><code>quartier</code>, <code>commune</code></td><td>Nom et code postal (Kaloum 88000, Dixinn 88100, Matam 88200, Ratoma 88300, Matoto 88400, Kassa 88500, Lambanyi 88600, Sonfonia 88700, Gbessia 88800, Tombolia 88900, Kagbélen 89000, Manéah 89100, Sanoyah 89200 ; un code par quartier).</td></tr>
+      <tr><td><code>position</code>, <code>plusCode</code>, <code>plusCodeCourt</code></td><td>Coordonnées du point et Plus Code (3 m de précision), à coller dans Google Maps ou Waze.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3. Fichiers de données</h3>
+  <p><code>data/index.json</code> : communes, quartiers (nom, code postal, position, commune) et limites. <code>data/voies.json</code> : chaque voie avec son code (<code>c</code>), son nom (<code>n</code>), son ancien nom ou numéro (<code>a</code>), son statut (<code>st</code>), la personnalité honorée et sa dédicace (<code>p</code>, <code>b</code>), sa commune (<code>k</code>), ses codes postaux (<code>q</code>), le point de départ de la numérotation (<code>d</code>, latitude et longitude) et son tracé (<code>g</code> : coordonnées en millionièmes de degré, codées en différences). Pour retrouver exactement les mêmes numéros, utilisez la bibliothèque, qui suit la même règle que le plan de Kaloum.</p>
+
+  <h2>Les noms des rues</h2>
+  <p>Comme pour le plan de Kaloum : un vrai nom déjà en usage est gardé. Une rue sans nom, ou qui n'a qu'un numéro, reçoit un nom proposé.</p>
+  <ul>
+    <li><b>Les grandes rues</b> portent le nom d'une personnalité : guinéenne d'abord, puis africaine, puis du reste du monde. Chacune n'est honorée qu'une fois dans toute la ville. Celles qui ont déjà une rue, à Kaloum ou ailleurs, sont écartées.</li>
+    <li><b>Les autres rues</b> prennent un nom dans des séries : villes et villages de Guinée, fleuves et monts, arbres et fleurs, oiseaux, métiers, villes d'Afrique et du monde… Un nom ne revient jamais deux fois dans la même commune, ni deux noms qui se ressemblent (« des Saules » et « des Sauges »).</li>
+    <li><b>Avenue</b> pour les grands axes, <b>Impasse</b> pour un cul-de-sac, <b>Chemin</b> pour une piste, <b>Rue</b> ailleurs. Une bretelle prend le nom de la route qu'elle dessert.</li>
+    <li>L'ancien numéro reste reconnu par la recherche (<code>nomUsuel</code>). Un nom publié n'est jamais redonné à une autre rue de la commune, même si sa rue disparaît.</li>
+  </ul>
+  <p class="hint">Une même série peut donner le même nom dans deux communes (« Rue des Manguiers, Ratoma » et « Rue des Manguiers, Matoto ») : affichez toujours le quartier ou la commune, comme le fait <code>texte</code>.</p>
+
+  <h2>Règles et licence</h2>
+  <p>Rues © contributeurs OpenStreetMap, licence ODbL : affichez « © OpenStreetMap » dans votre appli. Les numéros, codes postaux et noms proposés de ce plan sont un service d'adressage privé, en attendant les plans officiels des communes et de l'État : nommer les rues revient aux communes, et un nom proposé peut être remplacé. Quand un plan officiel est publié, il remplace ce plan pour la commune concernée.</p>
+  <p class="note">Mise à jour du référentiel : <a href="atelier.html">atelier</a> (réservé au responsable du projet).</p>
+</div>
+<script src="sdk/conakry-adresses.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ca=null,A=null,B=null,mode='voiture';
+const fmtD=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1).replace('.',',')+' km',fmtT=s=>s<60?'moins d\'1 min':Math.round(s/60)+' min';
+function ac(inp,ul,set){let t,last=[];
+  inp.addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>{if(!ca)return;last=ca.chercher(inp.value,{max:6});ul.hidden=!inp.value.trim();
+    ul.innerHTML=last.length?last.map((r,i)=>`<li><button type="button" data-i="${i}">${esc(r.adresse?r.adresse.ligne1:r.libelle)}<small>${esc(r.adresse?r.adresse.ligne2:r.type)}</small></button></li>`).join(''):'<li class="hint" style="padding:8px">Aucun résultat.</li>';
+    ul.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const r=last[+b.dataset.i];const a=r.adresse||ca.adresse(r.lat,r.lng);inp.value=a?a.texte:r.libelle;ul.hidden=true;set(a||{position:{lat:r.lat,lng:r.lng},texte:r.libelle});calc()})},150)});
+  document.addEventListener('click',e=>{if(!e.target.closest('.ac'))ul.hidden=true});
+}
+function calc(){
+  if(B){const b=Object.assign({},B);delete b.pointRue;$('json').textContent=JSON.stringify(b,null,2)}
+  if(!A||!B)return;
+  const r=ca.itineraire(A.position,B.position,{mode});
+  $('res').innerHTML=r?`<b>${fmtT(r.duree)}</b> · ${fmtD(r.distance)} · ${r.etapes.length} étapes<br><span class="hint">${r.etapes.slice(0,4).map(e=>esc(e.instruction)).join(' → ')}${r.etapes.length>4?' → …':''}</span>`:'<span class="hint">Aucun chemin trouvé entre ces deux points.</span>';
+}
+document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('[data-m]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));calc()});
+ac($('dA'),$('sA'),a=>{A=a});ac($('dB'),$('sB'),a=>{B=a});
+ConakryAdresses.charger({base:'data/'}).then(r=>{ca=r;window.__ref=r}).catch(e=>{$('res').innerHTML='<span class="hint">Référentiel indisponible : '+esc(e.message)+'</span>'});
+})();
+</script>
+</body>
+</html>
