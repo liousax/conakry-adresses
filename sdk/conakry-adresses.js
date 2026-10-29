@@ -16,6 +16,8 @@ const ATTRIBUTION = 'Plan d\'adressage provisoire Conakry Adresses · rues © co
 /* mêmes constantes que le plan de Kaloum : les numéros y sont identiques */
 const STEP = 10, R = 6371000, mLat = 111320, mLon = 111320 * Math.cos(9.51 * Math.PI / 180);
 const REF = { lat: 9.60, lng: -13.62 };              /* centre de référence pour les Plus Codes courts */
+/* ville du référentiel (index.json « ville ») : Conakry par défaut, pour les référentiels d'avant les autres villes */
+const VILLE_DEFAUT = { code: 'conakry', nom: 'Conakry', centre: [REF.lat, REF.lng] };
 const MAX_RUE = 60;                                  /* au-delà, pas d'adresse de rue : quartier + Plus Code */
 const rad = d => d * Math.PI / 180;
 
@@ -123,18 +125,20 @@ function plusCode(lat, lng, len) {
   code = code.slice(0, 8) + '+' + code.slice(8);
   return code.slice(0, len + 1);
 }
-/* forme courte pour Conakry : « 8QCJ+2VX Conakry » */
-const plusCodeCourt = (lat, lng) => plusCode(lat, lng, 11).slice(4) + ' Conakry';
-function plusCodeDecode(code) {
-  const c = String(code).toUpperCase().replace(/\s+.*$/, '');
+/* forme courte, avec le nom de la ville : « 8QCJ+2VX Conakry », « 8QCJ+2VX Labé » */
+const plusCodeCourt = (lat, lng, ville) => plusCode(lat, lng, 11).slice(4) + ' ' + (ville || 'Conakry');
+/* ref : centre de la ville, pour compléter un code court (Conakry par défaut) */
+function plusCodeDecode(code, ref) {
+  ref = ref && isFinite(ref.lat) && isFinite(ref.lng) ? ref : REF;
+  const c = String(code).slice(0, 64).trim().split(/\s/)[0].toUpperCase();   /* « 8QCJ+2VX Conakry » → « 8QCJ+2VX » */
   const m = c.match(/^([23456789CFGHJMPQRVWX]{2,8})\+([23456789CFGHJMPQRVWX]*)$/); if (!m) return null;
   let s = m[1] + m[2];
-  if (m[1].length < 8) {                   /* code court : on complète avec le début du code de Conakry */
-    const pad = 8 - m[1].length, res = Math.pow(20, 2 - pad / 2), ref = plusCode(REF.lat, REF.lng, 10).replace('+', '');
-    const full = plusCodeDecode(ref.slice(0, pad) + m[1] + '+' + m[2]); if (!full) return null;
+  if (m[1].length < 8) {                   /* code court : on complète avec le début du code du centre de la ville */
+    const pad = 8 - m[1].length, res = Math.pow(20, 2 - pad / 2), debut = plusCode(ref.lat, ref.lng, 10).replace('+', '');
+    const full = plusCodeDecode(debut.slice(0, pad) + m[1] + '+' + m[2]); if (!full) return null;
     let { lat, lng } = full;
-    if (REF.lat + res / 2 < lat && lat - res >= -90) lat -= res; else if (REF.lat - res / 2 > lat && lat + res <= 90) lat += res;
-    if (REF.lng + res / 2 < lng) lng -= res; else if (REF.lng - res / 2 > lng) lng += res;
+    if (ref.lat + res / 2 < lat && lat - res >= -90) lat -= res; else if (ref.lat - res / 2 > lat && lat + res <= 90) lat += res;
+    if (ref.lng + res / 2 < lng) lng -= res; else if (ref.lng - res / 2 > lng) lng += res;
     return { lat, lng };
   }
   let lat = -90, lng = -180, res = 20;
@@ -192,7 +196,11 @@ const vers = (dx, dy) => { const c = CN[(Math.round(Math.atan2(dy, dx) / (Math.P
    --------------------------------------------------------------------- */
 class Referentiel {
   constructor(index, voies) {
-    this.info = { nom: index.nom, version: index.version, date: index.date, source: index.source, attribution: ATTRIBUTION, avertissement: index.avertissement };
+    const vi = index.ville && index.ville.nom ? index.ville : null;
+    this.ville = vi ? { code: vi.code || norm(vi.nom).replace(/ /g, ''), nom: vi.nom, centre: Array.isArray(vi.centre) ? vi.centre : VILLE_DEFAUT.centre } : VILLE_DEFAUT;
+    this._ref = { lat: this.ville.centre[0], lng: this.ville.centre[1] };
+    this.info = { nom: index.nom, version: index.version, date: index.date, source: index.source, ville: this.ville.nom, codeVille: this.ville.code,
+      attribution: vi ? ATTRIBUTION.replace('Conakry Adresses', index.nom || this.ville.nom + ' Adresses') : ATTRIBUTION, avertissement: index.avertissement };
     this.communes = index.communes.map(c => ({ code: c.code, nom: c.nom, cp: c.cp }));
     this.communeParCode = {}; this.communes.forEach(c => { this.communeParCode[c.code] = c; });
     this.quartiers = index.quartiers.map(q => ({ nom: q[0], cp: q[1], lat: q[2], lng: q[3], commune: q[4] }));
@@ -256,9 +264,9 @@ class Referentiel {
       numero: no || null, cote: no ? (no % 2 ? 'impair (gauche)' : 'pair (droite)') : null,
       voie: { code: v.code, nom, nomUsuel: v.nomUsuel, statut: v.statut, statutTexte: statutTexte(v), dedicace: v.dedicace },
       quartier: q ? { nom: q.nom, cp: q.cp } : null, commune: c ? { code: c.code, nom: c.nom, cp: c.cp } : null,
-      ville: 'Conakry', pays: 'Guinée',
-      ligne1: l1, ligne2: l2, texte: l1 + (q ? ', ' + q.cp + ' ' + q.nom : '') + (c && (!q || q.nom !== c.nom) ? ', ' + c.nom : '') + ', Conakry',
-      position: { lat: pos.lat, lng: pos.lng }, plusCode: plusCode(pos.lat, pos.lng, 11), plusCodeCourt: plusCodeCourt(pos.lat, pos.lng),
+      ville: this.ville.nom, pays: 'Guinée',
+      ligne1: l1, ligne2: l2, texte: l1 + (q ? ', ' + q.cp + ' ' + q.nom : '') + (c && (!q || q.nom !== c.nom) ? ', ' + c.nom : '') + (c && c.nom === this.ville.nom ? '' : ', ' + this.ville.nom),
+      position: { lat: pos.lat, lng: pos.lng }, plusCode: plusCode(pos.lat, pos.lng, 11), plusCodeCourt: plusCodeCourt(pos.lat, pos.lng, this.ville.nom),
       precision: pr
     };
   }
@@ -272,8 +280,8 @@ class Referentiel {
       const c = this.communeParCode[q.commune];
       const t = 'Près de ' + q.nom + ', ' + q.cp + (c && c.nom !== q.nom ? ' ' + c.nom : '');
       return { id: null, numero: null, cote: null, voie: null, quartier: { nom: q.nom, cp: q.cp }, commune: c ? { code: c.code, nom: c.nom, cp: c.cp } : null,
-        ville: 'Conakry', pays: 'Guinée', ligne1: plusCodeCourt(lat, lng), ligne2: t, texte: plusCodeCourt(lat, lng) + ' · ' + t + ', Conakry',
-        position: { lat, lng }, plusCode: plusCode(lat, lng, 11), plusCodeCourt: plusCodeCourt(lat, lng), precision: 'quartier' };
+        ville: this.ville.nom, pays: 'Guinée', ligne1: plusCodeCourt(lat, lng, this.ville.nom), ligne2: t, texte: plusCodeCourt(lat, lng, this.ville.nom) + ' · ' + t + (c && c.nom === this.ville.nom ? '' : ', ' + this.ville.nom),
+        position: { lat, lng }, plusCode: plusCode(lat, lng, 11), plusCodeCourt: plusCodeCourt(lat, lng, this.ville.nom), precision: 'quartier' };
     }
     const v = this._chain(n.v), r = refOn(v, lat, lng);
     const qq = this.quartierDe(r.q.lat, r.q.lon) || q;
@@ -291,7 +299,7 @@ class Referentiel {
   }
   /* POSITION D'UN IDENTIFIANT : « GN-88001-3AVRIL1984-98 » */
   position(id) {
-    const m = String(id || '').trim().toUpperCase().match(/^GN-(\d{5})-([A-Z0-9]+)-(\d{1,5})$/); if (!m) return null;
+    const m = String(id || '').slice(0, 80).trim().toUpperCase().match(/^GN-(\d{5})-([A-Z0-9]+)-(\d{1,5})$/); if (!m) return null;
     const v = this.voieParCode[m[2]]; if (!v) return null;
     this._chain(v); const a = this._adresseVoie(v, +m[3]);
     a.limite = +m[3] > v.maxNo ? v.maxNo : null;
@@ -325,12 +333,13 @@ class Referentiel {
   }
   chercher(texte, opts) {
     opts = opts || {}; const max = opts.max || 8, out = [];
-    const raw = String(texte || '').trim(); if (!raw) return out;
+    /* une adresse tient en 120 caractères : au-delà, le texte est coupé (un texte collé très long ne fige pas la recherche) */
+    const raw = String(texte || '').slice(0, 160).trim(); if (!raw) return out;
     /* identifiant d'adresse */
     if (/^GN-/i.test(raw)) { const a = this.position(raw); if (a) out.push({ type: 'adresse', libelle: a.texte, adresse: a, lat: a.position.lat, lng: a.position.lng, score: 1 }); return out; }
     /* Plus Code */
     if (/^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]*/i.test(raw.replace(/\s.*/, ''))) {
-      const p = plusCodeDecode(raw); if (p) { const a = this.adresse(p.lat, p.lng); out.push({ type: 'pluscode', libelle: raw.toUpperCase().replace(/\s.*/, '') + (a ? ' · ' + a.ligne2 : ''), adresse: a, lat: p.lat, lng: p.lng, score: 1 }); }
+      const p = plusCodeDecode(raw, this._ref); if (p) { const a = this.adresse(p.lat, p.lng); out.push({ type: 'pluscode', libelle: raw.toUpperCase().replace(/\s.*/, '') + (a ? ' · ' + a.ligne2 : ''), adresse: a, lat: p.lat, lng: p.lng, score: 1 }); }
       return out;
     }
     /* coordonnées « 9.51, -13.71 » */
@@ -398,7 +407,36 @@ class Referentiel {
         if (ow >= 0) adj[a].push([b, L, L / vit, vi, gi, i]); if (ow <= 0) adj[b].push([a, L, L / vit, vi, gi, -i]);
       } });
     });
-    return this._graph[mode] = { pts, adj, ids, vmax: pied ? 1.35 : 8.3 * (mode === 'moto' ? 1.2 : 1) };
+    /* raccords : un bout de rue qui s'arrête à quelques mètres d'une autre rue sans la toucher (deux sources de
+       données qui se rejoignent, comme le plan de Kaloum et OpenStreetMap). On relie toujours ce qui est à 3 m ou
+       moins ; jusqu'à 25 m, seulement si l'on ne peut pas déjà aller de l'un à l'autre et revenir. Les adresses ne bougent pas. */
+    const n = pts.length, voisins = Array.from({ length: n }, () => new Set()), rue = new Int32Array(n).fill(-1);
+    adj.forEach((l, a) => l.forEach(e => { voisins[a].add(e[0]); voisins[e[0]].add(a); rue[a] = e[3]; rue[e[0]] = e[3]; }));
+    /* morceaux du réseau où l'on peut aller et revenir (composantes fortement connexes, sens uniques compris) */
+    const comp = new Int32Array(n).fill(-1);
+    { const ordre = [], vu = new Uint8Array(n), radj = Array.from({ length: n }, () => []);
+      adj.forEach((l, a) => l.forEach(e => radj[e[0]].push(a)));
+      for (let s0 = 0; s0 < n; s0++) { if (vu[s0]) continue; const pile = [[s0, 0]]; vu[s0] = 1;
+        while (pile.length) { const top = pile[pile.length - 1], l = adj[top[0]];
+          if (top[1] < l.length) { const w = l[top[1]++][0]; if (!vu[w]) { vu[w] = 1; pile.push([w, 0]); } } else { ordre.push(top[0]); pile.pop(); } } }
+      let c = 0; for (let k = ordre.length - 1; k >= 0; k--) { const s0 = ordre[k]; if (comp[s0] >= 0) continue; const pile = [s0]; comp[s0] = c;
+        while (pile.length) { const u = pile.pop(); for (const w of radj[u]) if (comp[w] < 0) { comp[w] = c; pile.push(w); } } c++; } }
+    const C = 0.0003, grille = new Map();
+    pts.forEach((p, i) => { const k = Math.floor(p.lon / C) * 1e6 + Math.floor(p.lat / C); let l = grille.get(k); if (!l) grille.set(k, l = []); l.push(i); });
+    let raccords = 0;
+    for (let u = 0; u < n; u++) {
+      if (voisins[u].size !== 1) continue;                         /* bout d'une rue qui ne touche rien */
+      const p = pts[u], x0 = Math.floor(p.lon / C), y0 = Math.floor(p.lat / C); let w = -1, dw = Infinity;
+      for (let x = x0 - 1; x <= x0 + 1; x++) for (let y = y0 - 1; y <= y0 + 1; y++) for (const j of grille.get(x * 1e6 + y) || []) {
+        if (j === u || voisins[u].has(j)) continue;
+        const d = dist(p, pts[j]); if (d > 25 || d >= dw) continue;
+        if (d <= 3 || comp[j] !== comp[u]) { dw = d; w = j; }
+      }
+      if (w < 0) continue;
+      const vi = rue[u], v = this.voies[vi], vit = pied ? 1.35 : ((v && VITESSE[v.highway]) || 5) * (mode === 'moto' ? 1.2 : 1);
+      adj[u].push([w, dw, dw / vit, vi, -1, 0]); adj[w].push([u, dw, dw / vit, vi, -1, 0]); voisins[u].add(w); voisins[w].add(u); raccords++;
+    }
+    return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : 8.3 * (mode === 'moto' ? 1.2 : 1) };
   }
   itineraire(de, a, opts) {
     opts = opts || {}; const mode = ({ voiture: 'voiture', car: 'voiture', moto: 'moto', pied: 'pied', walk: 'pied' })[opts.mode || 'voiture'] || 'voiture';

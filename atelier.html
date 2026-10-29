@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-5jNz0NQ0URBOAB1ZDKpjaOv0TnnnWe/QpNZC7MCD1so='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-mOIJACQGyDFYQx7ykZJ5WSjoBwVJ0MTD59UykNKn/SY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
+<script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
 <style>
 body{background:var(--bg)}
 .wrap{max-width:980px;margin:0 auto;padding:24px 18px 60px}
@@ -19,7 +20,7 @@ h1{font:800 30px/1.1 var(--display);margin:6px 0 6px}
 .lead{color:var(--muted);max-width:720px;margin:0 0 18px}
 .step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}
 .step h2{font:800 19px var(--display);margin:0 0 6px;display:flex;gap:10px;align-items:center}
-.step h2 .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--green);color:#fff;font:800 14px var(--body);flex:none}
+.step h2 .n{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--on-green);font:800 14px var(--body);flex:none}
 .step.off{opacity:.55}
 .bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden;margin:10px 0 6px}
 .bar i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
@@ -35,6 +36,8 @@ td.num{text-align:right;font-variant-numeric:tabular-nums}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
 details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green)}
 .btn.mini{min-height:32px;padding:4px 10px;font-size:13px}
+.villes{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}.villes button{font:600 14px var(--body);border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:7px 14px;cursor:pointer;min-height:40px}
+.villes button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
 .trbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;background:#fff2e3;color:#4a2c00;border:1px solid #f0c48a;border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px}
 @media (prefers-color-scheme:dark){.trbar{background:#3a2a14;color:#f6dcb4;border-color:#6b4a1f}}
 .leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:8px}.leg span{display:inline-flex;gap:6px;align-items:center}.leg i{width:14px;height:4px;border-radius:2px;display:inline-block}
@@ -43,9 +46,10 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
 <body>
 <div class="flag" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="wrap">
-  <a class="back" href="./">← Carte de Conakry</a>
+  <a class="back" id="retour" href="./">← Carte de Conakry</a>
   <h1>Atelier du référentiel</h1>
-  <p class="lead">Cette page fabrique le plan d'adressage provisoire de toute la zone spéciale de Conakry à partir d'OpenStreetMap. Kaloum est repris tel quel du plan figé de Kaloum, lu sur le site de Kaloum sans rien y changer. Ailleurs, chaque rue sans nom, ou qui n'a qu'un numéro, reçoit un nom proposé, comme à Kaloum. À lancer depuis un ordinateur connecté, puis à publier dans le dossier <code>data</code> du site.</p>
+  <div class="villes" id="villes" role="group" aria-label="Ville"></div>
+  <p class="lead" id="lead"></p>
 
   <section class="step" id="s1">
     <h2><span class="n">1</span>Télécharger les rues</h2>
@@ -66,7 +70,7 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
 
   <section class="step off" id="s3">
     <h2><span class="n">3</span>Publier</h2>
-    <p class="hint">Le fichier contient le dossier <code>data</code> : <code>index.json</code> (communes, quartiers, limites), <code>voies.json</code> (rues et numérotation) et <code>sources.json</code> (pour garder les mêmes codes à la prochaine génération). Dans GitHub : « Add file → Upload files », glissez le dossier <code>data</code>, puis « Commit changes ».</p>
+    <p class="hint">Le zip contient le dossier <code>data</code> (pour une ville de l'intérieur, son sous-dossier, par exemple <code>data/labe</code>) : <code>index.json</code> (communes, quartiers, limites), <code>voies.json</code> (rues et numérotation), <code>sources.json</code> (pour garder les mêmes codes à la prochaine génération) et <code>villes.json</code> (les villes en ligne). Dans GitHub, sur l'accueil du dépôt : « Add file → Upload files », glissez le dossier <code>data</code>, puis « Commit changes ».</p>
     <div class="row"><button class="btn primary" type="button" id="dl" disabled>Télécharger le référentiel (zip)</button><button class="btn" type="button" id="dlNoms" disabled>Noms proposés (tableur)</button><button class="btn" type="button" id="dlGeo" disabled>GeoJSON pour QGIS</button></div>
     <p class="hint">« Noms proposés » : la liste des rues renommées, avec leur ancien numéro, leur quartier et la personnalité honorée, à ouvrir dans Excel pour la soumettre aux communes.</p>
   </section>
@@ -79,6 +83,24 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
 <script>
 (()=>{
 const A=window.AtelierConakry,CA=window.ConakryAdresses,$=id=>document.getElementById(id);
+/* ---------- ville : Conakry ou une ville de l'intérieur (?ville=labe) ---------- */
+const ORDRE=['conakry','kindia','labe','mamou','nzerekore','siguiri'];
+const villeQ=new URLSearchParams(location.search).get('ville')||'';
+let V=Object.prototype.hasOwnProperty.call(A.VILLES,villeQ)?A.VILLES[villeQ]:A.VILLES.conakry;
+const sous=v=>v.code==='conakry'?'':v.code+'/';                 /* dossier du référentiel : data/ pour Conakry, data/labe/ … */
+const K=k=>V.code==='conakry'?k:V.code+':'+k;                   /* mémoire de l'atelier, par ville */
+function choisirVille(v){
+  V=v;history.replaceState(null,'',v.code==='conakry'?location.pathname:'?ville='+v.code);
+  $('villes').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v.code?'true':'false'));
+  $('retour').textContent='← Carte de '+v.nom;$('retour').href=v.code==='conakry'?'./':'./?ville='+v.code;
+  $('lead').innerHTML=v.kaloum?'Cette page fabrique le plan d\'adressage provisoire de toute la zone spéciale de Conakry à partir d\'OpenStreetMap. Kaloum est repris tel quel du plan figé de Kaloum, lu sur le site de Kaloum sans rien y changer. Ailleurs, chaque rue sans nom, ou qui n\'a qu\'un numéro, reçoit un nom proposé, comme à Kaloum. À lancer depuis un ordinateur connecté, puis à publier dans le dossier <code>data</code> du site.'
+    :'Cette page fabrique le plan d\'adressage provisoire de '+v.nom+' à partir d\'OpenStreetMap, comme pour Conakry : chaque rue sans nom, ou qui n\'a qu\'un numéro, reçoit un nom proposé ; chaque quartier reçoit un code postal à partir de '+v.communes[0].cp+'. À lancer depuis un ordinateur connecté, puis à publier dans le dossier <code>data</code> du site (sous-dossier <code>'+v.code+'</code>).';
+  input=null;result=null;['s2','s3'].forEach(id=>$(id).classList.add('off'));['dl','dlGeo','dlNoms'].forEach(id=>$(id).disabled=true);
+  $('rapport').innerHTML='';$('leg').innerHTML='';$('apercu').hidden=true;bar(0);log('Prêt pour '+v.nom+'.');
+  if(map)map.jumpTo({center:[v.centre[1],v.centre[0]],zoom:v.kaloum?10:12});
+}
+setTimeout(()=>{$('villes').innerHTML=ORDRE.map(k=>A.VILLES[k]).map(v=>`<button type="button" data-v="${v.code}">${esc(v.nom)}</button>`).join('');
+  $('villes').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!$('go').disabled)choisirVille(A.VILLES[b.dataset.v])});choisirVille(V)},0);
 const ENDPOINTS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const log=t=>{$('log').textContent=t};const bar=f=>{$('bar').style.width=Math.round(f*100)+'%'};
@@ -112,9 +134,10 @@ async function planKaloum(){
 }
 /* ---------- version publiée (pour garder les codes) ---------- */
 async function precedent(){
-  try{const g=u=>fetch(u,{cache:'no-cache'}).then(r=>r.ok?r.json():null);
-    const index=await g('data/index.json');if(!index||index.format!=='conakry-adresses')return null;
-    const [voies,sources]=await Promise.all([g('data/'+index.fichiers.voies),g('data/'+(index.fichiers.sources||'sources.json'))]);
+  try{const g=u=>fetch(u,{cache:'no-cache'}).then(r=>r.ok?r.json():null),d='data/'+sous(V);
+    const index=await g(d+'index.json');if(!index||index.format!=='conakry-adresses')return null;
+    if(index.ville&&index.ville.code&&index.ville.code!==V.code)return null;
+    const [voies,sources]=await Promise.all([g(d+index.fichiers.voies),g(d+(index.fichiers.sources||'sources.json'))]);
     return voies?{index,voies,sources:sources||{voies:{}}}:null}catch(e){return null}
 }
 let input=null,result=null,map=null;
@@ -122,37 +145,37 @@ async function manuelles(){const out={};for(const k of await ckeys())if(String(k
 async function build(){
   const t0=performance.now();
   result=A.construire(Object.assign({},input,{manuelles:await manuelles()}));
-  log('Référentiel construit en '+((performance.now()-t0)/1000).toFixed(1)+' s : '+result.index.stats.voies.toLocaleString('fr-FR')+' voies, '+result.index.stats.quartiers+' quartiers, '+result.index.stats.km.toLocaleString('fr-FR')+' km. Plan de Kaloum : '+input.planSource+'.');
+  log(V.nom+' : référentiel construit en '+((performance.now()-t0)/1000).toFixed(1)+' s : '+result.index.stats.voies.toLocaleString('fr-FR')+' voies, '+result.index.stats.quartiers+' quartiers, '+result.index.stats.km.toLocaleString('fr-FR')+' km.'+(V.kaloum?' Plan de Kaloum : '+input.planSource+'.':''));
   showReport(result);
   $('s2').classList.remove('off');$('s3').classList.remove('off');$('dl').disabled=false;$('dlGeo').disabled=false;$('dlNoms').disabled=false;
 }
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
-    const Q=A.requetes(),n=Q.tuiles.length+2;let done=0;
-    log('Plan de Kaloum (lecture seule)…');const pk=await planKaloum();
-    log('Limites des communes…');const lim=await cached('limites',Q.limites,'Limites');bar(++done/n);
-    log('Quartiers…');const lieux=await cached('lieux',Q.lieux,'Quartiers');bar(++done/n);
+    const Q=A.requetes(V.bbox),n=Q.tuiles.length+2;let done=0;
+    let pk={plan:null,source:''};if(V.kaloum){log('Plan de Kaloum (lecture seule)…');pk=await planKaloum()}
+    log(V.nom+' : limites des communes…');const lim=await cached(K('limites'),Q.limites,'Limites');bar(++done/n);
+    log(V.nom+' : quartiers…');const lieux=await cached(K('lieux'),Q.lieux,'Quartiers');bar(++done/n);
     const ways=[];
     for(const t of Q.tuiles){log('Rues : carreau '+(done-1)+' sur '+Q.tuiles.length+'…');const j=await cached('t:'+t.id,t.q,'Carreau '+(done-1));for(const e of j.elements)if(e.type==='way')ways.push(e);bar(++done/n)}
     log('Construction du référentiel ('+ways.length.toLocaleString('fr-FR')+' tronçons)…');await new Promise(r=>setTimeout(r,30));
     const prev=await precedent();
     $('prevInfo').textContent=prev?'Version publiée trouvée ('+prev.index.version+', '+prev.index.stats.voies.toLocaleString('fr-FR')+' voies) : ses noms, codes de voie, codes postaux, points de départ et limites tracées sont conservés.':'Aucune version précédente publiée : tous les codes sont nouveaux.';
-    input={ways,relations:lim.elements.filter(e=>e.type==='relation'),places:lieux.elements.filter(e=>e.type==='node'),plan:pk.plan,planSource:pk.source+', figé le '+(pk.plan.fige_le||'?'),precedent:prev};
+    input={ville:V.code,ways,relations:lim.elements.filter(e=>e.type==='relation'),places:lieux.elements.filter(e=>e.type==='node'),plan:pk.plan,planSource:pk.plan?pk.source+', figé le '+(pk.plan.fige_le||'?'):'',precedent:prev};
     await build();
   }catch(e){log('Arrêt : '+(e.message||e)+'. Relancez « Télécharger » : ce qui est déjà reçu est gardé.');console.error(e)}
   $('go').disabled=false;
 };
 $('reset').onclick=async()=>{for(const k of await ckeys())if(!String(k).startsWith('manuel:'))await cdel(k);log('Mémoire vidée (les limites tracées sont gardées) : le prochain téléchargement repartira de zéro.');bar(0)};
-const COL={KAL:'#c8312a',KAS:'#7b2d8e',DIX:'#0f7a46',MTM:'#d9650b',RAT:'#3e5a8a',LAM:'#1b8fb5',SON:'#5a7d1a',MTT:'#a3245b',GBE:'#8a6d00',TOM:'#2f6f62',KAG:'#6b4a2b',MAN:'#5d3fa6',SAN:'#b3541e'};
+const COL={KAL:'#c8312a',KAS:'#7b2d8e',DIX:'#0f7a46',MTM:'#d9650b',RAT:'#3e5a8a',LAM:'#1b8fb5',SON:'#5a7d1a',MTT:'#a3245b',GBE:'#8a6d00',TOM:'#2f6f62',KAG:'#6b4a2b',MAN:'#5d3fa6',SAN:'#b3541e',KIN:'#0f7a46',LAB:'#3e5a8a',MAM:'#a3245b',SIG:'#8a6d00',NZE:'#c8312a'};
 function showReport(r){
-  const rows=A.COMMUNES.map(c=>{const x=r.rapport.communes[c.code];
+  const rows=V.communes.map(c=>{const x=r.rapport.communes[c.code];
     const lim=!x.limite?'<span class="miss">absente</span>':x.limite==='OpenStreetMap'?'<span class="ok">OpenStreetMap</span>':'<span class="mid">'+esc(x.limite)+'</span>';
     const act=x.limite==='OpenStreetMap'||x.limite==='contour du plan de Kaloum'?'':x.manuel?`<button class="btn mini" type="button" data-trace="${c.code}">Retracer</button> <button class="btn mini" type="button" data-untrace="${c.code}">Effacer</button>`:`<button class="btn mini" type="button" data-trace="${c.code}">Tracer la limite</button>`;
     return`<tr><td><b>${esc(c.nom)}</b></td><td>${c.cp}</td><td>${lim}</td><td class="num">${x.quartiers}</td><td class="num">${x.voies.toLocaleString('fr-FR')}</td><td class="num">${x.km.toLocaleString('fr-FR')}</td><td>${act}</td></tr>`}).join('');
   const w=r.rapport.avertissements,N=r.rapport.noms||{},f=n=>(n||0).toLocaleString('fr-FR');
   const ex=r.voies.voies.filter(v=>v.st==='propose'&&v.k!=='KAL'&&!v.x);
-  const pick=l=>l.slice(0,4).map(v=>esc(v.n)+' <span class="hint">('+esc((A.COMMUNES.find(c=>c.code===v.k)||{}).nom)+(v.a?', ex-'+esc(v.a):'')+')</span>').join(' · ');
+  const pick=l=>l.slice(0,4).map(v=>esc(v.n)+' <span class="hint">('+esc((V.communes.find(c=>c.code===v.k)||{}).nom)+(v.a?', ex-'+esc(v.a):'')+')</span>').join(' · ');
   $('rapport').innerHTML=`<table><thead><tr><th>Commune</th><th>Code</th><th>Limite</th><th>Quartiers</th><th>Voies</th><th>km</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     ${w.length?'<ul class="warns">'+w.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':''}
     <h3 style="margin:16px 0 4px">Noms des rues</h3>
@@ -165,11 +188,11 @@ function showReport(r){
       <tr><td>Bretelles (nom de la route desservie)</td><td class="num">${f(N.bretelles)}</td></tr>
     </tbody></table>
     ${ex.length?`<p class="hint">Exemples : ${pick(ex.filter(v=>v.p))}${ex.some(v=>!v.p)?' · '+pick(ex.filter(v=>!v.p)):''}</p>`:''}
-    <details><summary>Quartiers et codes postaux (${r.index.quartiers.length})</summary><table><tbody>${r.index.quartiers.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(q=>`<tr><td>${q[1]}</td><td>${esc(q[0])}</td><td>${esc((A.COMMUNES.find(c=>c.code===q[4])||{}).nom)}</td></tr>`).join('')}</tbody></table></details>
+    <details><summary>Quartiers et codes postaux (${r.index.quartiers.length})</summary><table><tbody>${r.index.quartiers.slice().sort((a,b)=>a[1].localeCompare(b[1])).map(q=>`<tr><td>${q[1]}</td><td>${esc(q[0])}</td><td>${esc((V.communes.find(c=>c.code===q[4])||{}).nom)}</td></tr>`).join('')}</tbody></table></details>
     ${r.rapport.quartiersOfficielsSansPosition.length?`<details><summary>Quartiers officiels absents d'OpenStreetMap (${r.rapport.quartiersOfficielsSansPosition.length})</summary><p class="hint">Ils seront ajoutés quand ils seront placés sur OpenStreetMap. En attendant, leurs adresses prennent le quartier voisin.</p><p>${r.rapport.quartiersOfficielsSansPosition.map(esc).join(', ')}</p></details>`:''}`;
   $('rapport').querySelectorAll('[data-trace]').forEach(b=>b.onclick=()=>startTrace(b.dataset.trace));
   $('rapport').querySelectorAll('[data-untrace]').forEach(b=>b.onclick=async()=>{await cput('manuel:'+b.dataset.untrace,null);await build()});
-  $('leg').innerHTML=A.COMMUNES.map(c=>`<span><i style="background:${COL[c.code]}"></i>${esc(c.nom)}</span>`).join('');
+  $('leg').innerHTML=V.communes.map(c=>`<span><i style="background:${COL[c.code]||'#888'}"></i>${esc(c.nom)}</span>`).join('');
   $('apercu').hidden=false;
   const D=CA._interne.decodeLine;
   const feats=r.voies.voies.map(v=>({type:'Feature',properties:{c:v.k,n:v.n},geometry:{type:'MultiLineString',coordinates:v.g.map(a=>D(a).map(p=>[p.lon,p.lat]))}}));
@@ -190,7 +213,7 @@ function showReport(r){
       {id:'trf',type:'fill',source:'tr',filter:['==',['geometry-type'],'Polygon'],paint:{'fill-color':'#d9650b','fill-opacity':.15}},
       {id:'trl',type:'line',source:'tr',paint:{'line-color':'#d9650b','line-width':2.5}},
       {id:'trp',type:'circle',source:'tr',filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':5,'circle-color':'#fff','circle-stroke-color':'#d9650b','circle-stroke-width':2}}]},
-    center:[-13.62,9.6],zoom:10,attributionControl:false,doubleClickZoom:false});
+    center:[V.centre[1],V.centre[0]],zoom:V.kaloum?10:12,attributionControl:false,doubleClickZoom:false});
   map.addControl(new maplibregl.NavigationControl({showCompass:false}));
   window.atelierCarte=map;   /* accès pour le débogage */
   map.once('load',()=>{map.resize();fit()});requestAnimationFrame(()=>{map.resize();fit()});
@@ -200,7 +223,7 @@ function showReport(r){
 /* ---------- tracer la limite d'une commune absente d'OpenStreetMap ---------- */
 let trace=null;
 function startTrace(code){
-  const c=A.COMMUNES.find(x=>x.code===code);trace={code,pts:[]};
+  const c=V.communes.find(x=>x.code===code);trace={code,pts:[]};
   $('trName').textContent=c.nom;$('trbar').hidden=false;drawTrace();
   $('apercu').scrollIntoView({behavior:'smooth',block:'center'});map.getCanvas().style.cursor='crosshair';
 }
@@ -218,23 +241,34 @@ async function endTrace(){
 $('trEnd').onclick=endTrace;
 $('trUndo').onclick=()=>{if(trace){trace.pts.pop();drawTrace()}};
 $('trCancel').onclick=()=>{trace=null;$('trbar').hidden=true;map.getCanvas().style.cursor='';drawTrace()};
-$('dl').onclick=()=>{if(!result)return;
-  const b=A.zip([{name:'data/index.json',data:JSON.stringify(result.index)},{name:'data/voies.json',data:JSON.stringify(result.voies)},{name:'data/sources.json',data:JSON.stringify(result.sources)}]);
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='referentiel-conakry-'+result.index.version.replace(/\./g,'')+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+/* liste des villes publiées (data/villes.json) : celles déjà en ligne, plus celle-ci */
+async function villesPubliees(){
+  const out=[];
+  for(const k of ORDRE){const v=A.VILLES[k];let ok=v.code===V.code;
+    if(!ok)try{const r=await fetch('data/'+sous(v)+'index.json',{method:'HEAD',cache:'no-cache'});ok=r.ok}catch(e){}
+    if(ok)out.push({code:v.code,nom:v.nom,dossier:'data/'+sous(v),cp:v.communes[0].cp.slice(0,2),centre:v.centre})}
+  return out;
+}
+$('dl').onclick=async()=>{if(!result)return;$('dl').disabled=true;
+  try{const d='data/'+sous(V),villes=await villesPubliees();
+    const b=A.zip([{name:d+'index.json',data:JSON.stringify(result.index)},{name:d+'voies.json',data:JSON.stringify(result.voies)},{name:d+'sources.json',data:JSON.stringify(result.sources)},{name:'data/villes.json',data:JSON.stringify({v:1,villes})}]);
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='referentiel-'+V.code+'-'+result.index.version.replace(/\./g,'')+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+  finally{$('dl').disabled=false}};
 $('dlNoms').onclick=()=>{if(!result)return;
-  const C=Object.fromEntries(A.COMMUNES.map(c=>[c.code,c.nom])),Qn=Object.fromEntries(result.index.quartiers.map(q=>[q[1],q[0]]));
+  const C=Object.fromEntries(V.communes.map(c=>[c.code,c.nom])),Qn=Object.fromEntries(result.index.quartiers.map(q=>[q[1],q[0]]));
   const P=Object.fromEntries(NomsConakry.personnalites().map(p=>[p.id,p]));
-  const cell=x=>{x=String(x??'');return /[";\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x};
-  const L=A.COMMUNES.map(c=>c.code);
+  /* une cellule qui commence par = + - @ serait lue comme une formule par Excel : on la neutralise (noms venus d'OpenStreetMap) */
+  const cell=x=>{x=String(x??'').replace(/\r/g,' ');if(/^[=+\-@\t]/.test(x))x="'"+x;return /[";\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x};
+  const L=V.communes.map(c=>c.code);
   const rows=result.voies.voies.filter(v=>v.st==='propose'&&v.k!=='KAL'&&!v.x).sort((a,b)=>L.indexOf(a.k)-L.indexOf(b.k)||String(a.q[0]).localeCompare(String(b.q[0]))||a.n.localeCompare(b.n,'fr'))
     .map(v=>{const D=CA._interne.decodeLine;const len=v.g.reduce((s,a)=>{const g=D(a);let l=0;for(let i=1;i<g.length;i++)l+=CA._interne.dist(g[i-1],g[i]);return s+l},0);
       return [C[v.k],(v.q||[]).map(cp=>cp+' '+(Qn[cp]||'')).join(', '),v.n,v.a||'',v.p?'personnalité':'série',v.p&&P[v.p]?P[v.p].nom:'',v.b||'',Math.round(len),v.c].map(cell).join(';')});
   const csv='\ufeffCommune;Quartiers;Nom proposé;Ancien nom ou numéro;Type de nom;Personnalité;Dédicace;Longueur (m);Code de la voie\n'+rows.join('\n');
-  const b=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='noms-proposes-conakry-'+result.index.version.replace(/\./g,'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+  const b=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='noms-proposes-'+V.code+'-'+result.index.version.replace(/\./g,'')+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 $('dlGeo').onclick=()=>{if(!result)return;
   const D=CA._interne.decodeLine;
   const fc={type:'FeatureCollection',features:result.voies.voies.map(v=>({type:'Feature',properties:{code:v.c,nom:v.n,ancien_nom:v.a||null,statut:v.st,personnalite:v.p||null,dedicace:v.b||null,commune:v.k,codes_postaux:v.q,depart_numerotation:v.d?[v.d[1],v.d[0]]:null,numero_max:v.m},geometry:{type:'MultiLineString',coordinates:v.g.map(a=>D(a).map(p=>[p.lon,p.lat]))}}))};
-  const b=new Blob([JSON.stringify(fc)],{type:'application/geo+json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='voies-conakry.geojson';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+  const b=new Blob([JSON.stringify(fc)],{type:'application/geo+json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='voies-'+V.code+'.geojson';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 })();
 </script>
 </body>

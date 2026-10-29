@@ -34,7 +34,7 @@ td code{white-space:nowrap}
 .res{margin-top:12px;font-size:15px}.res b{font:800 24px var(--display)}
 .warn{background:#fff6d6;color:#4d3f00;border-radius:12px;padding:12px 14px;font-size:14px}
 @media (prefers-color-scheme:dark){.warn{background:#3a3214;color:#f6e7b0}}
-.modes{display:flex;gap:6px;margin-top:10px}.modes .btn[aria-pressed="true"]{background:var(--green);color:#fff;border-color:var(--green)}
+.modes{display:flex;gap:6px;margin-top:10px}.modes .btn[aria-pressed="true"]{background:var(--green);color:var(--on-green);border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -47,8 +47,8 @@ td code{white-space:nowrap}
 
   <h2>Essayer</h2>
   <div class="demo">
-    <div class="ac"><label for="dA">Départ (prise en charge)</label><input type="search" id="dA" placeholder="ex. 98 Avenue du 3 Avril 1984" autocomplete="off"><ul id="sA" hidden></ul></div>
-    <div class="ac"><label for="dB">Arrivée</label><input type="search" id="dB" placeholder="ex. Boulevard de la Nation, ou un Plus Code" autocomplete="off"><ul id="sB" hidden></ul></div>
+    <div class="ac"><label for="dA">Départ (prise en charge)</label><input type="search" id="dA" placeholder="ex. 98 Avenue du 3 Avril 1984" autocomplete="off" maxlength="160"><ul id="sA" hidden></ul></div>
+    <div class="ac"><label for="dB">Arrivée</label><input type="search" id="dB" placeholder="ex. Boulevard de la Nation, ou un Plus Code" autocomplete="off" maxlength="160"><ul id="sB" hidden></ul></div>
     <div class="modes" role="group" aria-label="Mode"><button class="btn" type="button" data-m="voiture" aria-pressed="true">Voiture</button><button class="btn" type="button" data-m="moto" aria-pressed="false">Moto</button><button class="btn" type="button" data-m="pied" aria-pressed="false">À pied</button></div>
     <div class="res" id="res" aria-live="polite"><span class="hint">Choisissez un départ et une arrivée.</span></div>
     <h3>Ce que votre appli reçoit pour l'arrivée</h3>
@@ -67,8 +67,10 @@ td code{white-space:nowrap}
 <pre>&lt;iframe src="https://liousax.github.io/conakry-adresses/choisir.html?titre=Prise%20en%20charge&amp;origine=https://mon-appli.example"
         style="width:100%;height:600px;border:0" allow="geolocation"&gt;&lt;/iframe&gt;
 &lt;script&gt;
+const cadre = document.querySelector('iframe');
 window.addEventListener('message', e =&gt; {
-  if (e.origin !== 'https://liousax.github.io') return;          <span class="c">// on n'écoute que la page d'adresses</span>
+  <span class="c">// on n'écoute que la page d'adresses de CE cadre (d'autres pages sont aussi sur liousax.github.io)</span>
+  if (e.origin !== 'https://liousax.github.io' || e.source !== cadre.contentWindow) return;
   if (e.data.type === 'conakry-adresse') {
     const a = e.data.adresse;   <span class="c">// a.texte, a.id, a.position.lat, a.position.lng, a.plusCodeCourt…</span>
   }
@@ -87,9 +89,11 @@ webView.Navigating += (s, e) =&gt; {
         double lat = adresse.GetProperty("position").GetProperty("lat").GetDouble();
     }
 };</pre>
-  <p>Paramètres : <code>titre</code> (texte au-dessus de l'adresse), <code>origine</code> (adresse de votre site, pour l'iframe), <code>retour</code> (schéma de votre appli), <code>lat</code> et <code>lng</code> ou <code>adresse=GN-…</code> (point de départ de la carte).</p>
+  <p>Paramètres : <code>titre</code> (texte au-dessus de l'adresse), <code>origine</code> (adresse de votre site, pour l'iframe), <code>retour</code> (schéma de votre appli, par exemple <code>itina://</code> ; les schémas du web et du système sont refusés), <code>lat</code> et <code>lng</code> ou <code>adresse=GN-…</code> (point de départ de la carte). La page affiche toujours au client le site ou l'appli qui recevra son adresse, et ne prend pas sa position toute seule quand une appli la demande : passez <code>lat</code> et <code>lng</code> si vous connaissez déjà la position.</p>
+  <p class="hint">Dans la WebView, n'acceptez que les pages de <code>https://liousax.github.io/conakry-adresses/</code> et votre schéma de retour ; ouvrez les autres liens dans le navigateur. Vérifiez aussi l'adresse reçue (position en Guinée, textes courts) avant de l'enregistrer.</p>
 
   <h3>2. Bibliothèque JavaScript</h3>
+  <p class="hint">Pour une appli en production, copiez <code>sdk/conakry-adresses.js</code> (et <code>sdk/guidage.js</code>) dans votre projet plutôt que de les charger depuis ce site : votre appli ne dépend pas d'une mise à jour, et marche hors ligne. Limitez aussi la longueur des champs de saisie (<code>maxlength="160"</code>).</p>
 <pre>&lt;script src="https://liousax.github.io/conakry-adresses/sdk/conakry-adresses.js"&gt;&lt;/script&gt;
 &lt;script&gt;
 const ca = await ConakryAdresses.charger();                 <span class="c">// environ 1 à 3 Mo, une fois</span>
@@ -105,17 +109,19 @@ ConakryAdresses.plusCodeCourt(9.5095, -13.7105);            <span class="c">// "
     <thead><tr><th>Fonction</th><th>Rôle</th></tr></thead>
     <tbody>
       <tr><td><code>charger({base})</code></td><td>Charge le référentiel (par défaut celui du site). Renvoie l'objet <code>ca</code>.</td></tr>
-      <tr><td><code>ca.adresse(lat, lng)</code></td><td>Adresse de la porte la plus proche (rue à moins de 60 m). Sinon : quartier, commune et Plus Code (<code>precision: 'quartier'</code>). <code>null</code> hors de Conakry.</td></tr>
+      <tr><td><code>ca.adresse(lat, lng)</code></td><td>Adresse de la porte la plus proche (rue à moins de 60 m). Sinon : quartier, commune et Plus Code (<code>precision: 'quartier'</code>). <code>null</code> hors de la ville.</td></tr>
       <tr><td><code>ca.chercher(texte, {max})</code></td><td>Suggestions pour « 12 bis Rue … Ratoma », un quartier, une commune, un Plus Code, un identifiant <code>GN-…</code> ou des coordonnées.</td></tr>
       <tr><td><code>ca.position(id)</code></td><td>Adresse et position d'un identifiant <code>GN-88001-3AVRIL1984-98</code>.</td></tr>
       <tr><td><code>ca.itineraire(de, a, {mode})</code></td><td>Trajet (<code>voiture</code>, <code>moto</code>, <code>pied</code>) : distance en m, durée en s sans bouchons, tracé et étapes. Respecte les sens uniques en voiture et à moto.</td></tr>
       <tr><td><code>ca.quartierDe(lat, lng)</code></td><td>Quartier et code postal d'un point.</td></tr>
       <tr><td><code>ca.voie(code)</code></td><td>Une voie : nom, statut, dédicace, longueur, numéro maximum, tracé.</td></tr>
       <tr><td><code>ca.numerosDans(s, o, n, e)</code></td><td>Numéros de porte d'un rectangle (pour les afficher sur votre carte).</td></tr>
+      <tr><td><code>charger({base: '…/data/labe/'})</code></td><td>Autres villes, chacune dans son dossier : <code>data/kindia/</code>, <code>data/labe/</code>, <code>data/mamou/</code>, <code>data/siguiri/</code>, <code>data/nzerekore/</code>. Les villes en ligne sont listées dans <code>data/villes.json</code>. Codes postaux par région : 81 Boké, 82 Faranah, 83 Kankan (Siguiri 83400), 84 Kindia, 85 Labé, 86 Mamou, 87 N'Zérékoré, 88 Conakry.</td></tr>
+      <tr><td><code>GuidageConakry.ouvrir(conteneur, ca, adresse, {mode})</code></td><td>Guidage pas à pas sur la carte du plan, en plein écran, avec la voix en français : script <code>sdk/guidage.js</code>, avec MapLibre GL. Sans Google Maps et sans fond de carte à télécharger. Option <code>positions: 'externe'</code> pour donner vous-même les positions GPS du téléphone (<code>guidage.position({lat, lng, precision, cap, vitesse})</code>).</td></tr>
     </tbody>
   </table>
-  <p><b>.NET MAUI Blazor Hybrid</b> (appli Itina) : la bibliothèque tourne dans la vue web de l'appli. Dans <code>wwwroot/index.html</code> :</p>
-<pre>&lt;script src="https://liousax.github.io/conakry-adresses/sdk/conakry-adresses.js"&gt;&lt;/script&gt;
+  <p><b>.NET MAUI Blazor Hybrid</b> (appli Itina) : la bibliothèque tourne dans la vue web de l'appli, depuis sa copie dans <code>wwwroot</code>. Dans <code>wwwroot/index.html</code> :</p>
+<pre>&lt;script src="conakry/conakry-adresses.js"&gt;&lt;/script&gt;
 &lt;script&gt;
   window.conakry = {
     pret: ConakryAdresses.charger(),

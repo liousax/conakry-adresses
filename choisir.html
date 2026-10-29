@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-aUH9v/ZngyVIfndVEPYuEfpMLNdBjlcEiEqm+pwOz2M='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-2Pioy1ogipKUcKJ1qJMR5vmM3O23Yu5UCXjUCSYV+8o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Choisir une adresse · Conakry Adresses</title>
@@ -24,10 +24,11 @@ html,body{height:100%;overflow:hidden}
 .moving .cross{transform:translateY(-8px)}
 .shadow{position:fixed;z-index:9;left:50%;top:calc(50% - 40px);width:10px;height:4px;margin:-2px 0 0 -5px;border-radius:50%;background:rgba(0,0,0,.35);pointer-events:none}
 .card{position:fixed;z-index:20;left:0;right:0;bottom:0;background:var(--panel);border-radius:18px 18px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.2);padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px))}
-.eyebrow{font:700 11px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.eyebrow{font:600 13px/1.3 var(--body);color:var(--muted)}
 .card b.l1{display:block;font:800 21px/1.2 var(--display);margin:2px 0}
 .l2{color:var(--fg)}.pc{font:600 12px ui-monospace,monospace;color:var(--muted);margin-top:4px}
 .actions{display:flex;gap:8px;margin-top:12px}.actions .btn{flex:1}
+.dest{margin:10px 0 0;font-size:13px;color:var(--muted)}.dest b{color:var(--fg);font-weight:700;overflow-wrap:anywhere}
 .loc{position:fixed;z-index:15;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 170px);width:46px;height:46px;border-radius:50%;border:0;background:var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.28);display:grid;place-items:center;cursor:pointer;color:var(--fg)}
 .maplibregl-ctrl-bottom-right{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}
 .maplibregl-ctrl-attrib,.maplibregl-ctrl-attrib.maplibregl-compact{background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--fg)}.maplibregl-ctrl-attrib a{color:var(--fg)}
@@ -47,6 +48,7 @@ html,body{height:100%;overflow:hidden}
   <b class="l1" id="l1">Chargement…</b>
   <div class="l2" id="l2"></div>
   <div class="pc" id="pc"></div>
+  <p class="dest" id="dest" hidden></p>
   <div class="actions"><button class="btn" type="button" id="annuler" hidden>Annuler</button><button class="btn primary" type="button" id="ok" disabled>Valider cette adresse</button></div>
 </section>
 <script src="lib/maplibre-gl.js"></script>
@@ -60,18 +62,25 @@ const $=id=>document.getElementById(id),CA=window.ConakryAdresses,P=new URLSearc
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const titre=(P.get('titre')||'').slice(0,60);if(titre)$('titre').textContent=titre;
+/* ville du plan : ?ville=labe (Conakry par défaut) */
+const VILLES={conakry:{nom:'Conakry',dossier:'data/',c:[9.547,-13.661]},kindia:{nom:'Kindia',dossier:'data/kindia/',c:[10.05692,-12.86576]},labe:{nom:'Labé',dossier:'data/labe/',c:[11.31823,-12.28332]},mamou:{nom:'Mamou',dossier:'data/mamou/',c:[10.37546,-12.09148]},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/',c:[7.75624,-8.8179]},siguiri:{nom:'Siguiri',dossier:'data/siguiri/',c:[11.42282,-9.16852]}};
+const VI=Object.prototype.hasOwnProperty.call(VILLES,P.get('ville')||'')?VILLES[P.get('ville')]:VILLES.conakry;
 /* destinataire de l'adresse : jamais n'importe quel site */
 let cible=null;try{const o=P.get('origine');if(o){const u=new URL(o);if(u.protocol==='https:'||u.hostname==='localhost'||u.hostname==='127.0.0.1')cible=u.origin}}catch(e){}
 if(!cible&&document.referrer&&window.parent!==window){try{cible=new URL(document.referrer).origin}catch(e){}}
-let retour=null;try{const r=P.get('retour');if(r){const u=new URL(r);if(/^[a-z][a-z0-9+.-]*:$/.test(u.protocol)&&!['http:','https:','javascript:','data:','file:','blob:','vbscript:','about:'].includes(u.protocol))retour=u.href}}catch(e){}
+/* retour vers une appli (WebView) : son propre schéma (itina://…), jamais un schéma du système ou du web */
+const INTERDITS=['http:','https:','javascript:','data:','file:','blob:','vbscript:','about:','intent:','android-app:','content:','chrome:','chrome-extension:','filesystem:','view-source:','jar:','ftp:','ws:','wss:','mailto:','tel:','sms:','search-ms:'];
+let retour=null;try{const r=P.get('retour');if(r){const u=new URL(r);if(/^[a-z][a-z0-9+.-]{1,30}:$/.test(u.protocol)&&!INTERDITS.includes(u.protocol)&&!u.protocol.startsWith('ms-'))retour=u.href}}catch(e){}
 const parentWin=window.parent!==window?window.parent:window.opener;
 if(parentWin||retour)$('annuler').hidden=false;
+/* le client voit toujours à qui part son adresse */
+if(cible||retour){const d=$('dest');d.textContent='L\'adresse sera envoyée à ';const b=document.createElement('b');b.textContent=cible?new URL(cible).host:'l\'appli « '+new URL(retour).protocol.slice(0,-1)+' »';d.append(b,'.');d.hidden=false}
 const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/';
 const map=new maplibregl.Map({container:'map',attributionControl:false,
   style:{version:8,glyphs:new URL('glyphs/{fontstack}/{range}.pbf',location.href).href.replace('%7Bfontstack%7D','{fontstack}').replace('%7Brange%7D','{range}'),
     sources:{plan:{type:'raster',tiles:[ESRI+'Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:16,attribution:'Fond © Esri'}},
     layers:[{id:'bg',type:'background',paint:{'background-color':css('--paper')}},{id:'plan',type:'raster',source:'plan',paint:{'raster-opacity':.55}}]},
-  center:[-13.70,9.53],zoom:15,dragRotate:false,pitchWithRotate:false});
+  center:[VI.c[1],VI.c[0]],zoom:15,dragRotate:false,pitchWithRotate:false});
 map.touchZoomRotate.disableRotation();
 map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'Rues © OpenStreetMap'}),'bottom-right');
 let ref=null,cur=null;
@@ -85,7 +94,7 @@ function layers(){
 }
 function update(){
   if(!ref)return;const c=map.getCenter();cur=ref.adresse(c.lat,c.lng);
-  if(!cur){$('l1').textContent='Hors de Conakry';$('l2').textContent='Déplacez la carte vers la zone de Conakry.';$('pc').textContent='';$('ok').disabled=true;return}
+  if(!cur){$('l1').textContent='Hors de '+VI.nom;$('l2').textContent='Déplacez la carte vers '+VI.nom+'.';$('pc').textContent='';$('ok').disabled=true;return}
   $('l1').textContent=cur.ligne1;$('l2').textContent=cur.ligne2;$('pc').textContent=(cur.id?cur.id+' · ':'')+cur.plusCodeCourt;$('ok').disabled=false;
 }
 map.on('movestart',()=>document.body.classList.add('moving'));
@@ -104,14 +113,18 @@ let last=[];
 const show=l=>{last=l;const s=$('sugg');if(!$('q').value.trim()){s.hidden=true;return}s.hidden=false;s.innerHTML=l.length?l.map((r,i)=>`<li><button type="button" data-i="${i}"><b>${esc(r.adresse?r.adresse.ligne1:r.libelle)}</b><small>${esc(r.adresse?r.adresse.ligne2:r.type)}</small></button></li>`).join(''):'<li class="hint" style="padding:10px">Aucun résultat.</li>';s.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const r=last[+b.dataset.i];s.hidden=true;$('q').blur();map.jumpTo({center:[r.lng,r.lat],zoom:r.type==='commune'?14:r.type==='quartier'?16:18});update()})};
 let t;$('q').addEventListener('input',()=>{clearTimeout(t);t=setTimeout(()=>ref&&show(ref.chercher($('q').value,{max:6})),160)});
 $('find').addEventListener('submit',e=>{e.preventDefault();if(!ref)return;const l=ref.chercher($('q').value,{max:6});if(l[0]&&(l.length===1||l[0].score>=1)){map.jumpTo({center:[l[0].lng,l[0].lat],zoom:18});$('sugg').hidden=true;update()}else show(l)});
-$('loc').onclick=()=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{map.jumpTo({center:[p.coords.longitude,p.coords.latitude],zoom:18});update()},()=>{$('l2').textContent='Position introuvable : autorisez la localisation.'},{enableHighAccuracy:true,timeout:15000});
-CA.charger({base:'data/'}).then(r=>{
+/* « Ma position » ; à l'ouverture aussi, si le téléphone l'autorise déjà et qu'aucune adresse n'est donnée */
+const localiser=silence=>navigator.geolocation&&navigator.geolocation.getCurrentPosition(p=>{if(silence&&ref&&!ref.adresse(p.coords.latitude,p.coords.longitude))return;map.jumpTo({center:[p.coords.longitude,p.coords.latitude],zoom:18});update()},e=>{if(!silence)$('l2').textContent=e.code===1?'Localisation refusée : autorisez-la dans les réglages, ou déplacez la carte.':'Position introuvable : déplacez la carte jusqu\'à la porte.'},{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+$('loc').onclick=()=>localiser(false);
+CA.charger({base:VI.dossier}).then(r=>{
   ref=r;window.__ref=r;
   const go=()=>{layers();
     const id=P.get('adresse'),la=parseFloat(P.get('lat')),ln=parseFloat(P.get('lng'));
     let a=id?ref.position(id):null;
     if(a)map.jumpTo({center:[a.position.lng,a.position.lat],zoom:18});
     else if(isFinite(la)&&isFinite(ln))map.jumpTo({center:[ln,la],zoom:18});
+    /* position automatique seulement quand la page est ouverte seule : jamais pour une appli ou un site qui la demande */
+    else if(!cible&&!retour&&!parentWin)try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(s=>{if(s.state==='granted')localiser(true)}).catch(()=>{})}catch(e){}
     update();
     if(parentWin&&cible)parentWin.postMessage({type:'conakry-pret',source:'conakry-adresses',version:CA.version},cible)};
   if(map.isStyleLoaded())go();else map.once('load',go);

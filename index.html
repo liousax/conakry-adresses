@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-6diiRCGYjdBURdWMu7cmItHpBvwdgNgbj3jEyc3jODc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-Ma7/QPnhG1mItDEI+f5N7MuW3fQA10HbDsTtit2PILU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f7a46">
@@ -27,12 +27,28 @@ html,body{height:100%;overflow:hidden}
 .sugg b{font-weight:600}.sugg small{color:var(--muted);font-size:12px}
 .sugg .empty{padding:10px;color:var(--muted);font-size:14px}
 .card{position:fixed;z-index:15;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(420px,calc(100vw - 24px));max-height:min(58vh,560px);overflow:auto;background:var(--panel);border-radius:18px;box-shadow:0 6px 28px rgba(0,0,0,.28);padding:16px}
-.eyebrow{font:700 11px var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.eyebrow{font:600 13px/1.3 var(--body);color:var(--muted);display:flex;align-items:center;gap:7px}
+.eyebrow.ici::before{content:"";width:10px;height:10px;border-radius:50%;background:#2a7de1;box-shadow:0 0 0 3px rgba(42,125,225,.25);flex:none}
+.eyebrow.tram::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--panel);border:2.5px solid var(--tram);box-sizing:border-box;flex:none}
 .card h1{font:800 24px/1.15 var(--display);margin:2px 0 4px;text-wrap:balance}
+.card .intro{margin:0;font-size:15px}
+.chiffres{margin:12px 0 0;font-size:13px;color:var(--muted)}
+.avert{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.avert summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--warn);min-height:28px}
+.avert summary::-webkit-details-marker{display:none}
+.avert summary::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.avert[open] summary::after{transform:rotate(-135deg) translateY(-1px)}
+.avert p{margin:4px 0 0;line-height:1.45}
+.liens{display:flex;flex-wrap:wrap;gap:4px 18px;margin:12px 0 0;font-size:14px}
+.liens a{font-weight:600;text-decoration:none;min-height:28px;display:inline-flex;align-items:center}
+.liens a:hover{text-decoration:underline}
+.btn.big{min-height:48px;font-size:15px}
+.btn svg{flex:none}
 .card h2{font:800 21px/1.2 var(--display);margin:2px 0 4px}
 .l2{font-size:15px;color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
-.chip{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;padding:4px 8px;border-radius:7px;background:var(--green-soft);color:var(--green);border:0;cursor:pointer}
+.chip{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;padding:5px 9px;border-radius:7px;background:var(--green-soft);color:var(--green);border:0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:30px;max-width:100%;overflow-wrap:anywhere;text-align:left}
+.chip svg{flex:none;opacity:.75}
 .chip.pc{background:var(--soft);color:var(--fg)}
 .st{font-size:13px;color:var(--muted);margin:6px 0 0}
 .st.prov{color:var(--warn)}
@@ -40,7 +56,7 @@ html,body{height:100%;overflow:hidden}
 .ded b{font-weight:700}
 .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .row .btn{flex:1 1 auto}
-.stats{display:flex;gap:18px;margin:10px 0 2px}.stats b{font:800 20px var(--display);display:block}.stats span{font-size:12px;color:var(--muted)}
+.villes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}.villes a{font:600 13px var(--body);padding:6px 11px;border-radius:999px;border:1px solid var(--line);color:var(--fg);text-decoration:none;background:var(--panel)}.villes a[aria-current="page"]{background:var(--green);border-color:var(--green);color:var(--on-green)}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--soft);padding:4px;border-radius:12px;margin:10px 0}
 .modes button{all:unset;text-align:center;padding:9px 4px;border-radius:9px;font:600 14px var(--body);cursor:pointer;color:var(--muted)}
 .modes button[aria-pressed="true"]{background:var(--panel);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.15)}
@@ -50,9 +66,22 @@ html,body{height:100%;overflow:hidden}
 .steps{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
 .steps li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .steps li span:last-child{color:var(--muted);white-space:nowrap}
-.fabs{position:fixed;z-index:15;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;gap:10px}
+.fabs{position:fixed;z-index:15;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 76px);display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+:root{--street-prop:#0f7a46;--street-keep:#3e5a8a;--street-todo:#b9a07a;--circ:#d9650b;--tram:#7b2d8e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--street-prop:#3fc483;--street-keep:#8fb0ea;--street-todo:#8a7a60;--circ:#ff9a45;--tram:#d08be6}}
+:root[data-theme="dark"]{--street-prop:#3fc483;--street-keep:#8fb0ea;--street-todo:#8a7a60;--circ:#ff9a45;--tram:#d08be6}
+/* menu « Rendu », comme sur la carte de Kaloum */
+.rendu{background:var(--panel);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.28);max-width:min(250px,calc(100vw - 24px))}
+.rendu>button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:44px;padding:0 14px;font:800 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.rendu>button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-radius:14px}
+.rendu .rb{display:grid;gap:9px;padding:2px 14px 13px;font-size:14px;max-height:calc(100vh - env(safe-area-inset-top,0px) - 250px);overflow:auto}
+@media (max-width:640px){.rendu .rb{max-height:calc(100vh - env(safe-area-inset-top,0px) - var(--card,140px) - 230px)}}
+.rendu label{display:flex;gap:9px;align-items:center;cursor:pointer;font-weight:500;min-height:26px}
+.rendu input{width:18px;height:18px;margin:0;accent-color:var(--green);flex:none}
+.rleg{display:grid;gap:4px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}.rleg i{display:inline-block;width:20px;height:5px;border-radius:3px;margin-right:7px;vertical-align:middle}
+.tram-info b{color:var(--tram)}
 .fab{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;border:0;background:var(--panel);color:var(--fg);box-shadow:0 2px 10px rgba(0,0,0,.28);cursor:pointer;font:700 12px var(--body)}
-.fab[aria-pressed="true"]{background:var(--green);color:#fff}
+.fab[aria-pressed="true"]{background:var(--green);color:var(--on-green)}
 .toast{position:fixed;z-index:40;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .status{position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 85%,transparent);padding:24px;text-align:center}
 .status div{max-width:440px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px}
@@ -61,14 +90,16 @@ html,body{height:100%;overflow:hidden}
 .me{width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:#2a7de1;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,125,225,.25)}
 .pick{position:fixed;z-index:25;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--panel);border:2px solid var(--blue);border-radius:12px;padding:8px 12px;font-weight:600;display:flex;gap:10px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:calc(100% - 24px)}
 .maplibregl-ctrl-bottom-right{bottom:calc(env(safe-area-inset-bottom,0px) + 4px)}
+@media (min-width:641px){.maplibregl-ctrl-bottom-left{left:calc(min(420px,100vw - 24px) + 18px)}}
 .maplibregl-ctrl-attrib,.maplibregl-ctrl-attrib.maplibregl-compact{background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--fg)}.maplibregl-ctrl-attrib a{color:var(--fg)}
 .k-north .maplibregl-ctrl-compass{display:none}
-.maplibregl-ctrl-top-right{top:calc(env(safe-area-inset-top,0px) + 190px)}
 @media (max-width:640px){
   .card{left:0;right:0;width:auto;bottom:0;border-radius:18px 18px 0 0;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));max-height:52vh}
   .maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{bottom:calc(var(--card,140px) + 4px)}
   .maplibregl-ctrl-zoom-in,.maplibregl-ctrl-zoom-out{display:none!important}
-  .maplibregl-ctrl-top-right{top:calc(env(safe-area-inset-top,0px) + 190px)}
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib{max-width:calc(100vw - 118px)}
+  .rendu .rb{gap:5px;font-size:14px}
+  .rendu label{min-height:30px}
 }
 </style>
 </head>
@@ -84,13 +115,27 @@ html,body{height:100%;overflow:hidden}
 <div class="fabs">
   <button class="fab" type="button" id="fabLoc" aria-label="Ma position"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
   <button class="fab" type="button" id="fabSat" aria-label="Vue satellite" aria-pressed="false">SAT</button>
+  <div class="rendu" id="rendu" hidden>
+    <button type="button" id="renduBtn" aria-expanded="false" aria-controls="renduCorps">Rendu <span id="renduFl" aria-hidden="true">▸</span></button>
+    <div class="rb" id="renduCorps" hidden>
+      <label><input type="radio" name="rendu" value="plan"> Plan de ville</label>
+      <label><input type="radio" name="rendu" value="suivi"> Suivi des noms</label>
+      <label><input type="checkbox" id="grilleOn"> Quadrillage</label>
+      <label><input type="checkbox" id="circOn"> Circulation</label>
+      <label><input type="checkbox" id="limOn"> Limites des communes</label>
+      <label id="tramLab"><input type="checkbox" id="tramOn"> Projet de tramway</label>
+      <div class="rleg" id="legSuivi" hidden><span><i style="background:var(--street-keep)"></i>Nom conservé</span><span><i style="background:var(--street-prop)"></i>Nom proposé</span><span><i style="background:var(--street-todo)"></i>À nommer</span></div>
+      <div class="rleg" id="legCirc" hidden><span><i style="background:var(--circ)"></i>Sens unique (flèches au zoom)</span></div>
+    </div>
+  </div>
 </div>
 <div class="pick" id="pick" hidden><span id="pickTxt">Touchez la carte pour choisir le départ</span><button class="btn" type="button" id="pickNo">Annuler</button></div>
 <section class="card" id="card" aria-live="polite"></section>
 <div class="toast" id="toast" role="status" hidden></div>
-<div class="status" id="status"><div><h3>Chargement du plan de Conakry…</h3><p class="hint">Les rues et les quartiers arrivent.</p></div></div>
+<div class="status" id="status"><div><h3>Chargement du plan…</h3><p class="hint">Les rues et les quartiers arrivent.</p></div></div>
 <script src="lib/maplibre-gl.js"></script>
 <script src="sdk/conakry-adresses.js"></script>
+<script src="sdk/guidage.js"></script>
 <script>
 (()=>{
 const $=id=>document.getElementById(id),CA=window.ConakryAdresses;
@@ -101,12 +146,26 @@ const fmtD=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1).replace('.',',
 const fmtT=s=>s<60?'moins d\'1 min':s<3600?Math.round(s/60)+' min':Math.floor(s/3600)+' h '+String(Math.round(s%3600/60)).padStart(2,'0');
 const glyphOk=c=>{const n=c.codePointAt(0);return n<1024||(n>=7680&&n<7936)||(n>=8192&&n<8448)};
 const safe=t=>[...String(t||'')].map(c=>glyphOk(c)?c:[...c.normalize('NFD')].filter(glyphOk).join('')).join('');
+/* ville : ?ville=labe, ou d'après le code postal d'un identifiant partagé (#GN-85002-…), sinon Conakry */
+const VILLES={conakry:{nom:'Conakry',dossier:'data/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
+const PREFIXES=[['834','siguiri'],['840','kindia'],['850','labe'],['860','mamou'],['870','nzerekore'],['88','conakry'],['89','conakry']];
+const villeDuCode=id=>{const m=String(id||'').match(/^GN-(\d{5})-/i);if(!m)return null;const p=PREFIXES.find(([x])=>m[1].startsWith(x));return p?p[1]:null};
+let VILLE=new URLSearchParams(location.search).get('ville');
+const aVille=k=>typeof k==='string'&&Object.prototype.hasOwnProperty.call(VILLES,k);
+const dec=t=>{try{return decodeURIComponent(t)}catch(e){return t}};   /* un lien abîmé (« #% ») ne bloque pas la carte */
+if(!aVille(VILLE))VILLE=villeDuCode(dec(location.hash.slice(1)))||'conakry';
+const VI=VILLES[VILLE],SUFFIXE=VILLE==='conakry'?'':'?ville='+VILLE;
+$('status').querySelector('h3').textContent='Chargement du plan de '+VI.nom+'…';
+let VLIST=null;
 if(!window.maplibregl||!CA){$('status').innerHTML='<div><h3>La carte ne peut pas démarrer</h3><p class="hint">Vérifiez la connexion internet et utilisez un navigateur récent (Chrome, Safari, Edge).</p></div>';return}
 
 /* ---------- carte ---------- */
 const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/';
 const dark=()=>matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light';
-let vue=null;try{vue=JSON.parse(localStorage.getItem('conakry-carte-vue')||'null')}catch(e){}
+const CLE_VUE='conakry-carte-vue'+(VILLE==='conakry'?'':'-'+VILLE);
+/* dernière vue gardée par ce navigateur : vérifiée, sinon oubliée (une vue abîmée empêcherait la carte de démarrer) */
+let vue=null;try{const v=JSON.parse(localStorage.getItem(CLE_VUE)||'null'),n=x=>typeof x==='number'&&isFinite(x);
+  if(v&&n(v.lat)&&n(v.lng)&&n(v.z)&&Math.abs(v.lat)<85&&Math.abs(v.lng)<=180&&v.z>=0&&v.z<=22)vue={lat:v.lat,lng:v.lng,z:v.z,b:n(v.b)?v.b:0,p:n(v.p)?Math.min(Math.max(v.p,0),60):0};else localStorage.removeItem(CLE_VUE)}catch(e){}
 const map=new maplibregl.Map({container:'map',attributionControl:false,maxPitch:60,
   style:{version:8,glyphs:new URL('glyphs/{fontstack}/{range}.pbf',location.href).href.replace('%7Bfontstack%7D','{fontstack}').replace('%7Brange%7D','{range}'),
     sources:{plan:{type:'raster',tiles:[ESRI+'Canvas/'+(dark()?'World_Dark_Gray_Base':'World_Light_Gray_Base')+'/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:16,attribution:'Fond © Esri'},
@@ -115,14 +174,14 @@ const map=new maplibregl.Map({container:'map',attributionControl:false,maxPitch:
   center:vue?[vue.lng,vue.lat]:[-13.62,9.60],zoom:vue?vue.z:11,bearing:vue?vue.b:0,pitch:vue?vue.p:0,
   locale:{'NavigationControl.ZoomIn':'Zoomer','NavigationControl.ZoomOut':'Dézoomer','NavigationControl.ResetBearing':'Remettre le nord en haut','AttributionControl.ToggleAttribution':'Sources','Popup.Close':'Fermer'}});
 map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'Rues © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> · plan provisoire'}),'bottom-right');
-map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
 map.addControl(new maplibregl.ScaleControl({unit:'metric',maxWidth:90}),'bottom-left');
 const north=()=>map.getContainer().classList.toggle('k-north',Math.abs(map.getBearing())<.5&&map.getPitch()<.5);map.on('rotate',north);map.on('pitch',north);north();
-let saveT;map.on('moveend',()=>{clearTimeout(saveT);saveT=setTimeout(()=>{const c=map.getCenter();try{localStorage.setItem('conakry-carte-vue',JSON.stringify({lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),z:+map.getZoom().toFixed(2),b:+map.getBearing().toFixed(1),p:+map.getPitch().toFixed(1)}))}catch(e){}},400)});
+let saveT;map.on('moveend',()=>{clearTimeout(saveT);saveT=setTimeout(()=>{const c=map.getCenter();try{localStorage.setItem(CLE_VUE,JSON.stringify({lat:+c.lat.toFixed(5),lng:+c.lng.toFixed(5),z:+map.getZoom().toFixed(2),b:+map.getBearing().toFixed(1),p:+map.getPitch().toFixed(1)}))}catch(e){}},400)});
 $('fabSat').onclick=()=>{const on=$('fabSat').getAttribute('aria-pressed')!=='true';$('fabSat').setAttribute('aria-pressed',on?'true':'false');map.setLayoutProperty('sat','visibility',on?'visible':'none');map.setLayoutProperty('plan','visibility',on?'none':'visible');map.setPaintProperty('bg','background-color',on?'#20251f':css('--paper'))};
 
 /* ---------- données ---------- */
-let ref=null,pin=null,me=null,mePos=null,route=null,picking=false;
+let ref=null,pin=null,me=null,mePos=null,mePosT=0,route=null,picking=false;
 const FC=f=>({type:'FeatureCollection',features:f||[]});
 function addLayers(){
   const z=['interpolate',['exponential',1.6],['zoom']];
@@ -138,6 +197,10 @@ function addLayers(){
   map.addLayer({id:'voies',type:'line',source:'voies',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],'#efe9dd',css('--street')],'line-width':width(0)}});
   map.addLayer({id:'route-c',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':[...z,11,5,16,12,18,20]}});
   map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':css('--blue'),'line-width':[...z,11,3,16,7,18,13]}});
+  /* précision du GPS autour du point bleu */
+  map.addSource('moi',{type:'geojson',data:FC()});
+  map.addLayer({id:'moi-f',type:'fill',source:'moi',paint:{'fill-color':'#2a7de1','fill-opacity':.12}});
+  map.addLayer({id:'moi-l',type:'line',source:'moi',paint:{'line-color':'#2a7de1','line-opacity':.5,'line-width':1.2}});
 /* numéros sous les noms : les noms de rues passent en priorité */
   map.addLayer({id:'nums',type:'symbol',source:'nums',minzoom:17.3,layout:{'text-field':['get','t'],'text-font':['NotoSansMedium'],'text-size':10.5,'text-padding':1},paint:{'text-color':['case',['==',['get','i'],1],css('--quartier'),css('--text')],'text-halo-color':css('--halo'),'text-halo-width':1.4}});
   const lab=(id,filter,minz,size,color,ls)=>map.addLayer({id,type:'symbol',source:'voies',minzoom:minz,filter,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':size,'symbol-placement':'line','text-max-angle':38,'symbol-spacing':280,'text-padding':2,'text-rotation-alignment':'map','text-pitch-alignment':'viewport','text-letter-spacing':ls||0},paint:{'text-color':color,'text-halo-color':css('--halo'),'text-halo-width':1.6}});
@@ -147,7 +210,7 @@ function addLayers(){
   map.addLayer({id:'quartiers',type:'symbol',source:'quartiers',minzoom:13,maxzoom:17.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],13,10.5,16,13],'text-transform':'uppercase','text-letter-spacing':.18,'text-max-width':9,'text-padding':6},paint:{'text-color':css('--quartier'),'text-halo-color':css('--halo'),'text-halo-width':1.8,'text-opacity':.9}});
   map.addLayer({id:'communes',type:'symbol',source:'communes',maxzoom:13.2,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],9,11,12,15],'text-transform':'uppercase','text-letter-spacing':.22},paint:{'text-color':css('--fg'),'text-halo-color':css('--halo'),'text-halo-width':2}});
 }
-function voiesFC(){return FC(ref.voies.map(v=>({type:'Feature',id:v.k,properties:{c:v.code,n:safe(v.nom),m:CA._interne.MAJEUR[v.highway]?1:0,p:v.statut==='a_nommer'||v.statut==='provisoire'||v.lien?1:0,t:v.highway==='track'?1:0},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(p=>[p.lon,p.lat]))}})))}
+function voiesFC(){return FC(ref.voies.map(v=>({type:'Feature',id:v.k,properties:{c:v.code,n:safe(v.nom),m:CA._interne.MAJEUR[v.highway]?1:0,p:v.statut==='a_nommer'||v.statut==='provisoire'||v.lien?1:0,t:v.highway==='track'?1:0,s:v.statut==='propose'?1:v.statut==='a_nommer'||v.statut==='provisoire'?2:0},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(p=>[p.lon,p.lat]))}})))}
 function zonesFC(){return FC(ref.zones.flatMap(z=>z.rings.map(r=>({type:'Feature',properties:{n:z.nom},geometry:{type:'LineString',coordinates:r.concat([r[0]])}}))))}
 function quartiersFC(){return FC(ref.quartiers.map(q=>({type:'Feature',properties:{n:safe(q.nom)+'\n'+q.cp},geometry:{type:'Point',coordinates:[q.lng,q.lat]}})))}
 function communesFC(){return FC(ref.communes.map(c=>{const qs=ref.quartiers.filter(q=>q.commune===c.code);if(!qs.length)return null;return{type:'Feature',properties:{n:safe(c.nom)},geometry:{type:'Point',coordinates:[qs.reduce((a,q)=>a+q.lng,0)/qs.length,qs.reduce((a,q)=>a+q.lat,0)/qs.length]}}}).filter(Boolean))}
@@ -159,40 +222,199 @@ function drawNums(){
 }
 map.on('moveend',()=>setTimeout(drawNums,0));
 
+/* ---------- menu « Rendu » (comme sur la carte de Kaloum) ---------- */
+let RENDU={mode:'plan',grille:false,circ:false,lim:true,tram:false};
+try{const r=JSON.parse(localStorage.getItem('conakry-rendu')||'{}')||{};if(r.mode==='suivi')RENDU.mode='suivi';for(const k of['grille','circ','lim','tram'])if(typeof r[k]==='boolean')RENDU[k]=r[k]}catch(e){}
+const garderRendu=()=>{try{localStorage.setItem('conakry-rendu',JSON.stringify(RENDU))}catch(e){}};
+const vis=(id,on)=>{if(map.getLayer(id))map.setLayoutProperty(id,'visibility',on?'visible':'none')};
+/* quadrillage : carreaux de 0,01° (environ 1,1 km), colonnes A, B… d'ouest en est, rangées 1, 2… du nord au sud */
+const GC=0.01;let G0=null;
+const colonne=i=>{let t='';i++;while(i>0){const r=(i-1)%26;t=String.fromCharCode(65+r)+t;i=Math.floor((i-1)/26)}return t};
+function grilleOrigine(){if(!G0){const b=ref.bbox;G0={w:Math.floor(b[0]/GC)*GC,n:Math.ceil(b[3]/GC)*GC,e:Math.ceil(b[2]/GC)*GC,s:Math.floor(b[1]/GC)*GC}}return G0}
+const carreau=p=>{const o=grilleOrigine(),i=Math.floor((p.lng-o.w)/GC),j=Math.floor((o.n-p.lat)/GC);return i>=0&&j>=0&&p.lng<=o.e&&p.lat>=o.s?colonne(i)+(j+1):null};
+function grille(){
+  if(map.getSource('grille'))return;
+  const o=grilleOrigine(),nx=Math.round((o.e-o.w)/GC),ny=Math.round((o.n-o.s)/GC),l=[],c=[];
+  for(let i=0;i<=nx;i++){const x=+(o.w+i*GC).toFixed(4);l.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[x,o.s],[x,o.n]]}})}
+  for(let j=0;j<=ny;j++){const y=+(o.n-j*GC).toFixed(4);l.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[o.w,y],[o.e,y]]}})}
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++)c.push({type:'Feature',properties:{t:colonne(i)+(j+1)},geometry:{type:'Point',coordinates:[o.w+(i+.5)*GC,o.n-(j+.5)*GC]}});
+  map.addSource('grille',{type:'geojson',data:FC(l)});map.addSource('carreaux',{type:'geojson',data:FC(c)});
+  map.addLayer({id:'grille',type:'line',source:'grille',paint:{'line-color':css('--blue'),'line-width':1,'line-opacity':.45}},'casing');
+  map.addLayer({id:'carreaux',type:'symbol',source:'carreaux',minzoom:12.5,layout:{'text-field':['get','t'],'text-font':['NotoSansMedium'],'text-size':13,'text-allow-overlap':false},paint:{'text-color':css('--blue'),'text-opacity':.6,'text-halo-color':css('--halo'),'text-halo-width':1.5}});
+}
+/* circulation : flèches dans le sens des rues à sens unique (OpenStreetMap) */
+function circulation(){
+  if(map.getSource('sens'))return;
+  const f=[];
+  for(const v of ref.voies)v.segs.forEach((g,gi)=>{const o=v.ow[gi]||0;if(!o||g.length<2)return;const c=g.map(p=>[p.lon,p.lat]);f.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:o>0?c:c.slice().reverse()}})});
+  const cv=document.createElement('canvas');cv.width=cv.height=36;const x=cv.getContext('2d');
+  x.fillStyle=css('--circ');x.strokeStyle=css('--halo');x.lineWidth=3;x.lineJoin='round';
+  x.beginPath();x.moveTo(8,8);x.lineTo(28,18);x.lineTo(8,28);x.lineTo(13,18);x.closePath();x.stroke();x.fill();
+  map.addImage('sens',x.getImageData(0,0,36,36),{pixelRatio:2});
+  map.addSource('sens',{type:'geojson',data:FC(f)});
+  map.addLayer({id:'sens',type:'symbol',source:'sens',minzoom:14.5,layout:{'symbol-placement':'line','symbol-spacing':80,'icon-image':'sens','icon-size':['interpolate',['linear'],['zoom'],15,.8,18,1.3],'icon-rotation-alignment':'map','icon-allow-overlap':true,'icon-ignore-placement':true}},'nums');
+  map.addLayer({id:'sens-l',type:'line',source:'sens',minzoom:12,maxzoom:14.6,paint:{'line-color':css('--circ'),'line-width':2,'line-opacity':.8}},'nums');
+  return f.length;
+}
+/* projet de tramway Coyah – Conakry – Kaloum – Coyah (stations et lignes reprises de la carte de Kaloum) */
+const TRAM_STATIONS={
+  coyah:{n:'Coyah',ll:[9.7056,-13.3858],big:1},maneah:{n:'Manéah',ll:[9.7005,-13.4128]},km36:{n:'Sanoyah – Km 36',ll:[9.6705,-13.4580],big:1},
+  kagbelen:{n:'Kagbélen',ll:[9.6930,-13.5190]},sonfonia:{n:'Sonfonia',ll:[9.6640,-13.5660]},lambanyi:{n:'Lambanyi',ll:[9.6420,-13.5990]},
+  cosa:{n:'Cosa',ll:[9.6020,-13.6170]},bambeto:{n:'Bambeto',ll:[9.5830,-13.6400]},hamdallaye:{n:'Hamdallaye',ll:[9.5660,-13.6510]},dixinn:{n:'Dixinn',ll:[9.5450,-13.6750]},
+  pont:{n:'Pont du 8 Novembre',ll:[9.5252,-13.6880],big:1},port:{n:'Port autonome',ll:[9.5157,-13.7080]},almamya:{n:'Almamya – Centre administratif',ll:[9.5105,-13.7113],big:1},
+  sandervalia:{n:'Sandervalia',ll:[9.5086,-13.7186]},coronthie:{n:'Coronthie',ll:[9.5047,-13.7142]},boulbinet:{n:'Boulbinet',ll:[9.5079,-13.7043]},manquepas:{n:'Manquepas',ll:[9.5089,-13.7090]},
+  madina:{n:'Madina (marché)',ll:[9.5470,-13.6610]},matam:{n:'Matam',ll:[9.5560,-13.6420]},gbessia:{n:'Gbessia – Aéroport',ll:[9.5769,-13.6120],big:1},
+  matoto:{n:'Matoto',ll:[9.5880,-13.5950]},tombolia:{n:'Tombolia',ll:[9.6150,-13.5560]}
+};
+const TRAM_LINES=[
+  {id:'tronc',nom:'Tronc commun Coyah – Sanoyah',st:['coyah','maneah','km36']},
+  {id:'nord',nom:'Branche nord (corridor route Le Prince)',st:['km36','kagbelen','sonfonia','lambanyi','cosa','bambeto','hamdallaye','dixinn','pont']},
+  {id:'kaloum',nom:'Boucle de Kaloum',st:['pont','port','almamya','sandervalia','coronthie','boulbinet','manquepas','pont']},
+  {id:'sud',nom:'Branche sud (corridor de l\'autoroute)',st:['pont','madina','matam','gbessia','matoto','tombolia','km36']}
+];
+const TRAM_INFO={
+  coyah:'Terminus. Gare routière vers l\'intérieur du pays.',km36:'Nœud de correspondance entre les deux branches et le tronc vers Coyah.',
+  pont:'Entrée de Kaloum : les deux branches s\'y rejoignent et font la boucle de la presqu\'île.',
+  port:'Port autonome de Conakry.',almamya:'Centre administratif : ministères, banques. Correspondance avec le train Conakry Express.',
+  boulbinet:'Port de pêche et quartier de Boulbinet.',coronthie:'Pointe de la presqu\'île. Embarcadère vers les îles de Loos (commune de Kassa).',
+  gbessia:'Aéroport international. Commune la plus peuplée de Conakry (520 000 habitants en 2025).',
+  kagbelen:'Correspondance avec le train Conakry Express (terminus de Kagbélen). 395 000 habitants en 2025.',
+  lambanyi:'386 000 habitants en 2025.',sonfonia:'310 000 habitants en 2025.',tombolia:'373 000 habitants en 2025.'
+};
+const distLL=(a,b)=>Math.hypot((a[0]-b[0])*110574,(a[1]-b[1])*111320*Math.cos(a[0]*Math.PI/180));
+let tramKm=0;
+function tramway(){
+  if(map.getSource('tram'))return false;
+  const lignes=[];tramKm=0;
+  for(const ln of TRAM_LINES){
+    const pts=ln.st.map(k=>TRAM_STATIONS[k].ll),g=[];
+    for(let j=1;j<pts.length;j++){
+      let leg=null;
+      /* le tracé suit les rues du plan (sens uniques ignorés pour un tram) ; à défaut, ligne droite */
+      try{const r=ref.itineraire({lat:pts[j-1][0],lng:pts[j-1][1]},{lat:pts[j][0],lng:pts[j][1]},{mode:'pied'});if(r&&r.distance<2.5*distLL(pts[j-1],pts[j])+300)leg=[pts[j-1]].concat(r.ligne,[pts[j]])}catch(e){}
+      if(!leg)leg=[pts[j-1],pts[j]];
+      g.push(...(g.length?leg.slice(1):leg));
+    }
+    for(let j=1;j<g.length;j++)tramKm+=distLL(g[j-1],g[j])/1000;
+    lignes.push({type:'Feature',properties:{n:ln.nom},geometry:{type:'LineString',coordinates:g.map(p=>[p[1],p[0]])}});
+  }
+  const st=Object.entries(TRAM_STATIONS).map(([k,v])=>({type:'Feature',properties:{k,n:safe(v.n),b:v.big?1:0},geometry:{type:'Point',coordinates:[v.ll[1],v.ll[0]]}}));
+  map.addSource('tram',{type:'geojson',data:FC(lignes)});map.addSource('tram-st',{type:'geojson',data:FC(st)});
+  const z=['interpolate',['linear'],['zoom']];
+  map.addLayer({id:'tram-b',type:'line',source:'tram',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':[...z,10,5,16,11]}},'nums');
+  map.addLayer({id:'tram',type:'line',source:'tram',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':css('--tram'),'line-width':[...z,10,2.5,16,5]}},'nums');
+  map.addLayer({id:'tram-t',type:'line',source:'tram',minzoom:13,paint:{'line-color':css('--tram'),'line-width':[...z,13,8,16,12],'line-dasharray':[.25,2.2]}},'nums');
+  map.addLayer({id:'tram-st',type:'circle',source:'tram-st',paint:{'circle-radius':['case',['==',['get','b'],1],6.5,4.5],'circle-color':'#ffffff','circle-stroke-color':css('--tram'),'circle-stroke-width':2.5}});
+  map.addLayer({id:'tram-n',type:'symbol',source:'tram-st',minzoom:10.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':12,'text-offset':[0,1.25],'text-anchor':'top','text-max-width':9},paint:{'text-color':css('--tram'),'text-halo-color':css('--halo'),'text-halo-width':1.8}});
+  return true;
+}
+function tramCarte(){
+  card.dataset.vue='tram';pin&&pin.remove();
+  card.innerHTML=`<div class="eyebrow tram">Projet de tramway</div><h2>Coyah – Conakry – Kaloum – Coyah</h2>
+    <p class="l2">Environ ${Math.round(tramKm)} km et ${Object.keys(TRAM_STATIONS).length} stations : deux branches depuis Sanoyah, qui se rejoignent au pont du 8 Novembre pour faire la boucle de Kaloum. Touchez une station pour en savoir plus.</p>
+    <p class="st">Tracé indicatif, à confirmer par une étude.</p>
+    <div class="row"><button class="btn" type="button" id="stBack">Retour</button></div>`;
+  $('stBack').onclick=accueil;
+}
+function station(k){
+  const s=TRAM_STATIONS[k];if(!s)return;
+  card.dataset.vue='tram';pin&&pin.remove();
+  card.innerHTML=`<div class="eyebrow tram">Station du projet de tramway</div><h2>${esc(s.n)}</h2><p class="l2 tram-info">${esc(TRAM_INFO[k]||'Station proposée.')}</p>
+    <p class="st">Position approximative, à confirmer par une étude.</p>
+    <div class="row"><button class="btn" type="button" id="stBack">Toute la ligne</button></div>`;
+  $('stBack').onclick=tramCarte;
+}
+function appliquerRendu(){
+  map.setPaintProperty('voies','line-color',RENDU.mode==='suivi'
+    ?['match',['get','s'],0,css('--street-keep'),1,css('--street-prop'),2,css('--street-todo'),css('--street')]
+    :['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],'#efe9dd',css('--street')]);
+  $('legSuivi').hidden=RENDU.mode!=='suivi';
+  if(RENDU.grille)grille();vis('grille',RENDU.grille);vis('carreaux',RENDU.grille);
+  if(RENDU.circ)circulation();vis('sens',RENDU.circ);vis('sens-l',RENDU.circ);$('legCirc').hidden=!RENDU.circ;
+  vis('zones',RENDU.lim);
+  const tramOk=VILLE==='conakry'&&RENDU.tram;
+  if(tramOk)tramway();
+  ['tram-b','tram','tram-t','tram-st','tram-n'].forEach(id=>vis(id,tramOk));
+  garderRendu();
+}
+const tel=()=>matchMedia('(max-width:640px)').matches;
+const ouvrirRendu=o=>{$('renduCorps').hidden=!o;$('renduBtn').setAttribute('aria-expanded',o?'true':'false');$('renduFl').textContent=o?'▾':'▸'};
+function initRendu(){
+  const box=$('rendu');box.hidden=false;
+  $('tramLab').hidden=VILLE!=='conakry';
+  box.querySelector(`input[value="${RENDU.mode==='suivi'?'suivi':'plan'}"]`).checked=true;
+  $('grilleOn').checked=!!RENDU.grille;$('circOn').checked=!!RENDU.circ;$('limOn').checked=!!RENDU.lim;$('tramOn').checked=!!RENDU.tram;
+  ouvrirRendu(!tel());          /* sur téléphone, replié pour laisser la place à la carte */
+  $('renduBtn').onclick=()=>ouvrirRendu($('renduCorps').hidden);
+  box.querySelectorAll('input[name="rendu"]').forEach(i=>i.onchange=()=>{RENDU.mode=i.value;appliquerRendu()});
+  $('grilleOn').onchange=e=>{RENDU.grille=e.target.checked;appliquerRendu();rafraichirFiche()};
+  $('circOn').onchange=e=>{RENDU.circ=e.target.checked;appliquerRendu()};
+  $('limOn').onchange=e=>{RENDU.lim=e.target.checked;appliquerRendu()};
+  $('tramOn').onchange=e=>{RENDU.tram=e.target.checked;appliquerRendu();
+    if(e.target.checked&&VILLE==='conakry'){tramCarte();if(tel())ouvrirRendu(false);const xs=Object.values(TRAM_STATIONS).map(s=>s.ll[1]),ys=Object.values(TRAM_STATIONS).map(s=>s.ll[0]);
+      map.fitBounds([[Math.min(...xs),Math.min(...ys)],[Math.max(...xs),Math.max(...ys)]],{padding:{top:90,left:tel()?30:460,right:tel()?30:290,bottom:tel()?card.offsetHeight+20:40},duration:600})}
+    else if(!e.target.checked&&(card.dataset.vue==='tram'))accueil()};
+  appliquerRendu();
+}
+
 /* ---------- fiche ---------- */
 const card=$('card');
 const setCardH=()=>document.documentElement.style.setProperty('--card',card.offsetHeight+'px');
 new ResizeObserver(setCardH).observe(card);
+const IGPS='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+const ICOPIE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+const lienVille=(code,h)=>'./'+(code==='conakry'?'':'?ville='+encodeURIComponent(code))+(h||'');
 function accueil(){
   route=null;map.getSource('route')&&map.getSource('route').setData(FC());
-  card.innerHTML=`<div class="eyebrow">Plan d'adressage provisoire</div><h1>Conakry Adresses</h1><p class="l2" style="margin:0">Touchez la carte pour obtenir l'adresse d'une porte, ou cherchez une adresse.</p>
-  ${ref?`<div class="stats"><div><b>${ref.voies.length.toLocaleString('fr-FR')}</b><span>voies</span></div><div><b>${ref.quartiers.length}</b><span>quartiers</span></div><div><b>${new Set(ref.quartiers.map(q=>q.commune)).size}</b><span>communes</span></div></div>`:''}
-  <p class="st">${ref?esc(ref.info.avertissement||''):''}</p>
-  <div class="row"><a class="btn" href="developpeurs.html">Pour les applis</a><a class="btn" href="choisir.html">Choisir une adresse</a></div>`;
+  card.dataset.vue='accueil';
+  const pl=(n,m)=>n>1?m+'s':m;
+  const chiffres=ref?(()=>{const nv=ref.voies.length,nq=ref.quartiers.length,nc=new Set(ref.quartiers.map(q=>q.commune)).size;
+    return `${nv.toLocaleString('fr-FR')} ${pl(nv,'voie')}, ${nq} ${pl(nq,'quartier')} et ${nc} ${pl(nc,'commune')} sur le plan.`})():'';
+  card.innerHTML=`<h1>${esc(ref?ref.info.nom:VI.nom+' Adresses')}</h1>
+  <p class="intro">Touchez la carte pour obtenir l'adresse d'une porte, ou cherchez une adresse.</p>
+  ${VLIST&&VLIST.length>1?`<nav class="villes" aria-label="Villes">${VLIST.map(v=>`<a href="${lienVille(v.code)}"${v.code===VILLE?' aria-current="page"':''}>${esc(v.nom)}</a>`).join('')}</nav>`:''}
+  <div class="row"><button class="btn primary big" type="button" id="ouSuisJe">${IGPS}Où suis-je ?</button></div>
+  ${chiffres?`<p class="chiffres">${chiffres}</p>`:''}
+  ${ref&&ref.info.avertissement?`<details class="avert"><summary>Plan provisoire, non officiel</summary><p>${esc(ref.info.avertissement)}</p></details>`:''}
+  <p class="liens"><a href="developpeurs.html${SUFFIXE}">Pour les applis</a><a href="choisir.html${SUFFIXE}">Choisir une adresse</a></p>`;
+  $('ouSuisJe').onclick=ouSuisJe;
 }
 const STAT={officiel:'Nom officiel',propose:'Nom proposé, en attendant le choix de la commune',usage:'Nom d\'usage (OpenStreetMap)',a_nommer:'Rue à nommer (plan de Kaloum)',provisoire:'Code provisoire'};
 const statut=a=>a.voie.statut==='propose'&&a.commune&&a.commune.code==='KAL'?'Nom proposé par le plan de Kaloum':STAT[a.voie.statut]||'';
 /* « Rue du Bembeya Jazz » → « Bembeya Jazz » : à qui la rue est dédiée */
 const honore=n=>String(n).replace(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Passage|Allée)\s+/,'').replace(/^(du|des|de la|de l'|de|d')\s*/,'').replace(/^./,c=>c.toUpperCase());
-function showAddress(a,from){
-  if(!a){toast('Hors de la zone de Conakry.');return}
-  placePin(a.position);
-  const nav=`https://www.google.com/maps/dir/?api=1&destination=${a.position.lat.toFixed(6)},${a.position.lng.toFixed(6)}`;
-  card.innerHTML=`<div class="eyebrow">${a.precision==='porte'?'Adresse':'Lieu sans rue proche'}</div>
+/* from : 'tap' (la carte ne bouge pas), 'gps' (« Où suis-je ? »), sinon recherche ou lien partagé */
+function showAddress(a,from,garderVue){
+  if(!a){toast('Hors de la zone de '+VI.nom+'.');return}
+  const gps=from==='gps',acc=gps&&mePos?mePos.acc:0;
+  if(gps){pin&&pin.remove()}else placePin(a.position);
+  card.dataset.vue=gps?'gps':'adresse';
+  const infos=[];
+  if(a.voie){infos.push(esc(statut(a)));if(a.voie.nomUsuel)infos.push('connue comme « '+esc(a.voie.nomUsuel)+' »');if(a.distanceRue>25)infos.push('à '+a.distanceRue+' m de la rue')}
+  const cr=RENDU.grille&&carreau(a.position);if(cr)infos.push('carreau '+cr);
+  card.innerHTML=`${gps?'<div class="eyebrow ici">Vous êtes ici</div>':`<div class="eyebrow">${a.precision==='porte'?'Adresse':'Lieu sans rue proche'}</div>`}
     <h1>${esc(a.ligne1)}</h1><div class="l2">${esc(a.ligne2)}</div>
-    ${a.voie?`<p class="st${a.voie.statut==='a_nommer'?' prov':''}">${esc(statut(a))}${a.voie.nomUsuel?' · connue comme « '+esc(a.voie.nomUsuel)+' »':''}${a.distanceRue>25?' · à '+a.distanceRue+' m de la rue':''}</p>${a.voie.dedicace?`<p class="ded"><b>${esc(honore(a.voie.nom))}</b> · ${esc(a.voie.dedicace)}</p>`:''}`:'<p class="st">Aucune rue à moins de 60 m : le Plus Code situe la porte à 3 m près.</p>'}
-    <div class="chips">${a.id?`<button class="chip" type="button" data-copy="${esc(a.id)}" title="Copier l'identifiant">${esc(a.id)}</button>`:''}<button class="chip pc" type="button" data-copy="${esc(a.plusCodeCourt)}" title="Copier le Plus Code">${esc(a.plusCodeCourt)}</button></div>
-    <div class="row"><button class="btn primary" type="button" id="goHere">Y aller</button><button class="btn" type="button" id="share">Partager</button><a class="btn" href="${nav}" target="_blank" rel="noopener noreferrer">Google Maps</a></div>`;
+    ${gps&&acc?`<p class="st${acc>100?' prov':''}">${acc>100?`Position approximative, à ${acc} m près : attendez un peu à découvert, puis touchez « Actualiser ».`:`Position du GPS, à ${acc} m près.`}</p>`:''}
+    ${a.voie?`<p class="st${a.voie.statut==='a_nommer'?' prov':''}">${infos.join(' · ')}</p>${a.voie.dedicace?`<p class="ded"><b>${esc(honore(a.voie.nom))}</b> · ${esc(a.voie.dedicace)}</p>`:''}`:`<p class="st">Aucune rue à moins de 60 m : le Plus Code situe ${gps?'l\'endroit':'la porte'} à 3 m près${cr?' · carreau '+cr:''}.</p>`}
+    <div class="chips">${a.id?`<button class="chip" type="button" data-copy="${esc(a.id)}" aria-label="Copier l'identifiant ${esc(a.id)}">${ICOPIE}${esc(a.id)}</button>`:''}<button class="chip pc" type="button" data-copy="${esc(a.plusCodeCourt)}" aria-label="Copier le Plus Code ${esc(a.plusCodeCourt)}">${ICOPIE}${esc(a.plusCodeCourt)}</button></div>
+    <div class="row">${gps?'<button class="btn primary" type="button" id="share">Partager mon adresse</button><button class="btn" type="button" id="maj">Actualiser</button>'
+      :'<button class="btn primary" type="button" id="goHere">Y aller</button><button class="btn" type="button" id="share">Partager</button>'}</div>`;
   card.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
-  $('goHere').onclick=()=>startRoute(a);
-  $('share').onclick=()=>share(a);
+  if(gps)$('maj').onclick=ouSuisJe;else $('goHere').onclick=()=>startRoute(a);
+  $('share').onclick=()=>share(a,gps);
   const h='#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));if(location.hash!==h)history.replaceState(null,'',h);
-  if(from!=='tap'){map.easeTo({center:[a.position.lng,a.position.lat],zoom:Math.max(map.getZoom(),17.2),duration:600})}
+  if(from!=='tap'&&!garderVue){map.easeTo({center:[a.position.lng,a.position.lat],zoom:Math.max(map.getZoom(),gps?17.5:17.2),duration:600})}
+}
+/* la fiche affichée suit les réglages (carreau du quadrillage) */
+function rafraichirFiche(){
+  if(!ref)return;
+  if(card.dataset.vue==='adresse'&&pin){const p=pin.getLngLat();showAddress(ref.adresse(p.lat,p.lng),'tap')}
+  else if(card.dataset.vue==='gps'&&mePos)showAddress(ref.adresse(mePos.lat,mePos.lng),'gps',true);
 }
 function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copié : '+t)).catch(()=>toast(t))}
-function share(a){
-  const url=location.origin+location.pathname+'#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));
-  const text=a.texte+'\nPlus Code : '+a.plusCodeCourt;
+function share(a,moi){
+  const url=location.origin+location.pathname+SUFFIXE+'#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));
+  const text=(moi?'Je suis ici : ':'')+a.texte+'\nPlus Code : '+a.plusCodeCourt;
   if(navigator.share)navigator.share({title:'Adresse',text,url}).catch(()=>{});
   else window.open('https://wa.me/?text='+encodeURIComponent(text+'\n'+url),'_blank','noopener,noreferrer');
 }
@@ -205,44 +427,94 @@ function placePin(p){
 let RT={de:null,deTxt:'',a:null,mode:'voiture'};
 function startRoute(a){
   RT.a=a;RT.de=null;
-  if(mePos&&ref.quartierDe(mePos.lat,mePos.lng)){RT.de=mePos;RT.deTxt='Ma position';computeRoute();return}
-  picking=true;$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false;
+  const choisir=m=>{if(m)toast(m);picking=true;$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false};
+  const depuis=p=>{RT.de=p;RT.deTxt='Ma position';computeRoute()};
+  if(mePos&&Date.now()-mePosT<120000&&ref.quartierDe(mePos.lat,mePos.lng))return depuis(mePos);
+  if(!navigator.geolocation)return choisir();
+  toast('Recherche de votre position…');
+  navigator.geolocation.getCurrentPosition(p=>{setMe(p);$('toast').hidden=true;
+    if(ref.quartierDe(mePos.lat,mePos.lng))depuis(mePos);else choisir('Vous n\'êtes pas à '+VI.nom+' : touchez la carte pour choisir le départ.')},
+    ()=>choisir('Position introuvable : touchez la carte pour choisir le départ.'),{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
 }
 $('pickNo').onclick=()=>{picking=false;$('pick').hidden=true};
 function computeRoute(){
   const r=ref.itineraire(RT.de,RT.a.position,{mode:RT.mode});route=r;
   map.getSource('route').setData(FC(r?[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:r.ligne.map(p=>[p[1],p[0]])}}]:[]));
-  const g=`https://www.google.com/maps/dir/?api=1&origin=${RT.de.lat.toFixed(6)},${RT.de.lng.toFixed(6)}&destination=${RT.a.position.lat.toFixed(6)},${RT.a.position.lng.toFixed(6)}&travelmode=${RT.mode==='pied'?'walking':RT.mode==='moto'?'two-wheeler':'driving'}`;
+  card.dataset.vue='itineraire';
   card.innerHTML=`<div class="eyebrow">Itinéraire</div><h2>${esc(RT.a.ligne1)}</h2>
     <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
     <div class="modes" role="group" aria-label="Mode de transport">${[['voiture','Voiture'],['moto','Moto'],['pied','À pied']].map(([k,t])=>`<button type="button" data-m="${k}" aria-pressed="${RT.mode===k}">${t}</button>`).join('')}</div>
-    ${r?`<div class="sum"><b>${fmtT(r.duree)}</b><span>${fmtD(r.distance)} · estimation sans bouchons</span></div>
-      <ol class="steps">${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol>`:'<p class="st">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques bloquent le passage.</p>'}
-    <div class="row"><a class="btn primary" href="${g}" target="_blank" rel="noopener noreferrer">Guidage Google Maps</a><button class="btn" type="button" id="rBack">Retour</button></div>`;
+    ${r?`<div class="sum"><b>${fmtT(r.duree)}</b><span>${fmtD(r.distance)} · estimation sans bouchons</span></div>`:'<p class="st">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques bloquent le passage.</p>'}
+    <div class="row">${r?'<button class="btn primary" type="button" id="rGo">Démarrer le guidage</button>':''}<button class="btn" type="button" id="rBack">Retour</button></div>
+    ${r?`<ol class="steps">${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol>`:''}`;
   card.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;computeRoute()});
+  if(r)$('rGo').onclick=guider;
   $('rBack').onclick=()=>{map.getSource('route').setData(FC());showAddress(RT.a,'tap')};
   if(r){const xs=r.ligne.map(p=>p[1]),ys=r.ligne.map(p=>p[0]);map.fitBounds([[Math.min(...xs),Math.min(...ys)],[Math.max(...xs),Math.max(...ys)]],{padding:{top:90,bottom:matchMedia('(max-width:640px)').matches?card.offsetHeight+30:40,left:matchMedia('(max-width:640px)').matches?30:460,right:60},maxZoom:17,duration:600})}
+}
+
+/* ---------- guidage pas à pas, sur cette carte ---------- */
+let guide=null;
+function guider(){
+  if(guide)return;
+  if(!window.GuidageConakry){toast('Guidage indisponible : rechargez la page.');return}
+  const box=document.createElement('div');document.body.appendChild(box);
+  try{
+    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:route,
+      surFin:raison=>{guide=null;box.remove();if(raison==='arrive')showAddress(RT.a,'tap');else computeRoute()}});
+  }catch(e){guide=null;box.remove();toast('Le guidage ne peut pas démarrer : '+e.message)}
 }
 
 /* ---------- interactions ---------- */
 map.on('click',e=>{
   if(!ref)return;
+  /* sur téléphone, toucher la carte referme d'abord le menu « Rendu » */
+  if(tel()&&!$('renduCorps').hidden&&!picking){ouvrirRendu(false);return}
   const ll=e.lngLat;
+  if(!picking&&map.getLayer('tram-st')&&map.getLayoutProperty('tram-st','visibility')!=='none'){
+    /* la station la plus proche du doigt ; plusieurs stations collées (vue large) : on zoome dessus */
+    const vu=new Set(),f=map.queryRenderedFeatures([[e.point.x-12,e.point.y-12],[e.point.x+12,e.point.y+12]],{layers:['tram-st']})
+      .filter(g=>!vu.has(g.properties.k)&&vu.add(g.properties.k)).map(g=>{const q=map.project(g.geometry.coordinates);return{k:g.properties.k,d:Math.hypot(q.x-e.point.x,q.y-e.point.y)}}).sort((a,b)=>a.d-b.d);
+    if(f.length>1&&f[1].d-f[0].d<8&&map.getZoom()<14){map.easeTo({center:e.lngLat,zoom:Math.min(map.getZoom()+2.5,15),duration:500});return}
+    if(f.length){station(f[0].k);return}
+  }
   if(picking){picking=false;$('pick').hidden=true;const a=ref.adresse(ll.lat,ll.lng);RT.de={lat:ll.lat,lng:ll.lng};RT.deTxt=a?a.ligne1:'Point choisi';computeRoute();return}
   showAddress(ref.adresse(ll.lat,ll.lng),'tap');
 });
-$('fabLoc').onclick=()=>{
+function setMe(p){
+  mePos={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)};mePosT=Date.now();
+  if(!me){const el=document.createElement('div');el.className='me';me=new maplibregl.Marker({element:el})}
+  me.setLngLat([mePos.lng,mePos.lat]).addTo(map);
+  /* cercle de précision (au-delà de 3 km, le GPS n'a pas encore trouvé) */
+  const r=Math.min(mePos.acc,3000),k=111320*Math.cos(mePos.lat*Math.PI/180),c=[];
+  if(r>=5)for(let i=0;i<=48;i++){const t=i/48*2*Math.PI;c.push([mePos.lng+r*Math.cos(t)/k,mePos.lat+r*Math.sin(t)/110574])}
+  if(map.getSource('moi'))map.getSource('moi').setData(FC(c.length?[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[c]}}]:[]));
+}
+/* « Où suis-je ? » : l'adresse de l'endroit où l'on se trouve, à partager */
+function ouSuisJe(){
   if(!navigator.geolocation){toast('Ce navigateur ne donne pas la position.');return}
+  if(window.isSecureContext===false){toast('La position ne marche que sur la carte en ligne (adresse en https).');return}
+  if(!ref){toast('Le plan se charge encore : réessayez dans un instant.');return}
   toast('Recherche de votre position…');
   navigator.geolocation.getCurrentPosition(p=>{
-    mePos={lat:p.coords.latitude,lng:p.coords.longitude};
-    if(!me){const el=document.createElement('div');el.className='me';me=new maplibregl.Marker({element:el})}
-    me.setLngLat([mePos.lng,mePos.lat]).addTo(map);
-    const a=ref&&ref.adresse(mePos.lat,mePos.lng);
-    if(!a){toast('Vous n\'êtes pas à Conakry : touchez la carte pour obtenir une adresse.');return}
-    $('toast').hidden=true;showAddress(a);
-  },()=>toast('Position introuvable : autorisez la localisation.'),{enableHighAccuracy:true,timeout:15000});
-};
+    setMe(p);$('toast').hidden=true;
+    const a=ref.adresse(mePos.lat,mePos.lng);
+    if(a)showAddress(a,'gps');else horsZone(mePos);
+  },err=>toast(err.code===1?'Localisation refusée : autorisez-la pour ce site dans les réglages du navigateur, puis réessayez.':'Position introuvable : réessayez à découvert, loin des murs.'),{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+}
+$('fabLoc').onclick=ouSuisJe;
+/* hors de la ville affichée : proposer la carte d'une autre ville en ligne, si l'on y est */
+function horsZone(p){
+  const proche=(VLIST||[]).filter(v=>v&&v.code!==VILLE&&aVille(v.code)&&Array.isArray(v.centre)&&isFinite(v.centre[0])&&isFinite(v.centre[1])).map(v=>({v,d:distLL([p.lat,p.lng],v.centre)})).sort((x,y)=>x.d-y.d)[0];
+  map.easeTo({center:[p.lng,p.lat],zoom:Math.min(Math.max(map.getZoom(),12),15),duration:600});
+  if(!proche||proche.d>25000){toast('Vous n\'êtes pas dans la zone de '+VI.nom+' : cette carte couvre '+VI.nom+' seulement.');return}
+  pin&&pin.remove();card.dataset.vue='ailleurs';
+  const nom=esc(VILLES[proche.v.code].nom);
+  card.innerHTML=`<div class="eyebrow ici">Vous êtes ici</div><h2>Près de ${nom}</h2>
+    <p class="l2">Cette carte couvre ${esc(VI.nom)}. Le plan de ${nom} est aussi en ligne.</p>
+    <div class="row"><a class="btn primary" href="${lienVille(proche.v.code,'#'+p.lat.toFixed(6)+','+p.lng.toFixed(6))}">Ouvrir la carte de ${nom}</a><button class="btn" type="button" id="hzBack">Retour</button></div>`;
+  $('hzBack').onclick=accueil;
+}
 /* recherche avec suggestions */
 let sel=-1,last=[];
 const sugg=$('sugg');
@@ -267,9 +539,9 @@ $('q').addEventListener('keydown',e=>{
 $('find').addEventListener('submit',e=>{e.preventDefault();if(!ref)return;if(sel>=0)return pick(sel);const r=ref.chercher($('q').value,{max:7});if(r.length===1||(r[0]&&r[0].score>=1))pick(0);else renderSugg(r)});
 document.addEventListener('click',e=>{if(!e.target.closest('.top'))sugg.hidden=true});
 function openHash(){
-  const h=decodeURIComponent(location.hash.slice(1));if(!h||!ref)return false;
+  const h=dec(location.hash.slice(1)).slice(0,200);if(!h||!ref)return false;
   let a=null;
-  if(/^GN-/i.test(h))a=ref.position(h);
+  if(/^GN-/i.test(h)){a=ref.position(h);const autre=villeDuCode(h);if(!a&&autre&&autre!==VILLE){location.href='./'+(autre==='conakry'?'':'?ville='+autre)+location.hash;return true}}
   else{const m=h.match(/^(-?\d+\.\d+),(-?\d+\.\d+)$/);if(m)a=ref.adresse(+m[1],+m[2]);else if(/^q=/.test(h)){const r=ref.chercher(h.slice(2));if(r[0])a=r[0].adresse||ref.adresse(r[0].lat,r[0].lng)}}
   if(a){map.jumpTo({center:[a.position.lng,a.position.lat],zoom:17.5});showAddress(a,'hash');return true}
   return false;
@@ -278,13 +550,14 @@ window.addEventListener('hashchange',openHash);
 
 /* ---------- démarrage ---------- */
 accueil();
-CA.charger({base:'data/'}).then(r=>{
+fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;if(card.dataset.vue==='accueil')accueil()}).catch(()=>{});
+CA.charger({base:VI.dossier}).then(r=>{
   ref=r;window.__ref=r;
-  const go=()=>{addLayers();$('status').hidden=true;accueil();
-    if(!openHash()&&!vue){const b=ref.bbox;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:40,duration:0})}
+  const go=()=>{addLayers();initRendu();$('status').hidden=true;accueil();
+    if(!openHash()&&!vue){const b=ref.bbox,tel=matchMedia('(max-width:640px)').matches;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,left:30,right:tel?30:70,bottom:tel?card.offsetHeight+20:40},duration:0})}
     drawNums()};
   if(map.isStyleLoaded())go();else map.once('load',go);
-}).catch(e=>{$('status').innerHTML='<div><h3>Plan pas encore publié</h3><p class="hint">Le référentiel de Conakry n\'est pas dans le dossier <code>data</code>. Ouvrez l\'<a href="atelier.html">atelier</a> pour le fabriquer.</p><p class="hint">'+esc(e.message)+'</p></div>'});
+}).catch(e=>{$('status').innerHTML='<div><h3>Plan de '+esc(VI.nom)+' pas encore publié</h3><p class="hint">Le référentiel n\'est pas dans le dossier <code>'+esc(VI.dossier)+'</code>. Ouvrez l\'<a href="atelier.html'+SUFFIXE+'">atelier</a> pour le fabriquer'+(VILLE==='conakry'?'':', ou revenez à la <a href="./">carte de Conakry</a>')+'.</p><p class="hint">'+esc(e.message)+'</p></div>'});
 })();
 </script>
 </body>
