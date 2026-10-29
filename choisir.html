@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I0JtrWh5Kdt3gpg/jn+N41xeOfjxQ3dD6ZiOZDRgn7o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-1U2WBxuoMRZ2vvd1y3zI6Brh2JODBmNcvKCE8MT+hic='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Choisir une adresse · Conakry Adresses</title>
@@ -63,7 +63,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const titre=(P.get('titre')||'').slice(0,60);if(titre)$('titre').textContent=titre;
 /* ville du plan : ?ville=labe (Conakry par défaut) */
-const VILLES={conakry:{nom:'Conakry',dossier:'data/',c:[9.547,-13.661]},kindia:{nom:'Kindia',dossier:'data/kindia/',c:[10.05692,-12.86576]},labe:{nom:'Labé',dossier:'data/labe/',c:[11.31823,-12.28332]},mamou:{nom:'Mamou',dossier:'data/mamou/',c:[10.37546,-12.09148]},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/',c:[7.75624,-8.8179]},siguiri:{nom:'Siguiri',dossier:'data/siguiri/',c:[11.42282,-9.16852]}};
+const VILLES={conakry:{nom:'Conakry',dossier:'data/',c:[9.547,-13.661]},boke:{nom:'Boké',dossier:'data/boke/',c:[10.93217,-14.29055]},faranah:{nom:'Faranah',dossier:'data/faranah/',c:[10.04036,-10.74343]},kankan:{nom:'Kankan',dossier:'data/kankan/',c:[10.38542,-9.30568]},kindia:{nom:'Kindia',dossier:'data/kindia/',c:[10.05692,-12.86576]},labe:{nom:'Labé',dossier:'data/labe/',c:[11.31823,-12.28332]},mamou:{nom:'Mamou',dossier:'data/mamou/',c:[10.37546,-12.09148]},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/',c:[7.75624,-8.8179]},siguiri:{nom:'Siguiri',dossier:'data/siguiri/',c:[11.42282,-9.16852]}};
 const VI=Object.prototype.hasOwnProperty.call(VILLES,P.get('ville')||'')?VILLES[P.get('ville')]:VILLES.conakry;
 /* destinataire de l'adresse : jamais n'importe quel site */
 let cible=null;try{const o=P.get('origine');if(o){const u=new URL(o);if(u.protocol==='https:'||u.hostname==='localhost'||u.hostname==='127.0.0.1')cible=u.origin}}catch(e){}

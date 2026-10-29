@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-7mXCHZIbgJEaVnoRfpuVF1R8yEvJd6je2IQ2/hqzvQg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-Mq6Ww0GyFGpy5VhGgY3mRz77wBHZ2gkBGtVl5gpFQEY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f7a46">
@@ -148,8 +148,9 @@ const fmtT=s=>s<60?'moins d\'1 min':s<3600?Math.round(s/60)+' min':Math.floor(s/
 const glyphOk=c=>{const n=c.codePointAt(0);return n<1024||(n>=7680&&n<7936)||(n>=8192&&n<8448)};
 const safe=t=>[...String(t||'')].map(c=>glyphOk(c)?c:[...c.normalize('NFD')].filter(glyphOk).join('')).join('');
 /* ville : ?ville=labe, ou d'après le code postal d'un identifiant partagé (#GN-85002-…), sinon Conakry */
-const VILLES={conakry:{nom:'Conakry',dossier:'data/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
-const PREFIXES=[['834','siguiri'],['840','kindia'],['850','labe'],['860','mamou'],['870','nzerekore'],['88','conakry'],['89','conakry']];
+const VILLES={conakry:{nom:'Conakry',dossier:'data/'},boke:{nom:'Boké',dossier:'data/boke/'},faranah:{nom:'Faranah',dossier:'data/faranah/'},kankan:{nom:'Kankan',dossier:'data/kankan/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
+/* code postal → ville : 81 Boké, 82 Faranah, 83 Kankan (Siguiri 83400), 84 Kindia, 85 Labé, 86 Mamou, 87 N'Zérékoré, 88-89 Conakry */
+const PREFIXES=[['810','boke'],['820','faranah'],['830','kankan'],['834','siguiri'],['840','kindia'],['850','labe'],['860','mamou'],['870','nzerekore'],['88','conakry'],['89','conakry']];
 const villeDuCode=id=>{const m=String(id||'').match(/^GN-(\d{5})-/i);if(!m)return null;const p=PREFIXES.find(([x])=>m[1].startsWith(x));return p?p[1]:null};
 let VILLE=new URLSearchParams(location.search).get('ville');
 const aVille=k=>typeof k==='string'&&Object.prototype.hasOwnProperty.call(VILLES,k);
