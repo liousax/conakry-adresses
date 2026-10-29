@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-2Pioy1ogipKUcKJ1qJMR5vmM3O23Yu5UCXjUCSYV+8o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I0JtrWh5Kdt3gpg/jn+N41xeOfjxQ3dD6ZiOZDRgn7o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Choisir une adresse · Conakry Adresses</title>
@@ -127,7 +127,8 @@ CA.charger({base:VI.dossier}).then(r=>{
     else if(!cible&&!retour&&!parentWin)try{navigator.permissions&&navigator.permissions.query({name:'geolocation'}).then(s=>{if(s.state==='granted')localiser(true)}).catch(()=>{})}catch(e){}
     update();
     if(parentWin&&cible)parentWin.postMessage({type:'conakry-pret',source:'conakry-adresses',version:CA.version},cible)};
-  if(map.isStyleLoaded())go();else map.once('load',go);
+  /* le plan s'affiche dès que le style est prêt, même si le fond de carte (Esri) ne répond pas */
+  const essai=()=>{if(map.isStyleLoaded())go();else setTimeout(essai,80)};essai();
 }).catch(e=>{$('l1').textContent='Plan indisponible';$('l2').textContent=e.message});
 })();
 </script>

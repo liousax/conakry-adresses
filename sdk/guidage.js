@@ -5,7 +5,10 @@
      le temps restant et l'heure d'arrivée.
    Le guidage n'utilise pas internet : les rues viennent du référentiel déjà chargé, aucun fond de carte n'est téléchargé.
    Utilisation :  GuidageConakry.ouvrir(conteneur, referentiel, adresse, { mode: 'moto' })
-   Dans une appli, la position peut venir du GPS du téléphone : { positions: 'externe' }, puis guidage.position({ lat, lng, … }). */
+   Dans une appli, la position peut venir du GPS du téléphone : { positions: 'externe' }, puis guidage.position({ lat, lng, … }).
+   Comme sur Google Maps et Waze :
+   - guidage en direct (par défaut) : il suit le GPS ; si l'on est loin de la ville, il propose l'aperçu au lieu d'un guidage impossible ;
+   - aperçu du trajet ({ vue: 'apercu' }) : étape par étape, puis « Démonstration », qui joue le trajet avec la voix (position simulée). */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.GuidageConakry = factory();
@@ -80,6 +83,38 @@ function projeter(P, p, de, a) {
 function pointA(P, s) {
   const i = indice(P, s), A = P.pts[i - 1], B = P.pts[i], L = P.cum[i] - P.cum[i - 1], t = L ? Math.max(0, Math.min(1, (s - P.cum[i - 1]) / L)) : 0;
   return { x: A.x + t * (B.x - A.x), y: A.y + t * (B.y - A.y) };
+}
+
+/* point (lat, lng) et cap de l'itinéraire à la distance s du départ */
+function pointLL(P, s) {
+  s = Math.max(0, Math.min(P.total, s));
+  const i = indice(P, s), A = P.pts[i - 1], B = P.pts[i], L = P.cum[i] - P.cum[i - 1], t = L ? Math.max(0, Math.min(1, (s - P.cum[i - 1]) / L)) : 0;
+  const s0 = Math.max(0, Math.min(s, P.total - 12)), a = pointA(P, s0), b = pointA(P, Math.min(P.total, s0 + 12));
+  const cap = Math.hypot(b.x - a.x, b.y - a.y) > 1 ? capDe(b.x - a.x, b.y - a.y) : L ? capDe(B.x - A.x, B.y - A.y) : null;
+  return { lat: A.lat + t * (B.lat - A.lat), lng: A.lng + t * (B.lng - A.lng), cap };
+}
+/* distance en kilomètres sur la Terre (pour « vous êtes à 4 690 km de Conakry ») */
+function km(a, b) {
+  const dLat = (b.lat - a.lat) * RAD, dLng = (b.lng - a.lng) * RAD;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * RAD) * Math.cos(b.lat * RAD) * Math.sin(dLng / 2) ** 2;
+  return 12742 * Math.asin(Math.min(1, Math.sqrt(x)));
+}
+/* mètres entre un point et le plan de la ville (0 dans le plan) */
+function horsPlan(ref, p) {
+  const b = ref && ref.bbox; if (!b) return 0;
+  return km(p, { lat: Math.max(b[1], Math.min(b[3], p.lat)), lng: Math.max(b[0], Math.min(b[2], p.lng)) }) * 1000;
+}
+/* sans itinéraire connu (appli ouverte loin de la ville) : un trajet de démonstration depuis une rue proche de la destination */
+function departDemo(ref, dest, mode) {
+  if (!ref || !dest || !ref.adresse || !ref.itineraire) return null;
+  const kx = 111320 * Math.cos(dest.lat * RAD);
+  for (const r of [1500, 900, 2500]) for (const c of [0, 90, 180, 270, 45, 135, 225, 315]) {
+    const a = ref.adresse(dest.lat + r * Math.cos(c * RAD) / 110574, dest.lng + r * Math.sin(c * RAD) / kx);
+    if (!a || a.precision !== 'porte') continue;
+    const de = a.pointRue || a.position, it = ref.itineraire({ lat: de.lat, lng: de.lng }, { lat: dest.lat, lng: dest.lng }, { mode: mode || 'voiture' });
+    if (it && it.ligne && it.ligne.length > 1 && it.distance >= 400 && it.distance <= 6000) return it;
+  }
+  return null;
 }
 
 /* ---------- moteur ---------- */
@@ -161,8 +196,9 @@ class Moteur {
       const c = capDe(P.xy(pr).x - p.x, P.xy(pr).y - p.y);
       if (!this.dit.has('rejoindre') || t - (this.tRejoindre || 0) > 60000) { this.dit.add('rejoindre'); this.dit.add('start'); this.tRejoindre = t; annonces.push({ texte: 'Rejoignez l\'itinéraire, à ' + distanceVoix(pr.d) + ' vers ' + versCap(c) + '.', prio: 2 }); }
       if (capGps != null && v != null && v > 2) this.cap = capGps;
+      const resteR = Math.max(0, P.total - this.s);
       return this.dernier = { etat: 'hors-route', bandeau: { icone: 'direct', distance: pr.d, verbe: 'Rejoignez l\'itinéraire', nom: 'vers ' + versCap(c), capDirect: c }, suite: null,
-        restant: { distance: Math.max(0, P.total - this.s) + pr.d, duree: null }, position: { lat: pos.lat, lng: pos.lng }, gps: { lat: pos.lat, lng: pos.lng, precision: acc }, cap: this.cap,
+        restant: { distance: resteR + pr.d, duree: (P.total ? Math.round(P.it.duree * resteR / P.total) : 0) + Math.round(pr.d / (pied ? 1.3 : 6)) }, position: { lat: pos.lat, lng: pos.lng }, gps: { lat: pos.lat, lng: pos.lng, precision: acc }, cap: this.cap,
         ligne: [[pos.lng, pos.lat]].concat(P.pts.slice(pr.i - 1).map(q => [q.lng, q.lat])), annonces, cote: null, ecart: Math.round(pr.d), imprecis: acc > 100 };
     }
     if (surRoute && (pr.s >= this.s || this.s - pr.s > 12)) this.s = pr.s;        /* petits reculs du GPS ignorés */
@@ -243,8 +279,22 @@ const SVG = {
   'demi-tour': '<path d="M15 41V19a9 9 0 0 1 18 0v15M26 28l7 7 7-7"/>',
   arrivee: '<path d="M24 43s13-13.4 13-23.5a13 13 0 0 0-26 0C11 29.6 24 43 24 43z"/><circle cx="24" cy="19.5" r="4.5"/>',
   direct: '<path d="M24 41V9M12 21 24 9l12 12"/>',
-  gps: '<circle cx="24" cy="24" r="8"/><path d="M24 4v8M24 36v8M4 24h8M36 24h8"/>'
+  gps: '<circle cx="24" cy="24" r="8"/><path d="M24 4v8M24 36v8M4 24h8M36 24h8"/>',
+  apercu: '<path d="M11 38c6-13 13-3 16-14s8-6 10-14"/><circle cx="11" cy="38" r="4"/><circle cx="37" cy="10" r="4"/>'
 };
+/* icônes des boutons (24 × 24) */
+const BT = {
+  prec: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+  suiv: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  jouer: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="plein" d="M8 5.5v13l10.5-6.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="plein" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>',
+  ensemble: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18c2.5-6 6-1.5 8-6.5S17.5 7 18 6"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/></svg>',
+  centre: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 19 12 15.8 5.5 19z"/></svg>'
+};
+const MODE_TXT = { voiture: 'en voiture', moto: 'à moto', pied: 'à pied' };
+/* démonstration : vitesse du point simulé (m/s), plus rapide que la réalité pour voir tout le trajet */
+const VITESSE_DEMO = { voiture: 16, moto: 16, pied: 5 };
+const LOIN = 25000;          /* au-delà de 25 km du plan : pas de guidage en direct, mais l'aperçu */
 const CSS = `.gc{position:fixed;inset:0;z-index:60;background:#ece6d9;color:#17231b;font-family:var(--body,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);-webkit-tap-highlight-color:transparent;overflow:hidden}
 .gc-carte{position:absolute;inset:0}
 .gc-haut{position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:2}
@@ -259,18 +309,30 @@ const CSS = `.gc{position:fixed;inset:0;z-index:60;background:#ece6d9;color:#172
 .gc-s{font-size:14px;opacity:.9;margin-top:2px}
 .gc-puis{display:inline-flex;gap:8px;align-items:center;margin:0 0 0 12px;background:#0b4a2d;color:#fff;border-radius:0 0 12px 12px;padding:5px 12px 6px;font-size:14px;font-weight:600;box-shadow:0 6px 14px rgba(0,0,0,.22)}
 .gc-puis svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round}
-.gc-msg{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 104px);background:#17231b;color:#fff;padding:9px 14px;border-radius:10px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.gc-bas{position:absolute;z-index:2;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.2);padding:12px 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:8px}
+.gc-msg{position:absolute;z-index:3;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + var(--gc-haut,96px) + 20px);background:#17231b;color:#fff;padding:9px 14px;border-radius:10px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.gc-bas{position:absolute;z-index:2;left:0;right:0;bottom:0;background:#fff;border-radius:18px 18px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.2);padding:12px 14px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.gc-ctrl{flex:1 0 100%;order:-1;display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:4px}
+.gc-b.gc-jouer{flex:1;max-width:300px;display:flex;gap:8px;align-items:center;justify-content:center;background:#0f7a46;color:#fff}
+.gc-b[disabled]{opacity:.4;cursor:default}
+.gc-b svg .plein{fill:currentColor;stroke:none}
+.gc.apercu .gc-band{background:#2f4f7a}
+.gc-loin{position:absolute;z-index:3;left:12px;right:12px;bottom:calc(var(--gc-bas,90px) + 12px);max-width:460px;margin:0 auto;background:#fff;color:#17231b;border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.gc-loin b{display:block;font:800 20px/1.2 var(--display,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)}
+.gc-loin p{margin:6px 0 12px;font-size:14px;line-height:1.45;color:#4b544d}
+.gc-b.gc-voir{width:100%;background:#0f7a46;color:#fff}
+.gc-rond{position:absolute;z-index:2;bottom:calc(var(--gc-bas,90px) + 12px);width:50px;height:50px;padding:0;border-radius:50%;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.28)}
 .gc-eta{flex:1;min-width:0}.gc-eta b{display:block;font:800 26px/1.1 var(--display,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);color:#0f7a46;font-variant-numeric:tabular-nums}.gc-eta span{display:block;font-size:14px;color:#5b5f57;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gc-eta small{display:block;font-size:10.5px;color:#8a8f86;margin-top:2px}
 .gc-b{border:0;border-radius:12px;min-height:48px;min-width:48px;padding:0 14px;font:700 15px var(--body,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);background:#eef1ec;color:#17231b;cursor:pointer;display:grid;place-items:center}
 .gc-b svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .gc-fin{background:#c8312a;color:#fff}
-.gc-centre{position:absolute;z-index:2;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);box-shadow:0 3px 12px rgba(0,0,0,.28);background:#fff}
+.gc-centre{position:absolute;z-index:2;left:12px;bottom:calc(var(--gc-bas,90px) + 12px);box-shadow:0 3px 12px rgba(0,0,0,.28);background:#fff;display:flex;gap:6px;align-items:center}
+.gc-ens{right:12px}
 .gc [hidden]{display:none!important}
+@media (min-width:760px){.gc-haut{right:auto;width:min(540px,calc(100% - 20px))}}
 .gc-moi{width:46px;height:46px}.gc-moi svg{width:46px;height:46px;display:block}
 .gc-pin{width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-@media (prefers-color-scheme:dark){.gc{background:#1b201c;color:#eef1ec}.gc-bas{background:#222a24}.gc-eta b{color:#3fc483}.gc-eta span{color:#b9bfb6}.gc-b{background:#2f3831;color:#eef1ec}.gc-centre{background:#2f3831}.gc-fin{background:#c8312a;color:#fff}}`;
+@media (prefers-color-scheme:dark){.gc{background:#1b201c;color:#eef1ec}.gc-bas{background:#222a24}.gc-eta b{color:#3fc483}.gc-eta span{color:#b9bfb6}.gc-b{background:#2f3831;color:#eef1ec}.gc-centre,.gc-rond{background:#2f3831}.gc-fin{background:#c8312a;color:#fff}.gc-loin{background:#222a24;color:#eef1ec}.gc-loin p{color:#b9bfb6}}`;
 const COUL = {
   clair: { fond: '#ece6d9', rue: '#ffffff', rueB: '#d3c9b6', maj: '#ffe7a3', majB: '#d4ab4e', txt: '#2a2f2b', halo: '#ffffff', impair: '#8a4b0f', route: '#1a73e8', routeB: '#0d4fb0' },
   sombre: { fond: '#1b201c', rue: '#3a423c', rueB: '#262c27', maj: '#6a5a2c', majB: '#3b3220', txt: '#e8ebe6', halo: '#1b201c', impair: '#e6a865', route: '#4c9bff', routeB: '#1d4f9a' }
@@ -297,7 +359,8 @@ function voixNavigateur() {
 const lire = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
 
-/* ouvre le guidage plein écran dans conteneur (élément ou id) ; renvoie { position(p), arreter(), moteur } */
+/* ouvre le guidage plein écran dans conteneur (élément ou id) ; renvoie { position(p), arreter(), moteur, apercu(), jouer() }
+   opts.vue : 'direct' (GPS, par défaut) ou 'apercu' (trajet étape par étape et démonstration, sans GPS) */
 function ouvrir(conteneur, ref, adresse, opts) {
   opts = opts || {};
   const ML = opts.maplibregl || (typeof maplibregl !== 'undefined' ? maplibregl : null);
@@ -311,8 +374,11 @@ function ouvrir(conteneur, ref, adresse, opts) {
   el.innerHTML = `<div class="gc-carte"></div>
     <div class="gc-haut"><div class="gc-band" role="status" aria-live="polite"><div class="gc-ic"><svg viewBox="0 0 48 48" aria-hidden="true">${SVG.gps}</svg></div><div class="gc-tx"><div class="gc-d"></div><div class="gc-v">Recherche de votre position…</div><div class="gc-n"></div><div class="gc-s"></div></div></div><div class="gc-puis" hidden></div></div>
     <div class="gc-msg" hidden></div>
-    <button type="button" class="gc-b gc-centre" hidden>Recentrer</button>
-    <div class="gc-bas"><div class="gc-eta"><b>—</b><span>${esc(M.dest.titre)}</span><small>Rues © OpenStreetMap · plan provisoire</small></div>
+    <div class="gc-loin" hidden role="dialog" aria-label="Trop loin pour le guidage"><b></b><p></p><button type="button" class="gc-b gc-voir">Voir l'aperçu du trajet</button></div>
+    <button type="button" class="gc-b gc-centre" hidden>${BT.centre}Recentrer</button>
+    <button type="button" class="gc-b gc-rond gc-ens" aria-label="Vue d'ensemble du trajet" title="Vue d'ensemble">${BT.ensemble}</button>
+    <div class="gc-bas"><div class="gc-ctrl" hidden><button type="button" class="gc-b gc-prec" aria-label="Étape précédente">${BT.prec}</button><button type="button" class="gc-b gc-jouer" aria-pressed="false"></button><button type="button" class="gc-b gc-suiv" aria-label="Étape suivante">${BT.suiv}</button></div>
+      <div class="gc-eta"><b>—</b><span>${esc(M.dest.titre)}</span><small>Rues © OpenStreetMap · plan provisoire</small></div>
       <button type="button" class="gc-b gc-son" aria-pressed="true" aria-label="Voix"></button><button type="button" class="gc-b gc-fin">Terminer</button></div>`;
   box.appendChild(el);
   const q = s => el.querySelector(s);
@@ -322,8 +388,11 @@ function ouvrir(conteneur, ref, adresse, opts) {
   const sonIc = () => { q('.gc-son').setAttribute('aria-pressed', voixOn ? 'true' : 'false'); q('.gc-son').innerHTML = voixOn ? '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'; };
   sonIc(); if (!parler) q('.gc-son').hidden = true;
   if (parlerDefaut && !opts.parler && parlerDefaut.debloquer) parlerDefaut.debloquer();      /* iPhone : la voix doit démarrer pendant le geste */
+  /* les boutons posés sur la carte suivent la hauteur du bandeau et de la barre du bas */
+  const hauteurs = () => { el.style.setProperty('--gc-haut', q('.gc-haut').offsetHeight + 'px'); el.style.setProperty('--gc-bas', q('.gc-bas').offsetHeight + 'px'); };
+  let ro = null; try { ro = new ResizeObserver(hauteurs); ro.observe(q('.gc-haut')); ro.observe(q('.gc-bas')); } catch (x) { } hauteurs();
 
-  /* carte : seulement les rues du plan (rien à télécharger) */
+  /* carte : seulement les rues du plan (rien à télécharger), avec le fond de carte si opts.fond */
   const glyphs = (opts.glyphs ? new URL(opts.glyphs, location.href).href : new URL('../glyphs/{fontstack}/{range}.pbf', SCRIPT || location.href).href).replace('%7Bfontstack%7D', '{fontstack}').replace('%7Brange%7D', '{range}');
   const z = ['interpolate', ['exponential', 1.6], ['zoom']];
   const W = [[12, 2, .7], [13, 2.8, 1.2], [14, 4, 2], [15, 6, 3.4], [16, 9.5, 6.5], [17, 15, 11], [18, 24, 18], [19, 38, 28]];
@@ -331,7 +400,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   const voies = FC(ref.voies.map(v => ({ type: 'Feature', properties: { n: sur(v.nom), m: MAJ[v.highway] ? 1 : 0 }, geometry: { type: 'MultiLineString', coordinates: v.segs.map(g => g.map(p => [p.lon, p.lat])) } })));
   const sources = { voies: { type: 'geojson', data: voies, tolerance: .3, buffer: 64 }, route: { type: 'geojson', data: FC() }, nums: { type: 'geojson', data: FC() } };
   const layers = [{ id: 'fond', type: 'background', paint: { 'background-color': C.fond } }];
-  if (opts.fond) { sources.esri = { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 16 }; layers.push({ id: 'esri', type: 'raster', source: 'esri', paint: { 'raster-opacity': .5 } }); }
+  if (opts.fond) { sources.esri = { type: 'raster', tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/' + (sombre ? 'World_Dark_Gray_Base' : 'World_Light_Gray_Base') + '/MapServer/tile/{z}/{y}/{x}'], tileSize: 256, maxzoom: 16 }; layers.push({ id: 'esri', type: 'raster', source: 'esri', paint: { 'raster-opacity': .5 } }); }
   const rond = { 'line-cap': 'round', 'line-join': 'round' };
   layers.push(
     { id: 'bord', type: 'line', source: 'voies', layout: rond, paint: { 'line-color': ['case', ['==', ['get', 'm'], 1], C.majB, C.rueB], 'line-width': larg(2.4) } },
@@ -348,12 +417,26 @@ function ouvrir(conteneur, ref, adresse, opts) {
   moiEl.innerHTML = '<svg viewBox="0 0 46 46" aria-hidden="true"><circle cx="23" cy="23" r="21" fill="rgba(26,115,232,.2)"/><path d="M23 6 34.5 35 23 28.8 11.5 35z" fill="#1a73e8" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg>';
   const moi = new ML.Marker({ element: moiEl, rotationAlignment: 'map', pitchAlignment: 'map' });
   let pret = false, suivre = true, tSuivi = 0, affiche = null, anim = 0, enAttente = null, tPos = 0, fini = false;
-  map.on('load', () => { pret = true; if (M.P) dessinerRoute(M.P.pts.map(p => [p.lng, p.lat])); if (enAttente) { const e = enAttente; enAttente = null; afficher(e); } else if (M.P) { const xs = M.P.pts.map(p => p.lng), ys = M.P.pts.map(p => p.lat); map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: { top: 130, bottom: 120, left: 40, right: 40 }, maxZoom: 17, duration: 0 }); } });
-  const dessinerRoute = coords => { if (pret && map.getSource('route')) map.getSource('route').setData(FC(coords.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }] : [])); };
+  /* aperçu : itinéraire préparé (PA), étape montrée (-1 = vue d'ensemble), démonstration (moteur MD, minuterie, position simulée) */
+  let vue = 'direct', loin = false, PA = null, etape = -1, MD = null, lecture = null, simS = 0, simT = 0, demoProche = false;
+  const actif = () => vue === 'apercu' && MD ? MD : M;
+  const coords = P => P.pts.map(p => [p.lng, p.lat]);
+  /* prête dès que le style et les rues sont chargés : on n'attend pas le fond de carte (« load » ne vient jamais si ses tuiles échouent) */
+  const quandPret = f => { const essai = () => { if (fini) return; if (map.isStyleLoaded()) f(); else setTimeout(essai, 80); }; setTimeout(essai, 0); };
+  quandPret(() => {
+    if (pret) return;
+    pret = true;
+    if (vue === 'apercu') { montrerEtape(etape); return; }
+    if (M.P) dessinerRoute(coords(M.P));
+    if (loin) { map.jumpTo({ center: [d0.lng, d0.lat], zoom: 15.5, pitch: 0, bearing: 0 }); return; }
+    if (enAttente) { const e = enAttente; enAttente = null; afficher(e); } else if (M.P) ensemble(coords(M.P), 0);
+  });
+  const dessinerRoute = c => { if (pret && map.getSource('route')) map.getSource('route').setData(FC(c && c.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: c } }] : [])); };
   const numeros = () => {
     if (!pret || !ref.numerosDans) return;
-    const e = M.dernier, cible = d0.porte || d0;
-    if (map.getZoom() < 17.2 || !e || !(e.restant.distance < 400 || e.etat === 'arrive')) { map.getSource('nums').setData(FC()); return; }
+    const e = actif().dernier, cible = d0.porte || d0;
+    const pres = vue === 'apercu' && !lecture ? PA && etape >= PA.etapes.length - 1 : e && (e.restant.distance < 400 || e.etat === 'arrive');
+    if (map.getZoom() < 17.2 || !pres) { map.getSource('nums').setData(FC()); return; }
     /* numéros des portes autour de la destination, pour compter les portes à l'arrivée */
     const kx = 111320 * Math.cos(cible.lat * RAD), R = 170, dl = R / 110574, dg = R / kx;
     const n = ref.numerosDans(cible.lat - dl, cible.lng - dg, cible.lat + dl, cible.lng + dg, 600).filter(x => Math.hypot((x.lat - cible.lat) * 110574, (x.lng - cible.lng) * kx) <= R);
@@ -362,17 +445,27 @@ function ouvrir(conteneur, ref, adresse, opts) {
   let tNum = 0; map.on('moveend', () => { clearTimeout(tNum); tNum = setTimeout(numeros, 120); });
   const lacher = e => { if (e && e.originalEvent && !fini) { suivre = false; tSuivi = Date.now(); q('.gc-centre').hidden = false; } };
   ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart'].forEach(ev => map.on(ev, lacher));
-  const recentrer = () => { suivre = true; q('.gc-centre').hidden = true; if (M.dernier) camera(M.dernier, 600); };
+  const recentrer = () => { suivre = true; q('.gc-centre').hidden = true; if (vue === 'apercu' && !lecture) { montrerEtape(etape); return; } const e = actif().dernier; if (e) camera(e, 600); };
   q('.gc-centre').onclick = recentrer;
   q('.gc-son').onclick = () => { voixOn = !voixOn; ecrire('conakry-guidage-voix', voixOn ? '1' : '0'); sonIc(); if (!voixOn && parler && parler.taire) parler.taire(); };
-  const zoomPour = e => { const v = e && e.vitesse; return M.mode === 'pied' ? 18 : v == null ? 17.2 : v < 6 ? 17.6 : v < 12 ? 17 : 16.3; };
+  const zoomPour = e => { const v = e && e.vitesse; return actif().mode === 'pied' ? 18 : v == null ? 17.2 : v < 6 ? 17.6 : v < 12 ? 17 : 16.3; };
   let derniereVitesse = null;
+  const marges = () => { const H = map.getContainer().clientHeight, bas = q('.gc-bas').offsetHeight, haut = q('.gc-haut').offsetHeight; return { top: Math.max(haut + 20, Math.round(H * 0.42)), bottom: bas + 10, left: 0, right: 0 }; };
   function camera(e, duree) {
     if (!pret) return;
-    const H = map.getContainer().clientHeight, bas = q('.gc-bas').offsetHeight, haut = q('.gc-haut').offsetHeight;
-    map.easeTo({ center: [e.position.lng, e.position.lat], bearing: e.cap == null ? map.getBearing() : e.cap, pitch: 52, zoom: zoomPour({ vitesse: derniereVitesse }),
-      padding: { top: Math.max(haut + 20, Math.round(H * 0.42)), bottom: bas + 10, left: 0, right: 0 }, duration: duree, easing: x => x });
+    map.easeTo({ center: [e.position.lng, e.position.lat], bearing: e.cap == null ? map.getBearing() : e.cap, pitch: 52, zoom: zoomPour({ vitesse: derniereVitesse }), padding: marges(), duration: duree, easing: x => x });
   }
+  /* tout le trajet à l'écran (vue d'ensemble, comme sur Google Maps et Waze) */
+  function ensemble(c, duree) {
+    if (!pret || !c || c.length < 2) return;
+    const xs = c.map(p => p[0]), ys = c.map(p => p[1]), haut = q('.gc-haut').offsetHeight, bas = q('.gc-bas').offsetHeight;
+    map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: { top: haut + 30, bottom: bas + 30, left: 40, right: 40 }, maxZoom: 17, bearing: 0, pitch: 0, duration: duree });
+  }
+  q('.gc-ens').onclick = () => {
+    const e = actif().dernier, c = e && e.ligne && e.ligne.length > 1 ? e.ligne : PA ? coords(PA) : M.P ? coords(M.P) : null;
+    if (!c) return;
+    suivre = false; tSuivi = Date.now(); q('.gc-centre').hidden = false; ensemble(c, 700);
+  };
   function bouger(vers, duree) {
     cancelAnimationFrame(anim);
     if (!affiche) { affiche = vers; moi.setLngLat([vers.lng, vers.lat]).addTo(map); return; }
@@ -381,45 +474,144 @@ function ouvrir(conteneur, ref, adresse, opts) {
     anim = requestAnimationFrame(pas);
   }
   const message = m => { const x = q('.gc-msg'); x.textContent = m || ''; x.hidden = !m; };
+  function bandeau(b, suite) {
+    const ic = q('.gc-ic svg');
+    ic.innerHTML = SVG[b.icone] || SVG['tout-droit'];
+    ic.style.transform = b.icone === 'direct' && b.capDirect != null && pret ? 'rotate(' + Math.round(b.capDirect - map.getBearing()) + 'deg)' : '';
+    q('.gc-d').textContent = b.distance == null ? '' : distanceTexte(b.distance);
+    q('.gc-v').textContent = b.verbe || ''; q('.gc-n').textContent = b.nom || ''; q('.gc-s').textContent = b.sous || '';
+    const puis = q('.gc-puis');
+    if (suite) { puis.hidden = false; puis.innerHTML = 'Puis <svg viewBox="0 0 48 48" aria-hidden="true">' + (SVG[suite.icone] || '') + '</svg>' + esc(suite.nom || suite.verbe || ''); } else puis.hidden = true;
+  }
   function afficher(e) {
     if (!e) return;
     if (!pret) { enAttente = e; return; }
     el.classList.toggle('sans', e.etat === 'sans-chemin'); el.classList.toggle('arrive', e.etat === 'arrive'); el.classList.toggle('hors', e.etat === 'hors-route');
-    const b = e.bandeau, ic = q('.gc-ic svg');
-    ic.innerHTML = SVG[b.icone] || SVG['tout-droit'];
-    ic.style.transform = b.icone === 'direct' && b.capDirect != null ? 'rotate(' + Math.round(b.capDirect - map.getBearing()) + 'deg)' : '';
-    q('.gc-d').textContent = b.distance == null ? '' : distanceTexte(b.distance);
-    q('.gc-v').textContent = b.verbe || ''; q('.gc-n').textContent = b.nom || ''; q('.gc-s').textContent = b.sous || '';
-    const puis = q('.gc-puis');
-    if (e.suite) { puis.hidden = false; puis.innerHTML = 'Puis <svg viewBox="0 0 48 48" aria-hidden="true">' + (SVG[e.suite.icone] || '') + '</svg>' + esc(e.suite.nom || e.suite.verbe || ''); } else puis.hidden = true;
+    bandeau(e.bandeau, e.suite);
     const r = e.restant;
     q('.gc-eta b').textContent = e.etat === 'arrive' ? 'Arrivée' : r.duree == null ? distanceTexte(r.distance) : dureeTexte(r.duree);
     q('.gc-eta span').textContent = e.etat === 'arrive' ? (M.dest.titre + (M.dest.sousTitre ? ' · ' + M.dest.sousTitre : ''))
-      : r.duree == null ? 'à vol d\'oiseau' : distanceTexte(r.distance) + ' · arrivée ' + new Date(Date.now() + r.duree * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      : r.duree == null ? 'à vol d\'oiseau, aucun chemin sur le plan' : distanceTexte(r.distance) + ' · arrivée ' + new Date(Date.now() + r.duree * 1000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     dessinerRoute(e.etat === 'arrive' ? [] : e.ligne);
     bouger(e.position, 900);
     if (e.cap != null) moi.setRotation(e.cap);
     if (suivre || Date.now() - tSuivi > 15000) { if (!suivre) { suivre = true; q('.gc-centre').hidden = true; } camera(e, 900); }
-    message(e.imprecis ? 'Signal GPS faible : position approximative.' : e.etat === 'recalcul' ? 'Nouvel itinéraire' : '');
+    if (vue === 'direct') message(e.imprecis ? 'Signal GPS faible : position approximative.' : e.etat === 'recalcul' ? 'Nouvel itinéraire' : '');
   }
-  function position(p) {
-    if (fini) return null;
-    tPos = Date.now(); derniereVitesse = p.vitesse == null || !isFinite(p.vitesse) ? derniereVitesse : p.vitesse;
-    const e = M.maj(p);
+  /* une position (vraie ou simulée) passe par le moteur : voix, état pour l'appli (jamais en démonstration), écran */
+  function traiter(moteur, p, demo) {
+    derniereVitesse = p.vitesse == null || !isFinite(p.vitesse) ? derniereVitesse : p.vitesse;
+    const e = moteur.maj(p);
     if (!e) return null;
     /* la voix et l'état partent tout de suite, même si la carte n'est pas encore affichée */
     if (voixOn && parler) for (const a of e.annonces) parler(a.texte, a.prio);
-    if (opts.surEtat) try { opts.surEtat(e); } catch (x) { }
+    if (!demo && opts.surEtat) try { opts.surEtat(e); } catch (x) { }
     afficher(e); return e;
   }
-  /* GPS du navigateur, sauf si l'appli donne la position elle-même */
+  /* trop loin de la ville (par exemple en France) : pas de faux guidage « à 4 690 km », mais la destination et l'aperçu */
+  function montrerLoin(p) {
+    const d = km(p, d0), ville = ref.ville && ref.ville.nom ? ref.ville.nom : 'la destination';
+    q('.gc-loin b').textContent = 'Vous êtes à ' + (d >= 100 ? Math.round(d).toLocaleString('fr-FR') : nombre(d, d < 10 ? 1 : 0)) + ' km de ' + ville;
+    if (loin) return;
+    loin = true;
+    q('.gc-loin p').textContent = 'Le guidage en direct démarre quand vous êtes sur place, avec le GPS du téléphone. En attendant, regardez le trajet étape par étape, ou jouez-le en démonstration' + (M.P ? '.' : ', depuis une rue proche de la destination.');
+    q('.gc-loin').hidden = false; message('');
+    el.classList.remove('sans', 'hors', 'arrive');
+    bandeau({ icone: 'arrivee', distance: null, verbe: 'Destination', nom: d0.titre, sous: d0.sousTitre }, null);
+    q('.gc-eta b').textContent = '—'; q('.gc-eta span').textContent = d0.titre;
+    moi.remove(); affiche = null;
+    if (pret) map.jumpTo({ center: [d0.lng, d0.lat], zoom: 15.5, pitch: 0, bearing: 0 });
+  }
+  function position(p) {
+    if (fini || !p || !isFinite(p.lat) || !isFinite(p.lng)) return null;
+    tPos = Date.now();
+    if (vue === 'apercu') return null;                 /* l'aperçu ne suit pas le GPS */
+    if (horsPlan(ref, p) > LOIN) { montrerLoin(p); return null; }
+    if (loin) { loin = false; q('.gc-loin').hidden = true; }
+    return traiter(M, p, false);
+  }
+
+  /* ---------- aperçu du trajet et démonstration ---------- */
+  function passerApercu() {
+    if (!PA && M.P) PA = M.P;
+    if (!PA) { const it = departDemo(ref, d0, M.mode); if (it) { PA = preparer(it); demoProche = true; } }
+    if (!PA) { message('Aucun trajet à montrer : choisissez un départ sur la carte.'); return false; }
+    vue = 'apercu'; loin = false; el.classList.add('apercu');
+    q('.gc-loin').hidden = true; q('.gc-ctrl').hidden = false; q('.gc-ens').hidden = false; q('.gc-centre').hidden = true; message('');
+    if (idGps != null) { try { navigator.geolocation.clearWatch(idGps); } catch (x) { } idGps = null; }
+    suivre = true; montrerEtape(-1); return true;
+  }
+  const arreterLecture = () => { if (lecture) { clearInterval(lecture); lecture = null; } };
+  function majCtrl() {
+    const n = PA ? PA.etapes.length : 0, j = q('.gc-jouer');
+    j.innerHTML = lecture ? BT.pause + 'Pause' : MD && MD.fini ? BT.jouer + 'Rejouer' : BT.jouer + 'Démonstration';
+    j.setAttribute('aria-pressed', lecture ? 'true' : 'false');
+    q('.gc-prec').disabled = etape <= -1; q('.gc-suiv').disabled = etape >= n;
+    q('.gc-eta small').textContent = (lecture ? 'Démonstration : position simulée' : 'Aperçu du trajet' + (demoProche ? ', depuis une rue proche' : '')) + ' · Rues © OpenStreetMap';
+  }
+  function montrerEtape(i) {
+    if (!PA) return;
+    arreterLecture(); if (MD && MD.fini) MD = null;
+    const n = PA.etapes.length; etape = Math.max(-1, Math.min(n, i));
+    el.classList.remove('sans', 'hors'); el.classList.toggle('arrive', etape === n);
+    let b, pt;
+    if (etape === -1) {
+      b = { icone: 'apercu', distance: PA.total, verbe: 'Aperçu du trajet ' + (MODE_TXT[M.mode] || ''), nom: d0.titre, sous: dureeTexte(PA.it.duree) + ' par la route · ' + n + (n > 1 ? ' étapes' : ' étape') };
+      pt = pointLL(PA, 0);
+    } else if (etape < n) {
+      const e = PA.etapes[etape];
+      b = { icone: e.manoeuvre, distance: null, verbe: e.verbe, nom: e.nom, sous: 'Étape ' + (etape + 1) + ' sur ' + n + ' · ' + distanceTexte(e.distance) };
+      pt = pointLL(PA, e.debut);
+    } else {
+      const cote = Moteur.prototype.cote.call({ P: PA, dest: d0 });
+      b = { icone: 'arrivee', distance: null, verbe: 'Vous êtes à destination', nom: d0.titre, sous: cote ? 'Porte à votre ' + cote : d0.sousTitre };
+      pt = pointLL(PA, PA.total);
+    }
+    bandeau(b, null);
+    q('.gc-eta b').textContent = dureeTexte(PA.it.duree); q('.gc-eta span').textContent = distanceTexte(PA.total) + ' par la route · ' + (MODE_TXT[M.mode] || '');
+    majCtrl();
+    if (!pret) return;                                   /* la carte se placera à son chargement */
+    dessinerRoute(coords(PA));
+    bouger(pt, 500); if (pt.cap != null) moi.setRotation(pt.cap);
+    suivre = true; q('.gc-centre').hidden = true;
+    if (etape === -1) ensemble(coords(PA), 700);
+    else map.easeTo({ center: [pt.lng, pt.lat], bearing: pt.cap == null ? map.getBearing() : pt.cap, pitch: 50, zoom: etape === n ? 18 : M.mode === 'pied' ? 18 : 17.3, padding: marges(), duration: 800 });
+  }
+  /* démonstration : un point simulé suit le trajet ; le vrai moteur donne bandeau, voix et arrivée, comme en direct */
+  function tic() {
+    if (!PA || !MD) return;
+    const v = +opts.vitesseDemo || VITESSE_DEMO[M.mode] || 16, p = pointLL(PA, simS);
+    simT += 1000;
+    traiter(MD, { lat: p.lat, lng: p.lng, precision: 5, cap: p.cap, vitesse: v, t: simT }, true);
+    const n = PA.etapes.length; let k = 0; while (k + 1 < n && PA.etapes[k + 1].debut <= simS + 1) k++; etape = k;
+    if (MD.fini || simS >= PA.total) { arreterLecture(); etape = n; majCtrl(); return; }
+    simS = Math.min(PA.total, simS + v);
+  }
+  function jouer() {
+    if (!PA && !passerApercu()) return;
+    if (lecture) { arreterLecture(); majCtrl(); return; }
+    const n = PA.etapes.length;
+    simS = etape > 0 && etape < n ? PA.etapes[etape].debut : 0;
+    MD = new Moteur(ref, adresse, { mode: M.mode, itineraire: PA.it });
+    if (simS > 15) { MD.s = simS; MD.dit.add('start'); MD.premier = false; }
+    simT = Date.now(); suivre = true; q('.gc-centre').hidden = true;
+    if (parlerDefaut && !opts.parler && parlerDefaut.debloquer) parlerDefaut.debloquer();
+    lecture = setInterval(tic, 1000); majCtrl(); tic();
+  }
+  q('.gc-prec').onclick = () => montrerEtape(etape - 1);
+  q('.gc-suiv').onclick = () => montrerEtape(etape + 1);
+  q('.gc-jouer').onclick = jouer;
+  q('.gc-voir').onclick = passerApercu;
+
+  /* GPS du navigateur, sauf si l'appli donne la position elle-même (pas de GPS pour l'aperçu) */
   let veille = null, idGps = null;
-  if ((opts.positions || 'navigateur') === 'navigateur') {
+  if (opts.vue === 'apercu') passerApercu();
+  else if ((opts.positions || 'navigateur') === 'navigateur') {
     if (!navigator.geolocation) message('Ce navigateur ne donne pas la position.');
     else idGps = navigator.geolocation.watchPosition(g => position({ lat: g.coords.latitude, lng: g.coords.longitude, precision: g.coords.accuracy, cap: g.coords.heading, vitesse: g.coords.speed, t: g.timestamp }),
       err => message(err.code === 1 ? 'Localisation refusée : autorisez-la pour être guidé.' : 'Recherche du signal GPS…'), { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
   }
-  const perdu = setInterval(() => { if (!fini && tPos && Date.now() - tPos > 15000) message('Signal GPS perdu…'); }, 5000);
+  const perdu = setInterval(() => { if (!fini && vue === 'direct' && !loin && tPos && Date.now() - tPos > 15000) message('Signal GPS perdu…'); }, 5000);
   /* écran toujours allumé pendant le guidage */
   let verrou = null;
   const garder = async () => { try { if (navigator.wakeLock && document.visibilityState === 'visible') verrou = await navigator.wakeLock.request('screen'); } catch (x) { } };
@@ -427,20 +619,21 @@ function ouvrir(conteneur, ref, adresse, opts) {
   garder(); document.addEventListener('visibilitychange', vis);
   function arreter(raison) {
     if (fini && !el.isConnected) return;
-    fini = true; cancelAnimationFrame(anim); clearInterval(perdu); clearTimeout(tNum);
+    fini = true; arreterLecture(); cancelAnimationFrame(anim); clearInterval(perdu); clearTimeout(tNum);
     if (idGps != null) try { navigator.geolocation.clearWatch(idGps); } catch (x) { }
+    if (ro) try { ro.disconnect(); } catch (x) { }
     document.removeEventListener('visibilitychange', vis);
     try { if (verrou) verrou.release(); } catch (x) { }
     if (parler && parler.taire) parler.taire();
     try { map.remove(); } catch (x) { }
     el.remove();
-    if (opts.surFin) try { opts.surFin(raison || 'termine', M.dernier); } catch (x) { }
+    if (opts.surFin) try { opts.surFin(raison || 'termine', vue === 'apercu' ? null : M.dernier); } catch (x) { }
   }
-  q('.gc-fin').onclick = () => arreter(M.fini ? 'arrive' : 'termine');
-  const api = { position, arreter, moteur: M, carte: map, recentrer };
+  q('.gc-fin').onclick = () => arreter(vue === 'apercu' ? 'apercu' : M.fini ? 'arrive' : 'termine');
+  const api = { position, arreter, moteur: M, carte: map, recentrer, apercu: passerApercu, jouer, get vue() { return vue; }, get demo() { return MD; } };
   el.guidage = api;
   return api;
 }
 
-return { ouvrir, Moteur, preparer, destination, distanceTexte, distanceVoix, dureeTexte, versCap };
+return { ouvrir, Moteur, preparer, destination, distanceTexte, distanceVoix, dureeTexte, versCap, pointLL, km, horsPlan, departDemo };
 }));

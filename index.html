@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-Ma7/QPnhG1mItDEI+f5N7MuW3fQA10HbDsTtit2PILU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-7mXCHZIbgJEaVnoRfpuVF1R8yEvJd6je2IQ2/hqzvQg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f7a46">
@@ -62,7 +62,8 @@ html,body{height:100%;overflow:hidden}
 .modes button[aria-pressed="true"]{background:var(--panel);color:var(--green);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .sum{display:flex;gap:14px;align-items:baseline}.sum b{font:800 26px var(--display)}.sum span{color:var(--muted);font-size:14px}
 .pts{display:grid;grid-template-columns:14px 1fr;gap:6px 10px;align-items:center;font-size:14px;margin:6px 0}
-.pts i{width:12px;height:12px;border-radius:50%;display:block}.pts .a{background:var(--blue)}.pts .b{background:var(--red)}
+.pts i{width:12px;height:12px;border-radius:50%;display:block}
+.lien{all:unset;cursor:pointer;color:var(--green);font-weight:600;font-size:13px;margin-left:10px;padding:4px 0}.lien:focus-visible{outline:3px solid var(--yellow);outline-offset:2px;border-radius:4px}.pts .a{background:var(--blue)}.pts .b{background:var(--red)}
 .steps{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--line)}
 .steps li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
 .steps li span:last-child{color:var(--muted);white-space:nowrap}
@@ -437,30 +438,44 @@ function startRoute(a){
     ()=>choisir('Position introuvable : touchez la carte pour choisir le départ.'),{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
 }
 $('pickNo').onclick=()=>{picking=false;$('pick').hidden=true};
+/* « Ma position » comme départ (sur place) */
+function departGps(){
+  if(!navigator.geolocation){toast('Ce navigateur ne donne pas la position.');return}
+  toast('Recherche de votre position…');
+  navigator.geolocation.getCurrentPosition(p=>{setMe(p);$('toast').hidden=true;
+    if(ref.quartierDe(mePos.lat,mePos.lng)){RT.de=mePos;RT.deTxt='Ma position';computeRoute()}
+    else toast('Vous n\'êtes pas à '+VI.nom+' : gardez le départ choisi sur la carte.')},
+    ()=>toast('Position introuvable : autorisez la localisation.'),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
 function computeRoute(){
   const r=ref.itineraire(RT.de,RT.a.position,{mode:RT.mode});route=r;
   map.getSource('route').setData(FC(r?[{type:'Feature',properties:{},geometry:{type:'LineString',coordinates:r.ligne.map(p=>[p[1],p[0]])}}]:[]));
   card.dataset.vue='itineraire';
+  /* comme Google Maps : guidage en direct depuis « Ma position », sinon aperçu du trajet (étape par étape, démonstration) */
+  const gpsDepart=RT.deTxt==='Ma position';
   card.innerHTML=`<div class="eyebrow">Itinéraire</div><h2>${esc(RT.a.ligne1)}</h2>
-    <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
+    <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}<button class="lien" type="button" id="rDe">Changer</button>${gpsDepart?'':'<button class="lien" type="button" id="rMoi">Ma position</button>'}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
     <div class="modes" role="group" aria-label="Mode de transport">${[['voiture','Voiture'],['moto','Moto'],['pied','À pied']].map(([k,t])=>`<button type="button" data-m="${k}" aria-pressed="${RT.mode===k}">${t}</button>`).join('')}</div>
     ${r?`<div class="sum"><b>${fmtT(r.duree)}</b><span>${fmtD(r.distance)} · estimation sans bouchons</span></div>`:'<p class="st">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques bloquent le passage.</p>'}
-    <div class="row">${r?'<button class="btn primary" type="button" id="rGo">Démarrer le guidage</button>':''}<button class="btn" type="button" id="rBack">Retour</button></div>
+    <div class="row">${r?(gpsDepart?'<button class="btn primary" type="button" id="rGo">Démarrer</button><button class="btn" type="button" id="rApercu">Aperçu</button>':'<button class="btn primary" type="button" id="rApercu">Aperçu du trajet</button>'):''}<button class="btn" type="button" id="rBack">Retour</button></div>
+    ${r&&!gpsDepart?'<p class="st">Départ choisi sur la carte : l\'aperçu montre le trajet étape par étape et le joue en démonstration. Le guidage en direct part de votre position GPS, une fois sur place.</p>':''}
     ${r?`<ol class="steps">${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol>`:''}`;
   card.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;computeRoute()});
-  if(r)$('rGo').onclick=guider;
+  if(r){if(gpsDepart)$('rGo').onclick=()=>guider('direct');$('rApercu').onclick=()=>guider('apercu')}
+  $('rDe').onclick=()=>{picking=true;$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false};
+  if(!gpsDepart)$('rMoi').onclick=departGps;
   $('rBack').onclick=()=>{map.getSource('route').setData(FC());showAddress(RT.a,'tap')};
   if(r){const xs=r.ligne.map(p=>p[1]),ys=r.ligne.map(p=>p[0]);map.fitBounds([[Math.min(...xs),Math.min(...ys)],[Math.max(...xs),Math.max(...ys)]],{padding:{top:90,bottom:matchMedia('(max-width:640px)').matches?card.offsetHeight+30:40,left:matchMedia('(max-width:640px)').matches?30:460,right:60},maxZoom:17,duration:600})}
 }
 
 /* ---------- guidage pas à pas, sur cette carte ---------- */
 let guide=null;
-function guider(){
+function guider(vue){
   if(guide)return;
   if(!window.GuidageConakry){toast('Guidage indisponible : rechargez la page.');return}
   const box=document.createElement('div');document.body.appendChild(box);
   try{
-    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:route,
+    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:route,vue:vue==='apercu'?'apercu':'direct',fond:true,
       surFin:raison=>{guide=null;box.remove();if(raison==='arrive')showAddress(RT.a,'tap');else computeRoute()}});
   }catch(e){guide=null;box.remove();toast('Le guidage ne peut pas démarrer : '+e.message)}
 }
@@ -556,7 +571,8 @@ CA.charger({base:VI.dossier}).then(r=>{
   const go=()=>{addLayers();initRendu();$('status').hidden=true;accueil();
     if(!openHash()&&!vue){const b=ref.bbox,tel=matchMedia('(max-width:640px)').matches;map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:{top:80,left:30,right:tel?30:70,bottom:tel?card.offsetHeight+20:40},duration:0})}
     drawNums()};
-  if(map.isStyleLoaded())go();else map.once('load',go);
+  /* le plan s'affiche dès que le style est prêt, même si le fond de carte (Esri) ne répond pas */
+  const essai=()=>{if(map.isStyleLoaded())go();else setTimeout(essai,80)};essai();
 }).catch(e=>{$('status').innerHTML='<div><h3>Plan de '+esc(VI.nom)+' pas encore publié</h3><p class="hint">Le référentiel n\'est pas dans le dossier <code>'+esc(VI.dossier)+'</code>. Ouvrez l\'<a href="atelier.html'+SUFFIXE+'">atelier</a> pour le fabriquer'+(VILLE==='conakry'?'':', ou revenez à la <a href="./">carte de Conakry</a>')+'.</p><p class="hint">'+esc(e.message)+'</p></div>'});
 })();
 </script>
