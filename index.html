@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-Mq6Ww0GyFGpy5VhGgY3mRz77wBHZ2gkBGtVl5gpFQEY='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-ArybOnOUJIANrIPT9fB4C16uhEpLU+pw1JCddGHTf8k='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f7a46">
@@ -155,7 +155,13 @@ const villeDuCode=id=>{const m=String(id||'').match(/^GN-(\d{5})-/i);if(!m)retur
 let VILLE=new URLSearchParams(location.search).get('ville');
 const aVille=k=>typeof k==='string'&&Object.prototype.hasOwnProperty.call(VILLES,k);
 const dec=t=>{try{return decodeURIComponent(t)}catch(e){return t}};   /* un lien abîmé (« #% ») ne bloque pas la carte */
-if(!aVille(VILLE))VILLE=villeDuCode(dec(location.hash.slice(1)))||'conakry';
+/* ville ouverte : ?ville=labe, sinon celle d'un identifiant partagé (#GN-85002-…),
+   sinon la dernière ville ouverte sur ce téléphone (adresse du site sans rien derrière), sinon Conakry */
+const VILLE_MEMO='conakry-ville',lireMemo=()=>{try{return localStorage.getItem(VILLE_MEMO)}catch(e){return null}};
+let deMemoire=false;
+if(!aVille(VILLE)){VILLE=villeDuCode(dec(location.hash.slice(1)));if(!VILLE&&location.hash.length<2&&aVille(lireMemo())){VILLE=lireMemo();deMemoire=true}}
+if(!aVille(VILLE))VILLE='conakry';
+try{localStorage.setItem(VILLE_MEMO,VILLE)}catch(e){}
 const VI=VILLES[VILLE],SUFFIXE=VILLE==='conakry'?'':'?ville='+VILLE;
 $('status').querySelector('h3').textContent='Chargement du plan de '+VI.nom+'…';
 let VLIST=null;
@@ -365,7 +371,7 @@ const setCardH=()=>document.documentElement.style.setProperty('--card',card.offs
 new ResizeObserver(setCardH).observe(card);
 const IGPS='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
 const ICOPIE='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
-const lienVille=(code,h)=>'./'+(code==='conakry'?'':'?ville='+encodeURIComponent(code))+(h||'');
+const lienVille=(code,h)=>'./?ville='+encodeURIComponent(code)+(h||'');          /* toujours ?ville= : l'adresse nue ouvre la dernière ville */
 function accueil(){
   route=null;map.getSource('route')&&map.getSource('route').setData(FC());
   card.dataset.vue='accueil';
@@ -557,7 +563,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.top'))sugg.hidden=t
 function openHash(){
   const h=dec(location.hash.slice(1)).slice(0,200);if(!h||!ref)return false;
   let a=null;
-  if(/^GN-/i.test(h)){a=ref.position(h);const autre=villeDuCode(h);if(!a&&autre&&autre!==VILLE){location.href='./'+(autre==='conakry'?'':'?ville='+autre)+location.hash;return true}}
+  if(/^GN-/i.test(h)){a=ref.position(h);const autre=villeDuCode(h);if(!a&&autre&&autre!==VILLE){location.href='./?ville='+autre+location.hash;return true}}
   else{const m=h.match(/^(-?\d+\.\d+),(-?\d+\.\d+)$/);if(m)a=ref.adresse(+m[1],+m[2]);else if(/^q=/.test(h)){const r=ref.chercher(h.slice(2));if(r[0])a=r[0].adresse||ref.adresse(r[0].lat,r[0].lng)}}
   if(a){map.jumpTo({center:[a.position.lng,a.position.lat],zoom:17.5});showAddress(a,'hash');return true}
   return false;
@@ -574,7 +580,10 @@ CA.charger({base:VI.dossier}).then(r=>{
     drawNums()};
   /* le plan s'affiche dès que le style est prêt, même si le fond de carte (Esri) ne répond pas */
   const essai=()=>{if(map.isStyleLoaded())go();else setTimeout(essai,80)};essai();
-}).catch(e=>{$('status').innerHTML='<div><h3>Plan de '+esc(VI.nom)+' pas encore publié</h3><p class="hint">Le référentiel n\'est pas dans le dossier <code>'+esc(VI.dossier)+'</code>. Ouvrez l\'<a href="atelier.html'+SUFFIXE+'">atelier</a> pour le fabriquer'+(VILLE==='conakry'?'':', ou revenez à la <a href="./">carte de Conakry</a>')+'.</p><p class="hint">'+esc(e.message)+'</p></div>'});
+}).catch(e=>{
+  /* la dernière ville ouverte n'est plus en ligne : on revient à Conakry */
+  if(deMemoire){try{localStorage.removeItem(VILLE_MEMO)}catch(x){}location.replace('./?ville=conakry');return}
+  $('status').innerHTML='<div><h3>Plan de '+esc(VI.nom)+' pas encore publié</h3><p class="hint">Le référentiel n\'est pas dans le dossier <code>'+esc(VI.dossier)+'</code>. Ouvrez l\'<a href="atelier.html'+SUFFIXE+'">atelier</a> pour le fabriquer'+(VILLE==='conakry'?'':', ou revenez à la <a href="./?ville=conakry">carte de Conakry</a>')+'.</p><p class="hint">'+esc(e.message)+'</p></div>'});
 })();
 </script>
 </body>

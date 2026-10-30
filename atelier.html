@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-Ad4afNV/cactCSnzrt+sfSqa1k7u52N7Vhtb7+YWq8s='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-2G9eZ0XJBlqBCvWl3kb4bwiq/91xQM6APqP4dOrR2k0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
@@ -46,7 +46,7 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
 <body>
 <div class="flag" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="wrap">
-  <a class="back" id="retour" href="./">← Carte de Conakry</a>
+  <a class="back" id="retour" href="./?ville=conakry">← Carte de Conakry</a>
   <h1>Atelier du référentiel</h1>
   <div class="villes" id="villes" role="group" aria-label="Ville"></div>
   <p class="lead" id="lead"></p>
@@ -85,7 +85,8 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
 (()=>{
 const A=window.AtelierConakry,CA=window.ConakryAdresses,$=id=>document.getElementById(id);
 /* ---------- ville : Conakry ou une ville de l'intérieur (?ville=labe) ---------- */
-const ORDRE=['conakry','boke','faranah','kankan','kindia','labe','mamou','nzerekore','siguiri'];
+/* villes proposées, dans cet ordre ; une ville inconnue de lib/atelier-lib.js (fichier pas encore mis à jour) est simplement ignorée */
+const ORDRE=['conakry','boke','faranah','kankan','kindia','labe','mamou','nzerekore','siguiri'].filter(k=>A.VILLES[k]);
 const villeQ=new URLSearchParams(location.search).get('ville')||'';
 let V=Object.prototype.hasOwnProperty.call(A.VILLES,villeQ)?A.VILLES[villeQ]:A.VILLES.conakry;
 const sous=v=>v.code==='conakry'?'':v.code+'/';                 /* dossier du référentiel : data/ pour Conakry, data/labe/ … */
@@ -93,7 +94,7 @@ const K=k=>V.code==='conakry'?k:V.code+':'+k;                   /* mémoire de l
 function choisirVille(v){
   V=v;history.replaceState(null,'',v.code==='conakry'?location.pathname:'?ville='+v.code);
   $('villes').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v.code?'true':'false'));
-  $('retour').textContent='← Carte de '+v.nom;$('retour').href=v.code==='conakry'?'./':'./?ville='+v.code;
+  $('retour').textContent='← Carte de '+v.nom;$('retour').href='./?ville='+v.code;
   $('lead').innerHTML=v.kaloum?'Cette page fabrique le plan d\'adressage provisoire de toute la zone spéciale de Conakry à partir d\'OpenStreetMap. Kaloum est repris tel quel du plan figé de Kaloum, lu sur le site de Kaloum sans rien y changer. Ailleurs, chaque rue sans nom, ou qui n\'a qu\'un numéro, reçoit un nom proposé, comme à Kaloum. À lancer depuis un ordinateur connecté, puis à publier dans le dossier <code>data</code> du site.'
     :'Cette page fabrique le plan d\'adressage provisoire de '+v.nom+' à partir d\'OpenStreetMap, comme pour Conakry : chaque rue sans nom, ou qui n\'a qu\'un numéro, reçoit un nom proposé ; chaque quartier reçoit un code postal à partir de '+v.communes[0].cp+'. À lancer depuis un ordinateur connecté, puis à publier dans le dossier <code>data</code> du site (sous-dossier <code>'+v.code+'</code>).';
   input=null;result=null;['s2','s3'].forEach(id=>$(id).classList.add('off'));['dl','dlGeo','dlNoms'].forEach(id=>$(id).disabled=true);
