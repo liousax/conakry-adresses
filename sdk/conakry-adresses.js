@@ -200,12 +200,13 @@ class Referentiel {
     this.ville = vi ? { code: vi.code || norm(vi.nom).replace(/ /g, ''), nom: vi.nom, centre: Array.isArray(vi.centre) ? vi.centre : VILLE_DEFAUT.centre } : VILLE_DEFAUT;
     this._ref = { lat: this.ville.centre[0], lng: this.ville.centre[1] };
     this.info = { nom: index.nom, version: index.version, date: index.date, source: index.source, ville: this.ville.nom, codeVille: this.ville.code,
-      attribution: vi ? ATTRIBUTION.replace('Conakry Adresses', index.nom || this.ville.nom + ' Adresses') : ATTRIBUTION, avertissement: index.avertissement };
+      attribution: (vi ? ATTRIBUTION.replace('Conakry Adresses', index.nom || this.ville.nom + ' Adresses') : ATTRIBUTION)
+        + ((index.zones || []).some(z => z.source === 'officiel') ? ' · limites des communes © geoBoundaries, PAM, OCHA (CC BY 3.0 IGO)' : ''), avertissement: index.avertissement };
     this.communes = index.communes.map(c => ({ code: c.code, nom: c.nom, cp: c.cp }));
     this.communeParCode = {}; this.communes.forEach(c => { this.communeParCode[c.code] = c; });
     this.quartiers = index.quartiers.map(q => ({ nom: q[0], cp: q[1], lat: q[2], lng: q[3], commune: q[4] }));
     this.quartierParCp = {}; this.quartiers.forEach(q => { this.quartierParCp[q.cp] = q; });
-    this.zones = (index.zones || []).map(z => ({ nom: z.nom, communes: z.communes, rings: z.rings.map(decodeLine).map(r => r.map(p => [p.lon, p.lat])) }));
+    this.zones = (index.zones || []).map(z => ({ nom: z.nom, communes: z.communes, source: z.source, rings: z.rings.map(decodeLine).map(r => r.map(p => [p.lon, p.lat])) }));
     this.zones.forEach(z => { z.aire = z.rings.reduce((a, r) => a + ringArea(r), 0); z.idx = z.rings.map(ringIndex); z.qs = this.quartiers.filter(q => z.communes.indexOf(q.commune) >= 0); });
     this.voies = voies.voies.map((v, k) => ({
       k, code: v.c, nom: v.n, nomUsuel: v.a || null, statut: v.st, dedicace: v.b || null, personnalite: v.p || null, highway: CLASSES[v.h] || 'residential', commune: v.k,

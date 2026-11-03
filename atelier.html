@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-2G9eZ0XJBlqBCvWl3kb4bwiq/91xQM6APqP4dOrR2k0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-kHUVwDPzpEa1FbI7jqOMFiv/zaMsLHudfSQ2v0lB5RU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
@@ -75,7 +75,7 @@ details{margin-top:10px}summary{cursor:pointer;font-weight:600;color:var(--green
     <p class="hint" id="villesNote" hidden></p>
     <p class="hint">« Noms proposés » : la liste des rues renommées, avec leur ancien numéro, leur quartier et la personnalité honorée, à ouvrir dans Excel pour la soumettre aux communes.</p>
   </section>
-  <p class="note">Rues © contributeurs OpenStreetMap, licence ODbL : le référentiel produit reste sous cette licence et doit citer OpenStreetMap.</p>
+  <p class="note">Rues © contributeurs OpenStreetMap, licence ODbL : le référentiel produit reste sous cette licence et doit citer OpenStreetMap. Limites des communes absentes d'OpenStreetMap : <a href="https://www.geoboundaries.org" target="_blank" rel="noopener noreferrer">geoBoundaries</a>, d'après le Programme alimentaire mondial et OCHA (2023), licence CC BY 3.0 IGO, citées dans le référentiel quand elles servent.</p>
 </div>
 <script src="lib/maplibre-gl.js"></script>
 <script src="sdk/conakry-adresses.js"></script>
@@ -142,11 +142,37 @@ async function precedent(){
     const [voies,sources]=await Promise.all([g(d+index.fichiers.voies),g(d+(index.fichiers.sources||'sources.json'))]);
     return voies?{index,voies,sources:sources||{voies:{}}}:null}catch(e){return null}
 }
+/* ---------- limites officielles des communes (PAM et OCHA, 2023, via geoBoundaries) : sources/limites-officielles.json ----------
+   servent quand OpenStreetMap n'a pas la limite d'une commune ; fichier absent ou illisible : l'atelier fait comme avant */
+let OFFICIELLES=null;
+async function officielles(){
+  if(OFFICIELLES)return OFFICIELLES;
+  const out={};
+  try{const j=await fetch('sources/limites-officielles.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null);
+    const cs=j&&j.communes&&typeof j.communes==='object'?j.communes:{};
+    for(const k of Object.keys(cs)){const a=cs[k]&&cs[k].anneaux;
+      if(/^[A-Z]{3}$/.test(k)&&Array.isArray(a)&&a.length&&a.length<50&&a.every(r=>Array.isArray(r)&&r.length>=4&&r.length<5000&&r.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&Math.abs(p[0])<=180&&Math.abs(p[1])<=90)))out[k]=a}
+  }catch(e){}
+  return OFFICIELLES=out;
+}
+/* zone à télécharger : le carré de la ville, agrandi pour couvrir toute la limite officielle de sa commune (villes de l'intérieur) */
+function zoneTelechargee(off){
+  const b=Object.assign({},V.bbox);if(V.kaloum)return b;
+  const p={s:Infinity,w:Infinity,n:-Infinity,e:-Infinity};
+  for(const c of V.communes)for(const r of off[c.code]||[])for(const [lng,lat] of r){p.s=Math.min(p.s,lat);p.n=Math.max(p.n,lat);p.w=Math.min(p.w,lng);p.e=Math.max(p.e,lng)}
+  if(!(p.s<p.n))return b;
+  /* garde-fou : jamais plus de 0,4° autour du centre (une commune urbaine de Guinée tient dans ce carré) ; arrondi vers l'extérieur.
+     Un côté que la limite officielle ne dépasse pas reste celui de la ville : mêmes carreaux, déjà en mémoire. */
+  const [la,lo]=V.centre,M=0.4,bas=x=>Math.floor(x*1000)/1000,haut=x=>Math.ceil(x*1000)/1000;
+  if(p.s<b.s)b.s=bas(Math.max(p.s,la-M));if(p.n>b.n)b.n=haut(Math.min(p.n,la+M));
+  if(p.w<b.w)b.w=bas(Math.max(p.w,lo-M));if(p.e>b.e)b.e=haut(Math.min(p.e,lo+M));
+  return b;
+}
 let input=null,result=null,map=null;
 async function manuelles(){const out={};for(const k of await ckeys())if(String(k).startsWith('manuel:')){out[k.slice(7)]=await cget(k)}return out}
 async function build(){
   const t0=performance.now();
-  result=A.construire(Object.assign({},input,{manuelles:await manuelles()}));
+  result=A.construire(Object.assign({},input,{manuelles:await manuelles(),officielles:await officielles()}));
   log(V.nom+' : référentiel construit en '+((performance.now()-t0)/1000).toFixed(1)+' s : '+result.index.stats.voies.toLocaleString('fr-FR')+' voies, '+result.index.stats.quartiers+' quartiers, '+result.index.stats.km.toLocaleString('fr-FR')+' km.'+(V.kaloum?' Plan de Kaloum : '+input.planSource+'.':''));
   showReport(result);
   $('s2').classList.remove('off');$('s3').classList.remove('off');$('dl').disabled=false;$('dlGeo').disabled=false;$('dlNoms').disabled=false;
@@ -154,10 +180,13 @@ async function build(){
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
-    const Q=A.requetes(V.bbox),n=Q.tuiles.length+2;let done=0;
+    const Z=zoneTelechargee(await officielles()),Q=A.requetes(Z),n=Q.tuiles.length+2;let done=0;
     let pk={plan:null,source:''};if(V.kaloum){log('Plan de Kaloum (lecture seule)…');pk=await planKaloum()}
-    log(V.nom+' : limites des communes…');const lim=await cached(K('limites'),Q.limites,'Limites');bar(++done/n);
-    log(V.nom+' : quartiers…');const lieux=await cached(K('lieux'),Q.lieux,'Quartiers');bar(++done/n);
+    /* zone agrandie : nouvelles clés en mémoire, pour ne pas reprendre les limites et quartiers du petit carré */
+    const zk=['s','w','n','e'].every(k=>Z[k]===V.bbox[k])?'':':'+[Z.s,Z.w,Z.n,Z.e].join('_');
+    if(zk)log(V.nom+' : zone téléchargée agrandie à toute la commune ('+Math.round((Z.e-Z.w)*111.32*Math.cos(V.centre[0]*Math.PI/180))+' × '+Math.round((Z.n-Z.s)*110.57)+' km)…');
+    log(V.nom+' : limites des communes…');const lim=await cached(K('limites'+zk),Q.limites,'Limites');bar(++done/n);
+    log(V.nom+' : quartiers…');const lieux=await cached(K('lieux'+zk),Q.lieux,'Quartiers');bar(++done/n);
     const ways=[];
     for(const t of Q.tuiles){log('Rues : carreau '+(done-1)+' sur '+Q.tuiles.length+'…');const j=await cached('t:'+t.id,t.q,'Carreau '+(done-1));for(const e of j.elements)if(e.type==='way')ways.push(e);bar(++done/n)}
     log('Construction du référentiel ('+ways.length.toLocaleString('fr-FR')+' tronçons)…');await new Promise(r=>setTimeout(r,30));
@@ -172,8 +201,9 @@ $('reset').onclick=async()=>{for(const k of await ckeys())if(!String(k).startsWi
 const COL={KAL:'#c8312a',KAS:'#7b2d8e',DIX:'#0f7a46',MTM:'#d9650b',RAT:'#3e5a8a',LAM:'#1b8fb5',SON:'#5a7d1a',MTT:'#a3245b',GBE:'#8a6d00',TOM:'#2f6f62',KAG:'#6b4a2b',MAN:'#5d3fa6',SAN:'#b3541e',KIN:'#0f7a46',LAB:'#3e5a8a',MAM:'#a3245b',SIG:'#8a6d00',NZE:'#c8312a',BOK:'#2f6f62',FAR:'#b3541e',KAN:'#5d3fa6'};
 function showReport(r){
   const rows=V.communes.map(c=>{const x=r.rapport.communes[c.code];
-    const lim=!x.limite?'<span class="miss">absente</span>':x.limite==='OpenStreetMap'?'<span class="ok">OpenStreetMap</span>':'<span class="mid">'+esc(x.limite)+'</span>';
-    const act=x.limite==='OpenStreetMap'||x.limite==='contour du plan de Kaloum'?'':x.manuel?`<button class="btn mini" type="button" data-trace="${c.code}">Retracer</button> <button class="btn mini" type="button" data-untrace="${c.code}">Effacer</button>`:`<button class="btn mini" type="button" data-trace="${c.code}">Tracer la limite</button>`;
+    const off=x.limite==='limite officielle (PAM, OCHA)';
+    const lim=!x.limite?'<span class="miss">absente</span>':x.limite==='OpenStreetMap'||off?'<span class="ok">'+esc(x.limite)+'</span>':'<span class="mid">'+esc(x.limite)+'</span>';
+    const act=x.limite==='OpenStreetMap'||x.limite==='contour du plan de Kaloum'?'':x.manuel?`<button class="btn mini" type="button" data-trace="${c.code}">Retracer</button> <button class="btn mini" type="button" data-untrace="${c.code}">Effacer</button>`:`<button class="btn mini" type="button" data-trace="${c.code}">${off?'Corriger la limite':'Tracer la limite'}</button>`;
     return`<tr><td><b>${esc(c.nom)}</b></td><td>${c.cp}</td><td>${lim}</td><td class="num">${x.quartiers}</td><td class="num">${x.voies.toLocaleString('fr-FR')}</td><td class="num">${x.km.toLocaleString('fr-FR')}</td><td>${act}</td></tr>`}).join('');
   const w=r.rapport.avertissements,N=r.rapport.noms||{},f=n=>(n||0).toLocaleString('fr-FR');
   const ex=r.voies.voies.filter(v=>v.st==='propose'&&v.k!=='KAL'&&!v.x);

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-ArybOnOUJIANrIPT9fB4C16uhEpLU+pw1JCddGHTf8k='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-QsUiphvWCFYcqYMxpyFp9s+WMVpImzHiZQYGryppcek='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f7a46">
@@ -43,6 +43,15 @@ html,body{height:100%;overflow:hidden}
 .liens a{font-weight:600;text-decoration:none;min-height:28px;display:inline-flex;align-items:center}
 .liens a:hover{text-decoration:underline}
 .btn.big{min-height:48px;font-size:15px}
+.ville-btn{all:unset;box-sizing:border-box;cursor:pointer;margin-top:8px;display:inline-flex;align-items:center;gap:7px;background:var(--panel);color:var(--fg);border-radius:999px;box-shadow:0 2px 10px rgba(0,0,0,.22);padding:0 13px 0 11px;min-height:40px;font:700 14px var(--body)}
+.ville-btn svg{flex:none}.ville-btn svg:first-child{color:var(--red)}
+.ville-btn:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.ville-menu{list-style:none;margin:6px 0 0;padding:6px;background:var(--panel);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.22);width:max-content;min-width:190px;max-height:min(60vh,430px);overflow:auto}
+.ville-menu a{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:10px;color:var(--fg);text-decoration:none;font-weight:600;font-size:15px}
+.ville-menu a:hover,.ville-menu a:focus-visible{background:var(--green-soft)}
+.ville-menu a[aria-current="page"]{color:var(--green)}.ville-menu a[aria-current="page"]::after{content:"";margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--green)}
+.eyebrow .fermer{margin-left:auto;width:36px;height:36px;flex:none;border:0;border-radius:50%;background:var(--soft);color:var(--fg);cursor:pointer;display:grid;place-items:center;margin-top:-4px}
+.eyebrow .fermer:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
 .btn svg{flex:none}
 .card h2{font:800 21px/1.2 var(--display);margin:2px 0 4px}
 .l2{font-size:15px;color:var(--fg)}
@@ -112,6 +121,10 @@ html,body{height:100%;overflow:hidden}
     <button class="btn primary" type="submit">Chercher</button>
   </form>
   <ul class="sugg" id="sugg" role="listbox" hidden></ul>
+  <div class="ville-sel" id="villeSel" hidden>
+    <button type="button" class="ville-btn" id="villeBtn" aria-haspopup="true" aria-expanded="false" aria-controls="villeMenu" title="Changer de ville"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.6 7-12a7 7 0 0 0-14 0c0 5.4 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span id="villeNom"></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <ul class="ville-menu" id="villeMenu" hidden></ul>
+  </div>
 </header>
 <div class="fabs">
   <button class="fab" type="button" id="fabLoc" aria-label="Ma position"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
@@ -196,7 +209,7 @@ function addLayers(){
   /* largeur des rues selon le zoom : [zoom, grande voie, petite rue] */
   const W=[[10,.8,.2],[11,1.2,.4],[12,2,.7],[13,2.8,1.2],[14,4,2],[15,6,3.2],[16,9,6],[17,14,10],[18,22,16]];
   const width=add=>[...z,...W.flatMap(([zz,M,m])=>[zz,['case',['==',['get','m'],1],M+add,m+add]])];
-  map.addSource('zones',{type:'geojson',data:zonesFC()});
+  map.addSource('zones',Object.assign({type:'geojson',data:zonesFC()},ref.zones.some(z=>z.source==='officiel')?{attribution:'Limites des communes © <a href="https://www.geoboundaries.org" target="_blank" rel="noopener noreferrer">geoBoundaries</a> (PAM, OCHA, CC BY 3.0 IGO)'}:{}));
   map.addSource('voies',{type:'geojson',data:voiesFC(),tolerance:.25,buffer:64});
   map.addSource('noms',{type:'geojson',data:FC()});map.addSource('route',{type:'geojson',data:FC()});
   map.addSource('quartiers',{type:'geojson',data:quartiersFC()});map.addSource('communes',{type:'geojson',data:communesFC()});map.addSource('nums',{type:'geojson',data:FC()});
@@ -391,6 +404,9 @@ const STAT={officiel:'Nom officiel',propose:'Nom proposé, en attendant le choix
 const statut=a=>a.voie.statut==='propose'&&a.commune&&a.commune.code==='KAL'?'Nom proposé par le plan de Kaloum':STAT[a.voie.statut]||'';
 /* « Rue du Bembeya Jazz » → « Bembeya Jazz » : à qui la rue est dédiée */
 const honore=n=>String(n).replace(/^(Rue|Avenue|Boulevard|Impasse|Chemin|Passage|Allée)\s+/,'').replace(/^(du|des|de la|de l'|de|d')\s*/,'').replace(/^./,c=>c.toUpperCase());
+const BOUTON_FERMER='<button class="fermer" type="button" aria-label="Fermer et revenir à l\'accueil"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>';
+function fermer(){pin&&pin.remove();accueil();if(location.hash)history.replaceState(null,'',location.pathname+location.search)}
+const brancherFermer=()=>{const b=card.querySelector('.fermer');if(b)b.onclick=fermer};
 /* from : 'tap' (la carte ne bouge pas), 'gps' (« Où suis-je ? »), sinon recherche ou lien partagé */
 function showAddress(a,from,garderVue){
   if(!a){toast('Hors de la zone de '+VI.nom+'.');return}
@@ -400,14 +416,14 @@ function showAddress(a,from,garderVue){
   const infos=[];
   if(a.voie){infos.push(esc(statut(a)));if(a.voie.nomUsuel)infos.push('connue comme « '+esc(a.voie.nomUsuel)+' »');if(a.distanceRue>25)infos.push('à '+a.distanceRue+' m de la rue')}
   const cr=RENDU.grille&&carreau(a.position);if(cr)infos.push('carreau '+cr);
-  card.innerHTML=`${gps?'<div class="eyebrow ici">Vous êtes ici</div>':`<div class="eyebrow">${a.precision==='porte'?'Adresse':'Lieu sans rue proche'}</div>`}
+  card.innerHTML=`${gps?'<div class="eyebrow ici">Vous êtes ici'+BOUTON_FERMER+'</div>':`<div class="eyebrow">${a.precision==='porte'?'Adresse':'Lieu sans rue proche'}${BOUTON_FERMER}</div>`}
     <h1>${esc(a.ligne1)}</h1><div class="l2">${esc(a.ligne2)}</div>
     ${gps&&acc?`<p class="st${acc>100?' prov':''}">${acc>100?`Position approximative, à ${acc} m près : attendez un peu à découvert, puis touchez « Actualiser ».`:`Position du GPS, à ${acc} m près.`}</p>`:''}
     ${a.voie?`<p class="st${a.voie.statut==='a_nommer'?' prov':''}">${infos.join(' · ')}</p>${a.voie.dedicace?`<p class="ded"><b>${esc(honore(a.voie.nom))}</b> · ${esc(a.voie.dedicace)}</p>`:''}`:`<p class="st">Aucune rue à moins de 60 m : le Plus Code situe ${gps?'l\'endroit':'la porte'} à 3 m près${cr?' · carreau '+cr:''}.</p>`}
     <div class="chips">${a.id?`<button class="chip" type="button" data-copy="${esc(a.id)}" aria-label="Copier l'identifiant ${esc(a.id)}">${ICOPIE}${esc(a.id)}</button>`:''}<button class="chip pc" type="button" data-copy="${esc(a.plusCodeCourt)}" aria-label="Copier le Plus Code ${esc(a.plusCodeCourt)}">${ICOPIE}${esc(a.plusCodeCourt)}</button></div>
     <div class="row">${gps?'<button class="btn primary" type="button" id="share">Partager mon adresse</button><button class="btn" type="button" id="maj">Actualiser</button>'
       :'<button class="btn primary" type="button" id="goHere">Y aller</button><button class="btn" type="button" id="share">Partager</button>'}</div>`;
-  card.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));
+  card.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copy(b.dataset.copy));brancherFermer();
   if(gps)$('maj').onclick=ouSuisJe;else $('goHere').onclick=()=>startRoute(a);
   $('share').onclick=()=>share(a,gps);
   const h='#'+(a.id||a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6));if(location.hash!==h)history.replaceState(null,'',h);
@@ -460,14 +476,14 @@ function computeRoute(){
   card.dataset.vue='itineraire';
   /* comme Google Maps : guidage en direct depuis « Ma position », sinon aperçu du trajet (étape par étape, démonstration) */
   const gpsDepart=RT.deTxt==='Ma position';
-  card.innerHTML=`<div class="eyebrow">Itinéraire</div><h2>${esc(RT.a.ligne1)}</h2>
+  card.innerHTML=`<div class="eyebrow">Itinéraire${BOUTON_FERMER}</div><h2>${esc(RT.a.ligne1)}</h2>
     <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}<button class="lien" type="button" id="rDe">Changer</button>${gpsDepart?'':'<button class="lien" type="button" id="rMoi">Ma position</button>'}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
     <div class="modes" role="group" aria-label="Mode de transport">${[['voiture','Voiture'],['moto','Moto'],['pied','À pied']].map(([k,t])=>`<button type="button" data-m="${k}" aria-pressed="${RT.mode===k}">${t}</button>`).join('')}</div>
     ${r?`<div class="sum"><b>${fmtT(r.duree)}</b><span>${fmtD(r.distance)} · estimation sans bouchons</span></div>`:'<p class="st">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques bloquent le passage.</p>'}
     <div class="row">${r?(gpsDepart?'<button class="btn primary" type="button" id="rGo">Démarrer</button><button class="btn" type="button" id="rApercu">Aperçu</button>':'<button class="btn primary" type="button" id="rApercu">Aperçu du trajet</button>'):''}<button class="btn" type="button" id="rBack">Retour</button></div>
     ${r&&!gpsDepart?'<p class="st">Départ choisi sur la carte : l\'aperçu montre le trajet étape par étape et le joue en démonstration. Le guidage en direct part de votre position GPS, une fois sur place.</p>':''}
     ${r?`<ol class="steps">${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol>`:''}`;
-  card.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;computeRoute()});
+  card.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;computeRoute()});brancherFermer();
   if(r){if(gpsDepart)$('rGo').onclick=()=>guider('direct');$('rApercu').onclick=()=>guider('apercu')}
   $('rDe').onclick=()=>{picking=true;$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false};
   if(!gpsDepart)$('rMoi').onclick=departGps;
@@ -572,7 +588,18 @@ window.addEventListener('hashchange',openHash);
 
 /* ---------- démarrage ---------- */
 accueil();
-fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;if(card.dataset.vue==='accueil')accueil()}).catch(()=>{});
+/* menu des villes sous la recherche : toujours visible, même quand une fiche remplace l'accueil */
+function menuVilles(){
+  const l=(VLIST||[]).filter(v=>v&&aVille(v.code));
+  if(l.length<2){$('villeSel').hidden=true;return}
+  $('villeNom').textContent=VI.nom;$('villeSel').hidden=false;
+  $('villeMenu').innerHTML=l.map(v=>`<li><a href="${lienVille(v.code)}"${v.code===VILLE?' aria-current="page"':''}>${esc(VILLES[v.code].nom)}</a></li>`).join('');
+}
+const ouvrirVilles=o=>{$('villeMenu').hidden=!o;$('villeBtn').setAttribute('aria-expanded',o?'true':'false')};
+$('villeBtn').onclick=e=>{e.stopPropagation();ouvrirVilles($('villeMenu').hidden)};
+document.addEventListener('click',e=>{if(!e.target.closest('#villeSel'))ouvrirVilles(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')ouvrirVilles(false)});
+fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;if(card.dataset.vue==='accueil')accueil();menuVilles()}).catch(()=>{});
 CA.charger({base:VI.dossier}).then(r=>{
   ref=r;window.__ref=r;
   const go=()=>{addLayers();initRendu();$('status').hidden=true;accueil();

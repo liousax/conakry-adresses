@@ -57,4 +57,8 @@ Les noms, codes de voie, codes postaux et points de départ de la numérotation 
 
 ## Licence
 
-Rues © contributeurs OpenStreetMap, licence ODbL : citer « © OpenStreetMap » dans les applis. Bibliothèques incluses : voir `lib/LICENCES.txt`.
+Rues © contributeurs OpenStreetMap, licence ODbL : citer « © OpenStreetMap » dans les applis.
+
+Limites des communes absentes d'OpenStreetMap (`sources/limites-officielles.json`) : [geoBoundaries](https://www.geoboundaries.org), d'après le Programme alimentaire mondial et OCHA (2023), licence CC BY 3.0 IGO. Elles ne servent que si OpenStreetMap n'a pas la limite et qu'aucune limite n'a été tracée dans l'atelier ; la carte les cite alors dans ses sources.
+
+Bibliothèques incluses : voir `lib/LICENCES.txt`.
