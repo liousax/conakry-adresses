@@ -206,6 +206,10 @@ class Referentiel {
     this.communeParCode = {}; this.communes.forEach(c => { this.communeParCode[c.code] = c; });
     this.quartiers = index.quartiers.map(q => ({ nom: q[0], cp: q[1], lat: q[2], lng: q[3], commune: q[4] }));
     this.quartierParCp = {}; this.quartiers.forEach(q => { this.quartierParCp[q.cp] = q; });
+    /* codes postaux de la ville, par centaine (une centaine par commune : 880 Kaloum … 892 Sanoyah, 850 Labé, 834 Siguiri) :
+       un identifiant hors de ces centaines est l'adresse d'une autre ville, même si le code de sa rue existe aussi ici
+       (SANKARA, OLYMPIO… se retrouvent dans plusieurs villes) */
+    this._centainesCp = new Set(this.communes.map(c => c.cp).concat(this.quartiers.map(q => q.cp)).map(String).filter(c => /^\d{5}$/.test(c)).map(c => c.slice(0, 3)));
     this.zones = (index.zones || []).map(z => ({ nom: z.nom, communes: z.communes, source: z.source, rings: z.rings.map(decodeLine).map(r => r.map(p => [p.lon, p.lat])) }));
     this.zones.forEach(z => { z.aire = z.rings.reduce((a, r) => a + ringArea(r), 0); z.idx = z.rings.map(ringIndex); z.qs = this.quartiers.filter(q => z.communes.indexOf(q.commune) >= 0); });
     this.voies = voies.voies.map((v, k) => ({
@@ -298,12 +302,18 @@ class Referentiel {
     a.distanceRue = 7; a.pointRue = { lat: p.rue.lat, lng: p.rue.lng };
     return a;
   }
-  /* POSITION D'UN IDENTIFIANT : « GN-88001-3AVRIL1984-98 » */
-  position(id) {
-    const m = String(id || '').slice(0, 80).trim().toUpperCase().match(/^GN-(\d{5})-([A-Z0-9]+)-(\d{1,5})$/); if (!m) return null;
+  /* POSITION D'UN IDENTIFIANT : « GN-88001-3AVRIL1984-98 »
+     La rue et le numéro désignent la porte. Si l'identifiant n'est plus exactement celui de cette porte (quartier renuméroté
+     depuis, numéro au-delà de la fin de la rue), l'adresse est rendue avec corrige = true et idDemande : à signaler à l'utilisateur.
+     opts.strict : null dans ce cas (une course ou une livraison qui ne doit jamais partir vers une adresse corrigée).
+     Identifiant d'une autre ville (code postal hors du préfixe de celle-ci) : null, jamais la rue du même nom d'ici. */
+  position(id, opts) {
+    const brut = String(id || '').slice(0, 80).trim().toUpperCase(), m = brut.match(/^GN-(\d{5})-([A-Z0-9]+)-(\d{1,5})$/); if (!m) return null;
+    if (this._centainesCp.size && !this._centainesCp.has(m[1].slice(0, 3))) return null;
     const v = this.voieParCode[m[2]]; if (!v) return null;
     this._chain(v); const a = this._adresseVoie(v, +m[3]);
     a.limite = +m[3] > v.maxNo ? v.maxNo : null;
+    if (a.id !== brut) { a.corrige = true; a.idDemande = brut; if (opts && opts.strict) return null; }
     return a;
   }
   voie(code) { const v = this.voieParCode[String(code || '').toUpperCase()]; if (!v) return null; this._chain(v); return { code: v.code, nom: v.nom, nomUsuel: v.nomUsuel, statut: v.statut, statutTexte: statutTexte(v), dedicace: v.dedicace, commune: v.commune, codesPostaux: v.cps, longueur: Math.round(v.total), numeroMax: v.maxNo, segments: v.segs.map(g => g.map(p => [p.lat, p.lon])) }; }
@@ -337,7 +347,7 @@ class Referentiel {
     /* une adresse tient en 120 caractères : au-delà, le texte est coupé (un texte collé très long ne fige pas la recherche) */
     const raw = String(texte || '').slice(0, 160).trim(); if (!raw) return out;
     /* identifiant d'adresse */
-    if (/^GN-/i.test(raw)) { const a = this.position(raw); if (a) out.push({ type: 'adresse', libelle: a.texte, adresse: a, lat: a.position.lat, lng: a.position.lng, score: 1 }); return out; }
+    if (/^GN-/i.test(raw)) { const a = this.position(raw); if (a) out.push({ type: 'adresse', libelle: a.texte, adresse: a, lat: a.position.lat, lng: a.position.lng, score: 1, limite: a.limite, corrige: !!a.corrige }); return out; }
     /* Plus Code */
     if (/^[23456789CFGHJMPQRVWX]{2,8}\+[23456789CFGHJMPQRVWX]*/i.test(raw.replace(/\s.*/, ''))) {
       const p = plusCodeDecode(raw, this._ref); if (p) { const a = this.adresse(p.lat, p.lng); out.push({ type: 'pluscode', libelle: raw.toUpperCase().replace(/\s.*/, '') + (a ? ' · ' + a.ligne2 : ''), adresse: a, lat: p.lat, lng: p.lng, score: 1 }); }
@@ -402,7 +412,7 @@ class Referentiel {
     const id = p => { const k = NK(p); let i = ids.get(k); if (i === undefined) { i = pts.length; ids.set(k, i); pts.push(p); adj.push([]); } return i; };
     this.voies.forEach((v, vi) => {
       if (!pied && v.highway === 'pedestrian') return;
-      const vit = pied ? 1.35 : (VITESSE[v.highway] || 5) * (mode === 'moto' ? 1.2 : 1);
+      const vit = pied ? 1.35 : (VITESSE[v.highway] || 5);
       v.segs.forEach((g, gi) => { const ow = pied ? 0 : (v.ow[gi] || 0); for (let i = 1; i < g.length; i++) {
         const a = id(g[i - 1]), b = id(g[i]); if (a === b) continue; const L = dist(g[i - 1], g[i]);
         if (ow >= 0) adj[a].push([b, L, L / vit, vi, gi, i]); if (ow <= 0) adj[b].push([a, L, L / vit, vi, gi, -i]);
@@ -434,20 +444,24 @@ class Referentiel {
         if (d <= 3 || comp[j] !== comp[u]) { dw = d; w = j; }
       }
       if (w < 0) continue;
-      const vi = rue[u], v = this.voies[vi], vit = pied ? 1.35 : ((v && VITESSE[v.highway]) || 5) * (mode === 'moto' ? 1.2 : 1);
+      const vi = rue[u], v = this.voies[vi], vit = pied ? 1.35 : ((v && VITESSE[v.highway]) || 5);
       adj[u].push([w, dw, dw / vit, vi, -1, 0]); adj[w].push([u, dw, dw / vit, vi, -1, 0]); voisins[u].add(w); voisins[w].add(u); raccords++;
     }
-    return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : 8.3 * (mode === 'moto' ? 1.2 : 1) };
+    return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : 8.3 };
   }
   itineraire(de, a, opts) {
     opts = opts || {}; const mode = ({ voiture: 'voiture', car: 'voiture', moto: 'moto', pied: 'pied', walk: 'pied' })[opts.mode || 'voiture'] || 'voiture';
-    const G = this._graphe(mode);
+    /* la moto prend les mêmes rues et les mêmes sens que la voiture, 1,2 fois plus vite partout : même chemin, durée ÷ 1,2.
+       Un seul réseau sert aux deux (un réseau pèse environ autant que le plan lui-même en mémoire). */
+    const reseau = mode === 'moto' ? 'voiture' : mode, acc = mode === 'moto' ? 1.2 : 1;
+    const G = this._graphe(reseau);
     const okV = v => mode === 'pied' || v.highway !== 'pedestrian';
     const S = this._nearest(de.lat, de.lng, 150, okV), T = this._nearest(a.lat, a.lng, 150, okV);
     if (!S || !T) return null;
     const node = p => this._idNode(G, p);
     /* points de départ et d'arrivée raccrochés à la rue la plus proche */
     const sA = node(S.v.segs[S.gi][S.i - 1]), sB = node(S.v.segs[S.gi][S.i]), tA = node(T.v.segs[T.gi][T.i - 1]), tB = node(T.v.segs[T.gi][T.i]);
+    /* tronçons de départ et d'arrivée : même vitesse que le reste du trajet (la moto est accélérée à la fin, comme le reste) */
     const vitS = mode === 'pied' ? 1.35 : (VITESSE[S.v.highway] || 5), vitT = mode === 'pied' ? 1.35 : (VITESSE[T.v.highway] || 5);
     const LS = dist(S.v.segs[S.gi][S.i - 1], S.v.segs[S.gi][S.i]), LT = dist(T.v.segs[T.gi][T.i - 1], T.v.segs[T.gi][T.i]);
     const owS = mode === 'pied' ? 0 : (S.v.ow[S.gi] || 0), owT = mode === 'pied' ? 0 : (T.v.ow[T.gi] || 0);
@@ -472,7 +486,7 @@ class Referentiel {
     const legs = []; let k = DST;
     while (k !== SRC) { const [u, e] = prev.get(k); legs.unshift({ a: P(u), b: P(k), len: e[1], t: e[2], v: e[3] >= 0 ? this.voies[e[3]] : (u === SRC ? S.v : T.v) }); k = u; }
     const ligne = [[legs[0].a.lat, legs[0].a.lon]].concat(legs.map(l => [l.b.lat, l.b.lon]));
-    const distance = legs.reduce((x, l) => x + l.len, 0), duree = legs.reduce((x, l) => x + l.t, 0);
+    const distance = legs.reduce((x, l) => x + l.len, 0), duree = legs.reduce((x, l) => x + l.t, 0) / acc;
     /* étapes : une par rue, avec le sens du virage */
     const brg = (p, q) => Math.atan2((q.lat - p.lat) * mLat, (q.lon - p.lon) * mLon) * 180 / Math.PI;
     const etapes = []; let cur = null;
