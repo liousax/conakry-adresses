@@ -11,7 +11,7 @@
 }(typeof self !== 'undefined' ? self : this, function () {
 'use strict';
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const ATTRIBUTION = 'Plan d\'adressage provisoire Conakry Adresses · rues © contributeurs OpenStreetMap (ODbL)';
 /* mêmes constantes que le plan de Kaloum : les numéros y sont identiques */
 const STEP = 10, R = 6371000, mLat = 111320, mLon = 111320 * Math.cos(9.51 * Math.PI / 180);
@@ -189,6 +189,15 @@ const VITESSE = { trunk: 8.3, primary: 8.3, secondary: 6.9, tertiary: 6.0, resid
 const STATUTS = { officiel: 'nom officiel', propose: 'nom proposé', usage: 'nom d\'usage', a_nommer: 'rue à nommer', provisoire: 'code provisoire' };
 const statutTexte = v => v.statut === 'propose' && v.commune === 'KAL' ? 'nom proposé (plan de Kaloum)' : v.statut === 'a_nommer' && v.commune === 'KAL' ? 'rue à nommer (plan de Kaloum)' : STATUTS[v.statut] || '';
 const CN = ['est', 'nord-est', 'nord', 'nord-ouest', 'ouest', 'sud-ouest', 'sud', 'sud-est'];
+/* temps en plus sur la partie [a, b] d'un tronçon (fraction de son temps normal), d'après les parties ralenties [{ t0, t1, f }] :
+   là où deux signalements se recouvrent, le plus fort compte (deux signalements du même embouteillage ne se cumulent pas) */
+function surcout(l, a, b) {
+  if (!(b > a)) return 0;
+  const p = [a, b]; for (const x of l) { if (x.t0 > a && x.t0 < b) p.push(x.t0); if (x.t1 > a && x.t1 < b) p.push(x.t1); }
+  p.sort((x, y) => x - y); let s = 0;
+  for (let k = 1; k < p.length; k++) { const m = (p[k - 1] + p[k]) / 2; let f = 1; for (const x of l) if (x.t0 <= m && m <= x.t1 && x.f > f) f = x.f; s += (p[k] - p[k - 1]) * (f - 1); }
+  return s;
+}
 const vers = (dx, dy) => { const c = CN[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8]; return 'vers ' + (c[0] === 'e' || c[0] === 'o' ? 'l\'' : 'le ') + c; };
 
 /* ---------------------------------------------------------------------
@@ -214,10 +223,12 @@ class Referentiel {
     this.zones.forEach(z => { z.aire = z.rings.reduce((a, r) => a + ringArea(r), 0); z.idx = z.rings.map(ringIndex); z.qs = this.quartiers.filter(q => z.communes.indexOf(q.commune) >= 0); });
     this.voies = voies.voies.map((v, k) => ({
       k, code: v.c, nom: v.n, nomUsuel: v.a || null, statut: v.st, dedicace: v.b || null, personnalite: v.p || null, highway: CLASSES[v.h] || 'residential', commune: v.k,
-      cps: v.q || [], fixed: v.d ? [v.d[0], v.d[1]] : null, maxRef: v.m || null, lien: !!v.x,
+      cps: v.q || [], fixed: v.d ? [v.d[0], v.d[1]] : null, maxRef: v.m || null, lien: !!v.x, anciensCodes: Array.isArray(v.ac) ? v.ac : [],
       segs: v.g.map(decodeLine), ow: v.o || v.g.map(() => 0)
     }));
     this.voieParCode = {}; this.voies.forEach(v => { this.voieParCode[v.code] = v; });
+    /* anciens codes d'une rue renommée (règles de nommage du 15 novembre 2026) : un identifiant déjà partagé ouvre toujours la même adresse */
+    this.voieParAncienCode = {}; this.voies.forEach(v => { for (const c of v.anciensCodes) if (!this.voieParCode[c]) this.voieParAncienCode[c] = v; });
     this._grid = null; this._graph = {}; this._search = null;
   }
   get bbox() { let a = Infinity, b = -Infinity, c = Infinity, d = -Infinity; this.voies.forEach(v => v.segs.forEach(g => g.forEach(p => { a = Math.min(a, p.lon); b = Math.max(b, p.lon); c = Math.min(c, p.lat); d = Math.max(d, p.lat); }))); return [a, c, b, d]; }
@@ -244,7 +255,7 @@ class Referentiel {
         const v = this.voies[E[e]]; if (filter && !filter(v)) continue;
         const g = v.segs[E[e + 1]], i = E[e + 2], ax = g[i - 1].lon * mLon, ay = g[i - 1].lat * mLat, vx = g[i].lon * mLon - ax, vy = g[i].lat * mLat - ay, L2 = vx * vx + vy * vy; if (!L2) continue;
         const t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / L2)), d = Math.hypot(px - ax - t * vx, py - ay - t * vy);
-        if (d <= maxM && (!best || d < best.d)) best = { d, v, gi: E[e + 1], i, t, p: { lat: (ay + t * vy) / mLat, lon: (ax + t * vx) / mLon } };
+        if (d <= maxM && (!best || d < best.d)) best = { d, v, vi: E[e], gi: E[e + 1], i, t, p: { lat: (ay + t * vy) / mLat, lon: (ax + t * vx) / mLon } };
       }
     }
     return best;
@@ -310,13 +321,16 @@ class Referentiel {
   position(id, opts) {
     const brut = String(id || '').slice(0, 80).trim().toUpperCase(), m = brut.match(/^GN-(\d{5})-([A-Z0-9]+)-(\d{1,5})$/); if (!m) return null;
     if (this._centainesCp.size && !this._centainesCp.has(m[1].slice(0, 3))) return null;
-    const v = this.voieParCode[m[2]]; if (!v) return null;
+    const ancien = !this.voieParCode[m[2]] && this.voieParAncienCode[m[2]];
+    const v = this.voieParCode[m[2]] || ancien; if (!v) return null;
     this._chain(v); const a = this._adresseVoie(v, +m[3]);
     a.limite = +m[3] > v.maxNo ? v.maxNo : null;
-    if (a.id !== brut) { a.corrige = true; a.idDemande = brut; if (opts && opts.strict) return null; }
+    /* ancien identifiant de la même adresse (rue renommée) : accepté, avec l'identifiant actuel */
+    if (ancien && a.id === brut.replace('-' + m[2] + '-', '-' + v.code + '-')) a.ancienId = brut;
+    else if (a.id !== brut) { a.corrige = true; a.idDemande = brut; if (opts && opts.strict) return null; }
     return a;
   }
-  voie(code) { const v = this.voieParCode[String(code || '').toUpperCase()]; if (!v) return null; this._chain(v); return { code: v.code, nom: v.nom, nomUsuel: v.nomUsuel, statut: v.statut, statutTexte: statutTexte(v), dedicace: v.dedicace, commune: v.commune, codesPostaux: v.cps, longueur: Math.round(v.total), numeroMax: v.maxNo, segments: v.segs.map(g => g.map(p => [p.lat, p.lon])) }; }
+  voie(code) { const k = String(code || '').toUpperCase(), v = this.voieParCode[k] || this.voieParAncienCode[k]; if (!v) return null; this._chain(v); return { code: v.code, nom: v.nom, nomUsuel: v.nomUsuel, statut: v.statut, statutTexte: statutTexte(v), dedicace: v.dedicace, commune: v.commune, codesPostaux: v.cps, longueur: Math.round(v.total), numeroMax: v.maxNo, segments: v.segs.map(g => g.map(p => [p.lat, p.lon])) }; }
   /* numéros visibles dans un rectangle (pour les afficher sur une carte) */
   numerosDans(s, w, n, e, max) {
     max = max || 1500; const out = [], seen = new Set(), { C, grid, E } = this._idx();
@@ -449,6 +463,58 @@ class Referentiel {
     }
     return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : 8.3 };
   }
+  /* zones signalées [{ lat, lng, r (m), facteur }] → effets sur le réseau G, d'après la géométrie des tronçons (pas seulement leurs sommets) :
+     - passage fermé (facteur Infinity : route coupée, inondée) : la coupure est sur la ou les rues les plus proches du signalement
+       (à moins de r m, et pas plus de 15 m plus loin que la plus proche), au point de chacune le plus proche du signalement.
+       Un tronçon qui contient une coupure n'est plus franchissable, ni en entier ni en partie (bouts de départ et d'arrivée compris) ;
+       une coupure sur un sommet (carrefour, coude de la rue) ferme ce sommet. Un trajet peut partir ou arriver du bon côté d'une coupure ;
+     - ralentissement (facteur > 1 : embouteillage, travaux) : la partie de chaque tronçon située dans le cercle prend facteur fois plus de temps. */
+  _zones(G, eviter, okV) {
+    const { C, grid, E } = this._idx(), coupes = new Map(), lents = new Map(), bloques = new Set(), voies = new Set(), zl = [];
+    const ajoute = (m, k, x) => { const l = m.get(k); if (l) l.push(x); else m.set(k, [x]); };
+    /* partie [t0, t1] d'un tronçon A→B (en mètres, vecteur v) située à moins de r du point p */
+    const dedans = (ax, ay, vx, vy, L2, px, py, r) => { const L = Math.sqrt(L2), tp = ((px - ax) * vx + (py - ay) * vy) / L2, dp = Math.abs((px - ax) * vy - (py - ay) * vx) / L;
+      if (dp > r) return null; const hh = Math.sqrt(r * r - dp * dp) / L, t0 = Math.max(0, tp - hh), t1 = Math.min(1, tp + hh); return t1 > t0 ? [t0, t1] : null; };
+    for (const z of eviter.slice(0, 200)) {
+      if (!z || !isFinite(z.lat) || !isFinite(z.lng)) continue;
+      const r = Math.min(Math.max(+z.r || 50, 5), 2000), f = z.facteur === Infinity || z.facteur === 'bloque' ? Infinity : Math.min(Math.max(+z.facteur || 1, 1), 20);
+      if (f === 1) continue;
+      const px = +z.lng * mLon, py = +z.lat * mLat, cx = Math.floor(+z.lng / C), cy = Math.floor(+z.lat / C), n = Math.ceil(r / 100) + 1;
+      if (f !== Infinity) zl.push({ px, py, r, f });
+      const vu = new Set(), chaines = new Map();
+      for (let x = cx - n; x <= cx + n; x++) for (let y = cy - n; y <= cy + n; y++) {
+        const l = grid.get(x * 1e6 + y); if (!l) continue;
+        for (const e of l) {
+          if (vu.has(e)) continue; vu.add(e);
+          const vi = E[e], v = this.voies[vi]; if (!okV(v)) continue;
+          const gi = E[e + 1], i = E[e + 2], g = v.segs[gi];
+          const ax = g[i - 1].lon * mLon, ay = g[i - 1].lat * mLat, vx = g[i].lon * mLon - ax, vy = g[i].lat * mLat - ay, L2 = vx * vx + vy * vy; if (!L2) continue;
+          if (f === Infinity) {
+            /* même calcul que _nearest : un départ pris au point du signalement tombe exactement sur la coupure */
+            const t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / L2)), d = Math.hypot(px - ax - t * vx, py - ay - t * vy);
+            if (d > r) continue;
+            const k = vi + '/' + gi, b = chaines.get(k); if (!b || d < b.d) chaines.set(k, { vi, gi, i, t, d, n: g.length });
+          } else { const iv = dedans(ax, ay, vx, vy, L2, px, py, r); if (iv) { ajoute(lents, vi + '/' + gi + '/' + i, { t0: iv[0], t1: iv[1], f }); voies.add(vi); } }
+        }
+      }
+      if (!chaines.size) continue;
+      const l = [...chaines.values()], lim = Math.min(r, Math.min(...l.map(x => x.d)) + 15);
+      /* rue dont le point le plus proche est un de ses bouts : elle finit près du signalement sans y passer */
+      const bout = x => (x.i === 1 && x.t === 0) || (x.i === x.n - 1 && x.t === 1);
+      const sommet = x => { const k = this._idNode(G, this.voies[x.vi].segs[x.gi][x.t === 0 ? x.i - 1 : x.i]); if (k !== undefined) bloques.add(k); };
+      const pres = l.filter(x => x.d <= lim), passent = pres.filter(x => !bout(x));
+      if (passent.length) { for (const x of passent) if (x.t > 0 && x.t < 1) { ajoute(coupes, x.vi + '/' + x.gi + '/' + x.i, x.t); voies.add(x.vi); } else sommet(x); }
+      else sommet(pres.reduce((x, y) => y.d < x.d ? y : x));                 /* au carrefour même, ou au bout d'une impasse */
+    }
+    if (!coupes.size && !lents.size && !bloques.size && !zl.length) return null;
+    /* raccords (quelques mètres entre deux bouts de rue) : ralentis selon leur trajet en ligne droite */
+    const raccord = (p, q) => { const ax = p.lon * mLon, ay = p.lat * mLat, vx = q.lon * mLon - ax, vy = q.lat * mLat - ay, L2 = vx * vx + vy * vy; if (!L2) return 0;
+      const iv = []; for (const z of zl) { const x = dedans(ax, ay, vx, vy, L2, z.px, z.py, z.r); if (x) iv.push({ t0: x[0], t1: x[1], f: z.f }); } return iv.length ? surcout(iv, 0, 1) : 0; };
+    return { coupes, lents, bloques, voies, zl, raccord };
+  }
+  /* opts.eviter : zones signalées [{ lat, lng, r (m), facteur }] — facteur Infinity : passage fermé (route coupée, inondée) ;
+     facteur > 1 : la traversée prend ce multiple du temps (embouteillage, travaux), et la durée annoncée en tient compte.
+     Renvoie null s'il n'existe aucun chemin (par exemple quand les coupures signalées ferment tous les passages). */
   itineraire(de, a, opts) {
     opts = opts || {}; const mode = ({ voiture: 'voiture', car: 'voiture', moto: 'moto', pied: 'pied', walk: 'pied' })[opts.mode || 'voiture'] || 'voiture';
     /* la moto prend les mêmes rues et les mêmes sens que la voiture, 1,2 fois plus vite partout : même chemin, durée ÷ 1,2.
@@ -466,12 +532,20 @@ class Referentiel {
     const LS = dist(S.v.segs[S.gi][S.i - 1], S.v.segs[S.gi][S.i]), LT = dist(T.v.segs[T.gi][T.i - 1], T.v.segs[T.gi][T.i]);
     const owS = mode === 'pied' ? 0 : (S.v.ow[S.gi] || 0), owT = mode === 'pied' ? 0 : (T.v.ow[T.gi] || 0);
     const N = G.pts.length, SRC = N, DST = N + 1;
+    /* zones signalées (route coupée ou inondée, embouteillage…) : contrôlées sur la géométrie des tronçons parcourus (voir _zones) */
+    const Z = Array.isArray(opts.eviter) && opts.eviter.length ? this._zones(G, opts.eviter, okV) : null;
+    const detour = opts._detour instanceof Map && opts._detour.size ? opts._detour : null;      /* recherche d'un itinéraire bis seulement */
+    /* bouts de départ et d'arrivée : [nœud, longueur, temps, -1, tronçon, de, à], « de » et « à » étant la partie du tronçon parcourue (0 à 1) */
+    const kS = S.vi + '/' + S.gi + '/' + S.i, kT = T.vi + '/' + T.gi + '/' + T.i;
     const extra = new Map(); const push = (k, e) => { if (!extra.has(k)) extra.set(k, []); extra.get(k).push(e); };
-    if (owS >= 0) push(SRC, [sB, (1 - S.t) * LS, (1 - S.t) * LS / vitS, -1]);
-    if (owS <= 0) push(SRC, [sA, S.t * LS, S.t * LS / vitS, -1]);
-    if (owT >= 0) push(tA, [DST, T.t * LT, T.t * LT / vitT, -1]);
-    if (owT <= 0) push(tB, [DST, (1 - T.t) * LT, (1 - T.t) * LT / vitT, -1]);
-    if (S.v === T.v && S.gi === T.gi && S.i === T.i && ((owS >= 0 && T.t >= S.t) || (owS <= 0 && T.t <= S.t))) push(SRC, [DST, Math.abs(T.t - S.t) * LS, Math.abs(T.t - S.t) * LS / vitS, -1]);
+    if (owS >= 0) push(SRC, [sB, (1 - S.t) * LS, (1 - S.t) * LS / vitS, -1, kS, S.t, 1]);
+    if (owS <= 0) push(SRC, [sA, S.t * LS, S.t * LS / vitS, -1, kS, 0, S.t]);
+    if (owT >= 0) push(tA, [DST, T.t * LT, T.t * LT / vitT, -1, kT, 0, T.t]);
+    if (owT <= 0) push(tB, [DST, (1 - T.t) * LT, (1 - T.t) * LT / vitT, -1, kT, T.t, 1]);
+    /* départ et arrivée sur le même tronçon : directement, dans le sens permis ; à contresens d'un sens unique, seulement si
+       l'arrivée est à 15 m au plus derrière le départ (on est devant la porte : pas de tour du pâté de maisons pour quelques mètres) */
+    if (S.vi === T.vi && S.gi === T.gi && S.i === T.i && ((owS >= 0 && T.t >= S.t) || (owS <= 0 && T.t <= S.t) || Math.abs(T.t - S.t) * LS <= 15))
+      push(SRC, [DST, Math.abs(T.t - S.t) * LS, Math.abs(T.t - S.t) * LS / vitS, -1, kS, Math.min(S.t, T.t), Math.max(S.t, T.t)]);
     const P = k => k === SRC ? S.p : k === DST ? T.p : G.pts[k];
     const h = k => dist(P(k), T.p) / G.vmax;
     const g = new Map([[SRC, 0]]), prev = new Map(), heap = [[h(SRC), SRC]], done = new Set();
@@ -480,11 +554,28 @@ class Referentiel {
     while (heap.length) {
       const [, u] = hpop(); if (done.has(u)) continue; done.add(u); if (u === DST) break;
       const gu = g.get(u), list = u < N ? G.adj[u] : []; const ex = extra.get(u);
-      for (const e of ex ? list.concat(ex) : list) { const nd = gu + e[2]; if (nd < (g.has(e[0]) ? g.get(e[0]) : Infinity)) { g.set(e[0], nd); prev.set(e[0], [u, e]); hpush([nd + (e[0] === DST ? 0 : h(e[0])), e[0]]); } }
+      for (const e of ex ? list.concat(ex) : list) {
+        let c = e[2];
+        if (Z) {
+          if (Z.bloques.has(e[0])) continue;                                   /* carrefour fermé */
+          if (e[3] >= 0) {
+            if (e[4] >= 0) {
+              if (Z.voies.has(e[3])) { const k = e[3] + '/' + e[4] + '/' + (e[5] < 0 ? -e[5] : e[5]); if (Z.coupes.has(k)) continue; const s = Z.lents.get(k); if (s) c += e[2] * surcout(s, 0, 1); }
+            } else if (Z.zl.length) c += e[2] * Z.raccord(G.pts[u], G.pts[e[0]]);
+          } else {
+            /* bout de départ ou d'arrivée : fermé si une coupure est entre le point et le sommet (pas si l'on part ou arrive juste à la coupure) */
+            const cp = Z.coupes.get(e[4]); if (cp && cp.some(x => x > e[5] && x < e[6])) continue;
+            const s = Z.lents.get(e[4]); if (s && e[6] > e[5]) c += e[2] / (e[6] - e[5]) * surcout(s, e[5], e[6]);
+          }
+        }
+        const cout = detour && detour.has(e[0]) ? c * detour.get(e[0]) : c;
+        const nd = gu + cout; if (nd < (g.has(e[0]) ? g.get(e[0]) : Infinity)) { g.set(e[0], nd); prev.set(e[0], [u, e, c]); hpush([nd + (e[0] === DST ? 0 : h(e[0])), e[0]]); }
+      }
     }
+    /* aucun passage en dehors des coupures (ou aucune rue praticable) : pas de chemin */
     if (!prev.has(DST)) return null;
     const legs = []; let k = DST;
-    while (k !== SRC) { const [u, e] = prev.get(k); legs.unshift({ a: P(u), b: P(k), len: e[1], t: e[2], v: e[3] >= 0 ? this.voies[e[3]] : (u === SRC ? S.v : T.v) }); k = u; }
+    while (k !== SRC) { const [u, e, c] = prev.get(k); legs.unshift({ a: P(u), b: P(k), len: e[1], t: c, t0: e[2], v: e[3] >= 0 ? this.voies[e[3]] : (u === SRC ? S.v : T.v) }); k = u; }
     const ligne = [[legs[0].a.lat, legs[0].a.lon]].concat(legs.map(l => [l.b.lat, l.b.lon]));
     const distance = legs.reduce((x, l) => x + l.len, 0), duree = legs.reduce((x, l) => x + l.t, 0) / acc;
     /* étapes : une par rue, avec le sens du virage */
@@ -498,13 +589,35 @@ class Referentiel {
       cur = { v: l.v, len: l.len, turn, b, last: b, at: l.a }; etapes.push(cur);
     }
     const TXT = { gauche: 'Tournez à gauche sur ', droite: 'Tournez à droite sur ', 'legerement-gauche': 'Prenez légèrement à gauche sur ', 'legerement-droite': 'Prenez légèrement à droite sur ', 'tout-droit': 'Continuez tout droit sur ', 'demi-tour': 'Faites demi-tour sur ' };
+    /* « via » : les deux plus longues rues du trajet (200 m au moins), dans l'ordre du trajet */
+    const parRue = new Map(); etapes.forEach((s, i) => { const o = parRue.get(s.v.nom); if (o) o.len += s.len; else parRue.set(s.v.nom, { nom: s.v.nom, len: s.len, i }); });
+    const via = [...parRue.values()].filter(x => x.len >= 200).sort((x, y) => y.len - x.len).slice(0, 2).sort((x, y) => x.i - y.i).map(x => x.nom);
+    /* temps perdu : le surcoût des ralentissements signalés, pas la durée entière des tronçons concernés */
+    const retard = legs.reduce((x, l) => x + Math.max(0, l.t - l.t0), 0) / acc;
     return {
-      mode, distance: Math.round(distance), duree: Math.round(duree), ligne,
+      mode, distance: Math.round(distance), duree: Math.round(duree), ligne, via, ralenti: Math.round(retard),
       etapes: etapes.map(s => ({ manoeuvre: s.turn, voie: s.v.code, nom: s.v.nom, distance: Math.round(s.len), position: { lat: s.at.lat, lng: s.at.lon },
         instruction: s.turn === 'depart' ? 'Partez ' + vers(Math.cos(s.b * Math.PI / 180), Math.sin(s.b * Math.PI / 180)) + ' sur ' + s.v.nom : TXT[s.turn] + s.v.nom }))
     };
   }
   _idNode(G, p) { return G.ids.get(NK(p)); }
+  /* le meilleur trajet, et un itinéraire bis s'il est assez différent (moins des trois quarts en commun) et pas beaucoup plus long */
+  itineraires(de, a, opts) {
+    opts = opts || {};
+    const p = this.itineraire(de, a, opts); if (!p) return [];
+    const reseau = p.mode === 'moto' ? 'voiture' : p.mode, G = this._graph[reseau], deja = new Map();
+    for (const q of p.ligne) { const k = G.ids.get(q[0].toFixed(6) + ',' + q[1].toFixed(6)); if (k !== undefined) deja.set(k, 2.4); }
+    const b = this.itineraire(de, a, Object.assign({}, opts, { _detour: deja }));
+    if (!b) return [p];
+    /* longueur en commun avec le premier trajet (les bouts raccrochés au départ et à l'arrivée sont communs aux deux) */
+    let commun = 0, tout = 0;
+    const cle = q => G.ids.get(q[0].toFixed(6) + ',' + q[1].toFixed(6)), pris = k => k === undefined || deja.has(k);
+    for (let i = 1; i < b.ligne.length; i++) {
+      const q0 = b.ligne[i - 1], q1 = b.ligne[i], L = dist({ lat: q0[0], lon: q0[1] }, { lat: q1[0], lon: q1[1] });
+      tout += L; if (pris(cle(q0)) && pris(cle(q1))) commun += L;
+    }
+    return tout > 0 && commun / tout < 0.75 && b.duree <= p.duree * 1.45 + 90 ? [p, b] : [p];
+  }
 }
 
 /* ---------------------------------------------------------------------

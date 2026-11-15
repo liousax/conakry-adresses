@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Itina Geo",
+  "short_name": "Itina Geo",
+  "description": "La carte d'adressage de Conakry et des villes de Guinée : l'adresse de chaque porte, la recherche, les itinéraires, le guidage pas à pas et les signalements de la route, même sans internet.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d3a28",
+  "theme_color": "#12a05c",
+  "categories": ["navigation", "travel", "utilities"],
+  "icons": [
+    { "src": "geo-icone.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "geo-icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "geo-icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "geo-icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

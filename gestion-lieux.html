@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-YaV7eaLQzouK6s8o4//Rhal2Ng2OTK1zh0KW0j6Cpv4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Itina Geo · Lieux (équipe)</title>
+<link rel="icon" href="geo-icone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="lib/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+<script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
+<style>
+:root{--font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--accent:#12a05c}
+html,body{height:100%}body{margin:0;font-family:var(--font);background:var(--bg);color:var(--fg)}
+.g-tete{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+.g-tete img{width:34px;height:34px}.g-tete b{font-size:17px}.g-tete .esp{flex:1}
+.g-tete select{width:auto;min-height:40px}
+.g-compte{font-size:13.5px;color:var(--muted)}
+.g-main{display:grid;grid-template-columns:minmax(360px,520px) 1fr;height:calc(100% - 61px)}
+.g-cote{overflow:auto;padding:14px 16px 40px;border-right:1px solid var(--line);background:var(--panel)}
+.g-carte{position:relative}#map{position:absolute;inset:0;background:#efe9dd}
+@media (max-width:860px){.g-main{grid-template-columns:1fr;grid-template-rows:42vh auto;height:auto}.g-carte{order:-1;min-height:42vh}.g-cote{border-right:0}}
+.g-boite{border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 14px;background:var(--panel)}
+.g-boite h2{font-size:17px;margin:0 0 6px}.g-boite p{margin:6px 0;font-size:14px;line-height:1.45}
+.g-boite code{word-break:break-all}
+.g-form{display:grid;gap:8px}.g-form label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.g-onglets{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.g-onglets button{border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:7px 12px;font:600 13.5px var(--font);cursor:pointer}
+.g-onglets button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.g-onglets b{font-variant-numeric:tabular-nums}
+.g-fiche{border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 10px}
+.g-fiche.vue{outline:2px solid var(--accent)}
+.g-fiche header{display:flex;align-items:center;gap:10px}.g-fiche header b{font-size:15.5px;flex:1;min-width:0}
+.g-fiche p{margin:6px 0 0;font-size:13.5px;color:var(--muted);line-height:1.4;overflow-wrap:anywhere}
+.g-fiche .prive{color:#92400e}
+.g-act{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.g-act .btn{min-height:36px;padding:6px 11px;font-size:13px}
+.btn.vert{background:var(--accent);border-color:var(--accent);color:#fff}.btn.rouge{color:#b91c1c;border-color:#fecaca}
+.cat-r{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.cat-r svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.badge{font:700 11px var(--font);padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.badge.ok{background:#dcfce7;color:#166534}.badge.att{background:#fef3c7;color:#92400e}.badge.non{background:#fee2e2;color:#991b1b}
+.diff{font-size:13px;margin-top:8px;border-collapse:collapse;width:100%}.diff td{padding:4px 6px;border-top:1px solid var(--line);vertical-align:top}.diff td:first-child{color:var(--muted);white-space:nowrap}
+.diff del{color:#b91c1c}.diff ins{color:#166534;text-decoration:none;font-weight:600}
+.g-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px}
+.g-stats span{display:flex;align-items:center;gap:6px;font-size:13px}
+.g-msg{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;z-index:10;max-width:calc(100% - 32px)}
+.g-vide{color:var(--muted);font-size:14px;padding:10px 2px}
+.mk{width:26px;height:26px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4);display:grid;place-items:center;color:#fff;cursor:pointer}
+.mk svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.mk.att{opacity:.75;border-style:dashed}
+.g-motif{display:flex;gap:6px;margin-top:8px}.g-motif input{flex:1}
+.g-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.g-ph{position:relative;width:118px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}
+.g-ph a{display:block;height:88px}.g-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.g-ph .g-pa{display:flex;gap:4px;padding:4px}.g-ph .g-pa .btn{flex:1;min-height:30px;padding:2px 4px;font-size:12px}
+.g-ph .badge{position:absolute;top:4px;left:4px}
+progress{width:100%}
+</style>
+</head>
+<body>
+<header class="g-tete"><img src="geo-icone.svg" alt=""><b>Itina Geo · Lieux</b><span class="g-compte">équipe</span><span class="esp"></span>
+  <select id="ville" aria-label="Ville"></select><span class="g-compte" id="compte"></span><button class="btn" type="button" id="deco" hidden>Se déconnecter</button></header>
+<main class="g-main">
+  <section class="g-cote">
+    <div class="g-boite" id="config" hidden></div>
+    <form class="g-boite g-form" id="connexion" hidden autocomplete="on"><h2>Connexion de l'équipe</h2>
+      <p>Avec le compte créé dans Supabase (Authentication → Users) et inscrit dans <code>ITINA_LIEUX_ADMINS</code>.</p>
+      <label>Adresse e-mail<input id="email" type="email" autocomplete="username" required></label>
+      <label>Mot de passe<input id="mdp" type="password" autocomplete="current-password" required></label>
+      <button class="btn vert" type="submit">Se connecter</button><p class="g-vide" id="connErr"></p></form>
+    <nav class="g-onglets" id="onglets" role="tablist"></nav>
+    <div id="liste"></div>
+  </section>
+  <section class="g-carte"><div id="map" role="application" aria-label="Carte des lieux"></div></section>
+</main>
+<div class="g-msg" id="msg" hidden role="status"></div>
+<script src="lib/maplibre-gl.js"></script>
+<script src="sdk/conakry-adresses.js"></script>
+<script src="sdk/lieux.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id),GL=window.GeoLieux,CA=window.ConakryAdresses;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let msgT;const msg=m=>{const x=$('msg');x.textContent=m;x.hidden=false;clearTimeout(msgT);msgT=setTimeout(()=>{x.hidden=true},4000)};
+const VILLES={conakry:{nom:'Conakry',dossier:'data/'},boke:{nom:'Boké',dossier:'data/boke/'},faranah:{nom:'Faranah',dossier:'data/faranah/'},kankan:{nom:'Kankan',dossier:'data/kankan/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
+let VILLE=new URLSearchParams(location.search).get('ville');if(!Object.prototype.hasOwnProperty.call(VILLES,VILLE))VILLE='conakry';
+const VI=VILLES[VILLE];
+const lireS=k=>{try{return JSON.parse(sessionStorage.getItem(k)||'null')}catch(e){return null}},ecrireS=(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const lireL=k=>{try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}},ecrireL=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}};
+let CFG=null,SESSION=lireS('itina-geo-equipe'),ref=null,DONNEES=null,PUBLIC=null,STATIQUE=null,onglet='attente',map=null,marques=[],vu=null;
+const OSM_CLE='itina-geo-osm-'+VILLE;let OSM=lireL(OSM_CLE);
+const svgCat=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${(GL.CATEGORIES[k]||GL.CATEGORIES.autre).ic}</svg>`;
+const rond=k=>`<span class="cat-r" style="background:${GL.couleur(k)}">${svgCat(k)}</span>`;
+const date=t=>t?new Date(t).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'';
+
+/* ---------- réglages du service : data/connect.json ---------- */
+async function lireConfig(){
+  try{const r=await fetch('data/connect.json',{cache:'no-cache'});if(!r.ok)return null;const j=await r.json();
+    const l=j&&typeof j.lieux==='string'?j.lieux.trim().replace(/\/+$/,''):'',s=j&&typeof j.supabase==='string'?j.supabase.trim().replace(/\/+$/,''):'',k=j&&typeof j.clePublique==='string'?j.clePublique.trim():'';
+    if(!/^https:\/\/[a-z0-9-]{3,40}\.supabase\.co\/functions\/v1\/lieux$/.test(l))return null;
+    return{lieux:l,supabase:/^https:\/\/[a-z0-9-]{3,40}\.supabase\.co$/.test(s)?s:null,clePublique:/^[A-Za-z0-9._-]{20,400}$/.test(k)?k:null}}catch(e){return null}
+}
+function montrerConfig(){
+  const c=$('config');c.hidden=false;
+  c.innerHTML=!CFG?`<h2>Service des lieux pas encore branché</h2><p>Les fiches envoyées depuis la carte arrivent dans Itina Geo Connect (fonction « lieux »). Une fois la fonction déployée, déposez sur le site le fichier <code>data/connect.json</code> :</p>
+    <pre><code>{ "lieux": "https://&lt;projet&gt;.supabase.co/functions/v1/lieux",
+  "supabase": "https://&lt;projet&gt;.supabase.co",
+  "clePublique": "&lt;clé publique (anon) du projet&gt;" }</code></pre><p>En attendant, les onglets OpenStreetMap et Fichier marchent déjà.</p>`
+    :`<h2>Connexion impossible</h2><p>Ajoutez <code>supabase</code> et <code>clePublique</code> (la clé publique, jamais la clé d'administration) dans <code>data/connect.json</code>.</p>`;
+}
+
+/* ---------- connexion de l'équipe (Supabase Auth) ---------- */
+async function auth(corps,type){
+  const r=await fetch(CFG.supabase+'/auth/v1/token?grant_type='+type,{method:'POST',headers:{apikey:CFG.clePublique,'content-type':'application/json'},body:JSON.stringify(corps)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error_description||j.msg||j.message||'Connexion refusée');
+  SESSION={jeton:j.access_token,renouv:j.refresh_token,fin:Date.now()+(+j.expires_in||3600)*1000,email:j.user&&j.user.email||''};ecrireS('itina-geo-equipe',SESSION);
+}
+async function jeton(){
+  if(!SESSION)throw new Error('Connectez-vous.');
+  if(Date.now()>SESSION.fin-60000){try{await auth({refresh_token:SESSION.renouv},'refresh_token')}catch(e){deconnecter();throw new Error('Session expirée : reconnectez-vous.')}}
+  return SESSION.jeton;
+}
+function deconnecter(){SESSION=null;ecrireS('itina-geo-equipe',null);DONNEES=null;majCompte();rendre()}
+function majCompte(){$('compte').textContent=SESSION?SESSION.email:'';$('deco').hidden=!SESSION;$('connexion').hidden=!!SESSION||!CFG||!CFG.supabase||!CFG.clePublique}
+$('connexion').onsubmit=async e=>{e.preventDefault();$('connErr').textContent='';
+  try{await auth({email:$('email').value.trim(),password:$('mdp').value},'password');$('mdp').value='';majCompte();onglet='attente';await charger()}catch(x){$('connErr').textContent=x.message}};
+$('deco').onclick=deconnecter;
+async function equipe(route,corps){
+  const r=await fetch(CFG.lieux+'/v1/equipe/'+route,{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+await jeton()},body:JSON.stringify(corps)});
+  const j=await r.json().catch(()=>null);
+  if(r.status===401){deconnecter();throw new Error('Session expirée : reconnectez-vous.')}
+  if(!r.ok)throw new Error(j&&j.erreur?j.erreur.message:'Erreur '+r.status);
+  return j;
+}
+async function charger(){
+  if(!SESSION||!CFG)return;
+  try{DONNEES=await equipe('liste',{ville:VILLE})}catch(e){msg(e.message);DONNEES=null}
+  rendre();
+}
+
+/* ---------- listes ---------- */
+const ONGLETS=[['attente','À vérifier'],['photos','Photos'],['modifs','Modifications'],['retours','Signalements'],['publies','Publiés'],['archives','Refusés, retirés'],['osm','OpenStreetMap'],['fichier','Fichier lieux.json']];
+function compte(k){
+  if(k==='osm')return OSM&&OSM.lieux?OSM.lieux.length:0;if(k==='fichier')return null;if(!DONNEES)return null;
+  if(k==='retours')return DONNEES.retours.length;const l=DONNEES.lieux;
+  if(k==='photos')return l.filter(x=>x.statut==='publie'&&x.photosAttente&&x.photosAttente.length).reduce((n,x)=>n+x.photosAttente.length,0);
+  return k==='attente'?l.filter(x=>x.statut==='en_attente').length:k==='modifs'?l.filter(x=>x.modif).length:k==='publies'?l.filter(x=>x.statut==='publie').length:l.filter(x=>x.statut==='refuse'||x.statut==='retire').length;
+}
+function onglets(){
+  $('onglets').innerHTML=ONGLETS.filter(([k])=>DONNEES||['osm','fichier'].includes(k)).map(([k,t])=>{const n=compte(k);return `<button type="button" role="tab" data-o="${k}" aria-selected="${onglet===k}">${t}${n!=null?' <b>'+n+'</b>':''}</button>`}).join('');
+  $('onglets').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{onglet=b.dataset.o;rendre()});
+}
+const adresseTxt=l=>{const a=ref&&ref.adresse(l.lat,l.lng);return a?a.ligne1+' · '+a.ligne2:''};
+const resume=l=>{const o=[];if(l.tel)o.push('Tél. '+GL.telTexte(l.tel));if(l.wa&&l.wa!==l.tel)o.push('WhatsApp '+GL.telTexte(l.wa));if(l.web)o.push(l.web);
+  if(l.h24)o.push('24 h/24');else if(l.horaires&&l.horaires.length)o.push(GL.horairesTexte(l).filter(h=>h.texte!=='Fermé').map(h=>h.jour.slice(0,3)+' '+h.texte).join(', '));return o.join(' · ')};
+const STATUTS={en_attente:['att','à vérifier'],publie:['ok','publié'],refuse:['non','refusé'],retire:['non','retiré']};
+/* photos d'une fiche : publiées (retirer) et en attente (publier ou refuser chacune ; celles d'une nouvelle fiche partent avec elle) */
+function photosCarte(l){
+  const pub=l.photos||[],att=l.photosAttente||[];if(!pub.length&&!att.length)return'';
+  const c=(p,st)=>`<div class="g-ph"><a href="${esc(p.url||'#')}" target="_blank" rel="noopener noreferrer"><img src="${esc(p.mini||p.url||'')}" alt="" loading="lazy"></a>${st==='att'?'<span class="badge att">à vérifier</span>':''}<div class="g-pa">${st==='att'
+    ?(l.statut==='publie'?`<button class="btn vert" type="button" data-ph="photo_publier" data-p="${esc(p.id)}">Publier</button>`:'')+`<button class="btn rouge" type="button" data-ph="photo_refuser" data-p="${esc(p.id)}">Refuser</button>`
+    :`<button class="btn rouge" type="button" data-ph="photo_retirer" data-p="${esc(p.id)}">Retirer</button>`}</div></div>`;
+  return `<div class="g-photos">${pub.map(p=>c(p,'pub')).join('')}${att.map(p=>c(p,'att')).join('')}</div>${att.length&&l.statut==='en_attente'?'<p>Les photos à vérifier sont publiées avec la fiche : refusez d\'abord celles qui ne conviennent pas.</p>':''}`;
+}
+function carte(l,boutons,plus){
+  const s=STATUTS[l.statut]||['','?'];
+  return `<article class="g-fiche${vu===l.id?' vue':''}" data-id="${esc(l.id)}"><header>${rond(l.cat)}<b>${esc(l.nom)}</b>${l.verifie?'<span class="badge ok">vérifié</span>':''}<span class="badge ${s[0]}">${s[1]}</span></header>
+    <p>${esc((GL.CATEGORIES[l.cat]||{}).nom||l.cat)} · ${esc(adresseTxt(l))}${l.adr?' · '+esc(l.adr):''}</p>
+    ${resume(l)?`<p>${esc(resume(l))}</p>`:''}${l.desc?`<p>${esc(l.desc)}</p>`:''}
+    ${l.contact?`<p class="prive">Contact privé : ${esc(l.contact)}</p>`:''}${l.motif?`<p>Motif : ${esc(l.motif)}</p>`:''}
+    ${photosCarte(l)}
+    <p>${l.src==='osm'?'OpenStreetMap · ':''}envoyée le ${esc(date(l.cree_le))}${l.maj&&l.maj!==l.cree_le?' · modifiée le '+esc(date(l.maj)):''} · <code>${esc(l.id)}</code></p>${plus||''}
+    <div class="g-act"><button class="btn" type="button" data-voir="${esc(l.id)}">Voir</button>${boutons}</div><div data-motif></div></article>`;
+}
+function diff(l){
+  const m=l.modif||{},champs=[['nom','Nom'],['cat','Catégorie'],['tel','Téléphone'],['wa','WhatsApp'],['web','Site'],['desc','Description'],['h24','24 h/24'],['horaires','Horaires'],['lat','Position'],['contact','Contact']];
+  const v=(k,x)=>x==null||x===''?'—':k==='tel'||k==='wa'?GL.telTexte(x):k==='cat'?(GL.CATEGORIES[x]||{}).nom||x:k==='horaires'?GL.horairesTexte({horaires:x}).filter(h=>h.texte!=='Fermé').map(h=>h.jour.slice(0,3)+' '+h.texte).join(', '):k==='lat'?(+x).toFixed(5)+', '+(+m.lng).toFixed(5):k==='h24'?(x?'oui':'non'):String(x);
+  const rows=champs.filter(([k])=>JSON.stringify(l[k]??null)!==JSON.stringify(m[k]??null)&&!(k==='h24'&&!l[k]&&!m[k])).map(([k,t])=>`<tr><td>${t}</td><td><del>${esc(v(k,l[k]))}</del><br><ins>${esc(v(k,m[k]))}</ins></td></tr>`);
+  return `<table class="diff">${rows.join('')||'<tr><td colspan="2">Aucun changement visible.</td></tr>'}</table><p>Demandée le ${esc(date(l.modif_le))} avec le code du propriétaire.</p>`;
+}
+function rendre(){
+  onglets();
+  const L=$('liste');let html='',pts=[];
+  if(['attente','modifs','retours','publies','archives'].includes(onglet)&&!DONNEES){L.innerHTML=SESSION?'<p class="g-vide">Chargement…</p>':'<p class="g-vide">Connectez-vous pour voir les fiches envoyées depuis la carte.</p>';points([]);return}
+  if(onglet==='attente'){const l=DONNEES.lieux.filter(x=>x.statut==='en_attente');pts=l;
+    html=l.length?l.map(x=>carte(x,`<button class="btn vert" type="button" data-d="publier" data-v="1">Publier · vérifiée</button><button class="btn" type="button" data-d="publier">Publier</button><button class="btn rouge" type="button" data-d="refuser">Refuser</button>`)).join(''):'<p class="g-vide">Aucune fiche à vérifier.</p>'}
+  else if(onglet==='photos'){const l=DONNEES.lieux.filter(x=>x.statut==='publie'&&x.photosAttente&&x.photosAttente.length);pts=l;
+    html=l.length?l.map(x=>carte(x,'')).join(''):'<p class="g-vide">Aucune photo à vérifier sur les fiches publiées.</p>'}
+  else if(onglet==='modifs'){const l=DONNEES.lieux.filter(x=>x.modif);pts=l;
+    html=l.length?l.map(x=>carte(x,`<button class="btn vert" type="button" data-d="appliquer">Appliquer</button><button class="btn rouge" type="button" data-d="rejeter_modif">Rejeter</button>`,diff(x))).join(''):'<p class="g-vide">Aucune modification demandée.</p>'}
+  else if(onglet==='retours'){const T={ferme:'Fermé définitivement',emplacement:'Mauvais emplacement',inexistant:'N\'existe pas',infos:'Informations à corriger',autre:'Autre'};
+    html=DONNEES.retours.length?DONNEES.retours.map(r=>{const l=trouver(r.lieu_id);if(l)pts.push(l);
+      return `<article class="g-fiche" data-retour="${r.id}"><header>${l?rond(l.cat):''}<b>${esc(T[r.type]||r.type)}</b><span class="badge att">${esc(date(r.cree_le))}</span></header><p>${l?esc(l.nom)+' · '+esc(adresseTxt(l)):'Lieu '+esc(r.lieu_id)+' (introuvable ici)'}</p>${r.texte?`<p>« ${esc(r.texte)} »</p>`:''}${r.contact?`<p class="prive">Contact privé : ${esc(r.contact)}</p>`:''}
+        <div class="g-act">${l?`<button class="btn" type="button" data-voir="${esc(l.id)}">Voir le lieu</button><button class="btn rouge" type="button" data-retirer="${esc(l.id)}">Retirer le lieu</button>`:''}<button class="btn" type="button" data-traite="${r.id}">Traité</button></div><div data-motif></div></article>`}).join(''):'<p class="g-vide">Aucun signalement.</p>'}
+  else if(onglet==='publies'){const l=DONNEES.lieux.filter(x=>x.statut==='publie');pts=l;
+    html=l.length?l.map(x=>carte(x,`<button class="btn" type="button" data-d="verifier" data-v="${x.verifie?0:1}">${x.verifie?'Retirer « vérifié »':'Marquer vérifié'}</button><button class="btn rouge" type="button" data-d="retirer">Retirer de la carte</button>`)).join(''):'<p class="g-vide">Aucune fiche publiée.</p>'}
+  else if(onglet==='archives'){const l=DONNEES.lieux.filter(x=>x.statut==='refuse'||x.statut==='retire');pts=l;
+    html=l.length?l.map(x=>carte(x,`<button class="btn" type="button" data-d="publier">Republier</button>`)).join(''):'<p class="g-vide">Rien ici.</p>'}
+  else if(onglet==='osm')html=vueOSM();
+  else html=vueFichier();
+  L.innerHTML=html;lier();
+  if(onglet==='osm')points(OSM&&OSM.lieux||[],true);else if(onglet!=='fichier')points(pts);
+}
+const trouver=id=>DONNEES&&DONNEES.lieux.find(x=>x.id===id)||(OSM&&OSM.lieux||[]).find(x=>x.id===id)||(STATIQUE||[]).find(x=>x.id===id)||null;
+function lier(){
+  const L=$('liste');
+  L.querySelectorAll('[data-voir]').forEach(b=>b.onclick=()=>voir(b.dataset.voir));
+  L.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{const id=b.closest('[data-id]').dataset.id,d=b.dataset.d;
+    if(d==='refuser'||d==='retirer')demanderMotif(b.closest('.g-fiche'),m=>decider(id,d,{motif:m}));
+    else decider(id,d==='verifier'?'verifier':d,b.dataset.v!=null?{verifie:b.dataset.v==='1'}:{})});
+  L.querySelectorAll('[data-ph]').forEach(b=>b.onclick=()=>{const id=b.closest('[data-id]').dataset.id;decider(id,b.dataset.ph,{photo:b.dataset.p})});
+  L.querySelectorAll('[data-retirer]').forEach(b=>b.onclick=()=>{const l=trouver(b.dataset.retirer);demanderMotif(b.closest('.g-fiche'),m=>decider(l.id,'retirer',{motif:m,ville:VILLE,fiche:{nom:l.nom,cat:l.cat,lat:l.lat,lng:l.lng}}))});
+  L.querySelectorAll('[data-traite]').forEach(b=>b.onclick=async()=>{try{await equipe('retour',{id:+b.dataset.traite,traite:true});msg('Signalement traité.');await charger()}catch(e){msg(e.message)}});
+  const o=$('osmCharger');if(o)o.onclick=chargerOSM;const oe=$('osmEffacer');if(oe)oe.onclick=()=>{OSM=null;try{localStorage.removeItem(OSM_CLE)}catch(e){}rendre()};
+  const f=$('fichierFaire');if(f)f.onclick=fabriquer;
+}
+function demanderMotif(fiche,f){
+  const z=fiche.querySelector('[data-motif]');
+  z.innerHTML=`<form class="g-motif"><input placeholder="Motif (montré à l'équipe seulement)" maxlength="300"><button class="btn rouge" type="submit">Confirmer</button></form>`;
+  const fm=z.querySelector('form');fm.querySelector('input').focus();fm.onsubmit=e=>{e.preventDefault();f(fm.querySelector('input').value.trim())};
+}
+async function decider(id,decision,plus){
+  try{await equipe('decider',Object.assign({id,decision},plus||{}));msg({photo_publier:'Photo publiée.',photo_refuser:'Photo refusée et effacée.',photo_retirer:'Photo retirée de la carte.',publier:'Publiée : visible sur la carte.',refuser:'Fiche refusée.',retirer:'Retirée de la carte.',appliquer:'Modification appliquée.',rejeter_modif:'Modification rejetée.',verifier:'Mis à jour.'}[decision]||'Fait.');await charger()}
+  catch(e){msg(e.message)}
+}
+
+/* ---------- OpenStreetMap : les lieux qui ont un nom, dans le cadre de la ville ---------- */
+function vueOSM(){
+  const n=OSM&&OSM.lieux?OSM.lieux.length:0,stats={};
+  for(const l of OSM&&OSM.lieux||[])stats[l.cat]=(stats[l.cat]||0)+1;
+  return `<div class="g-boite"><h2>Lieux d'OpenStreetMap</h2><p>Les établissements qui ont un nom dans OpenStreetMap (boutiques, écoles, hôpitaux, banques, stations-service, mosquées…), dans le cadre de ${esc(VI.nom)}. Ils servent de base au fichier <code>lieux.json</code> ; l'équipe peut ensuite en retirer ou en corriger.</p>
+    ${n?`<p><b>${n.toLocaleString('fr-FR')}</b> lieux chargés le ${esc(date(OSM.date))}.</p><div class="g-stats">${Object.entries(stats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<span>${rond(k)}${esc((GL.CATEGORIES[k]||{}).nom||k)} : ${v}</span>`).join('')}</div>`:'<p>Aucun lieu chargé dans ce navigateur.</p>'}
+    <div class="g-act"><button class="btn vert" type="button" id="osmCharger">${n?'Recharger':'Charger'} depuis OpenStreetMap</button>${n?'<button class="btn" type="button" id="osmEffacer">Effacer</button>':''}</div><div id="osmEtat"></div>
+    <p class="g-vide">Données © contributeurs OpenStreetMap, licence ODbL : la carte l'indique.</p></div>`;
+}
+const ENDPOINTS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+async function chargerOSM(){
+  if(!ref){msg('Le plan de la ville se charge encore.');return}
+  const b=ref.bbox,bb=[b[1],b[0],b[3],b[2]].map(x=>x.toFixed(5)).join(',');
+  const q=`[out:json][timeout:120];(nwr["name"]["amenity"](${bb});nwr["name"]["shop"](${bb});nwr["name"]["office"](${bb});nwr["name"]["healthcare"](${bb});nwr["name"]["tourism"~"^(hotel|guest_house|hostel|motel|apartment)$"](${bb});nwr["name"]["leisure"~"^(stadium|sports_centre|fitness_centre|swimming_pool)$"](${bb});nwr["name"]["craft"="tailor"](${bb});nwr["name"]["aeroway"="aerodrome"](${bb});nwr["name"]["public_transport"="station"](${bb}););out center tags;`;
+  const etat=$('osmEtat');etat.innerHTML='<p>Demande à OpenStreetMap… (jusqu\'à 2 minutes)</p><progress></progress>';$('osmCharger').disabled=true;
+  let j=null,err=null;
+  for(const u of ENDPOINTS){try{const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'data='+encodeURIComponent(q)});if(!r.ok)throw new Error('HTTP '+r.status);j=await r.json();break}catch(e){err=e}}
+  if(!j){etat.innerHTML=`<p>OpenStreetMap ne répond pas (${esc(err&&err.message||'')}) : réessayez dans quelques minutes.</p>`;$('osmCharger').disabled=false;return}
+  const vus=new Set(),lieux=[];
+  for(const e of j.elements||[]){const l=GL.depuisOSM(e);if(!l||vus.has(l.id))continue;
+    if(ref.bbox&&(l.lng<ref.bbox[0]-.01||l.lng>ref.bbox[2]+.01||l.lat<ref.bbox[1]-.01||l.lat>ref.bbox[3]+.01))continue;vus.add(l.id);lieux.push(l)}
+  OSM={date:new Date().toISOString(),lieux};if(!ecrireL(OSM_CLE,OSM))msg('Trop de lieux pour les garder dans ce navigateur : fabriquez le fichier maintenant.');
+  msg(lieux.length+' lieux chargés depuis OpenStreetMap.');rendre();
+}
+
+/* ---------- le fichier lieux.json publié sur le site (hors ligne, sans service) ---------- */
+function vueFichier(){
+  return `<div class="g-boite"><h2>Fichier lieux.json</h2><p>La carte lit ce fichier pour montrer les lieux même sans internet et sans le service. Il réunit les lieux d'OpenStreetMap chargés ici${OSM&&OSM.lieux?' ('+OSM.lieux.length+')':' (aucun : sinon, ceux du fichier déjà publié)'} et les fiches publiées par l'équipe, moins les lieux retirés.</p>
+    <div class="g-act"><button class="btn vert" type="button" id="fichierFaire">Fabriquer lieux.json</button></div><div id="fichierEtat"></div>
+    <p>Déposez-le sur GitHub dans <code>${esc(VI.dossier)}lieux.json</code> (Add file → Upload files, dans le dossier <code>${esc(VI.dossier)}</code>).</p></div>`;
+}
+async function fabriquer(){
+  const etat=$('fichierEtat');etat.innerHTML='<p>Préparation…</p>';
+  let base=OSM&&OSM.lieux?OSM.lieux:null;
+  if(!base){try{const r=await fetch(VI.dossier+'lieux.json',{cache:'no-cache'});base=r.ok?((await r.json()).lieux||[]).filter(x=>x&&x.src==='osm'):[]}catch(e){base=[]}}
+  let service=[],basePh=null;
+  if(CFG){try{const r=await fetch(CFG.lieux+'/v1/lieux?ville='+encodeURIComponent(VILLE),{cache:'no-cache'});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();service=j.lieux||[];basePh=GL.basePhotos(j.photos)}
+    catch(e){etat.innerHTML=`<p>Le service des lieux ne répond pas (${esc(e.message)}) : le fichier n'aurait pas les fiches publiées. Réessayez.</p>`;return}}
+  const garder=['id','src','nom','cat','lat','lng','adr','tel','wa','web','horaires','h24','desc','verifie','photos'];
+  const lieux=GL.fusionner(base,service,[]).map(l=>{const v=GL.valider(l,{equipe:true});if(!v.ok)return null;const o={};for(const k of garder)if(v.lieu[k]!=null)o[k]=v.lieu[k];o.src=o.src||(String(l.id).startsWith('osm-')?'osm':'itina');return o}).filter(Boolean)
+    .sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+  const j={v:1,ville:VILLE,version:new Date().toISOString().slice(0,10),source:'OpenStreetMap (ODbL) et fiches Itina Geo',lieux};
+  if(basePh&&lieux.some(l=>l.photos))j.photos=basePh;
+  const texte=JSON.stringify(j),blob=new Blob([texte],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='lieux.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000);
+  etat.innerHTML=`<p><b>${lieux.length.toLocaleString('fr-FR')}</b> lieux, ${(texte.length/1024).toFixed(0)} Ko : fichier téléchargé.</p>`;
+}
+
+/* ---------- carte ---------- */
+function points(l,beaucoup){
+  if(!map)return;marques.forEach(m=>m.remove());marques=[];
+  const src=map.getSource('osm');
+  if(beaucoup){if(src)src.setData({type:'FeatureCollection',features:l.map(x=>({type:'Feature',properties:{id:x.id,c:GL.couleur(x.cat),n:x.nom},geometry:{type:'Point',coordinates:[x.lng,x.lat]}}))});return}
+  if(src)src.setData({type:'FeatureCollection',features:[]});
+  for(const x of l.slice(0,500)){const e=document.createElement('button');e.type='button';e.className='mk'+(x.statut==='en_attente'?' att':'');e.style.background=GL.couleur(x.cat);e.innerHTML=svgCat(x.cat);e.title=x.nom;
+    e.onclick=()=>voir(x.id);marques.push(new maplibregl.Marker({element:e}).setLngLat([x.lng,x.lat]).addTo(map))}
+  if(l.length&&!vu){const xs=l.map(x=>x.lng),ys=l.map(x=>x.lat);map.fitBounds([[Math.min(...xs),Math.min(...ys)],[Math.max(...xs),Math.max(...ys)]],{padding:60,maxZoom:16,duration:500})}
+}
+function voir(id){
+  const l=trouver(id);if(!l||!map)return;vu=id;
+  document.querySelectorAll('.g-fiche').forEach(f=>f.classList.toggle('vue',f.dataset.id===id));
+  map.flyTo({center:[l.lng,l.lat],zoom:17.5,duration:700});
+  new maplibregl.Popup({closeButton:true,offset:16}).setLngLat([l.lng,l.lat]).setHTML(`<b>${esc(l.nom)}</b><br>${esc(adresseTxt(l))}`).addTo(map);
+}
+function creerCarte(){
+  map=new maplibregl.Map({container:'map',attributionControl:false,style:{version:8,sources:{voies:{type:'geojson',data:{type:'FeatureCollection',features:ref.voies.map(v=>({type:'Feature',properties:{},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(p=>[p.lon,p.lat]))}}))}},osm:{type:'geojson',data:{type:'FeatureCollection',features:[]}}},
+    layers:[{id:'fond',type:'background',paint:{'background-color':'#efe9dd'}},{id:'bord',type:'line',source:'voies',paint:{'line-color':'#cdc3b1','line-width':['interpolate',['linear'],['zoom'],12,1.5,17,10]}},{id:'voies',type:'line',source:'voies',paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],12,.8,17,8]}},
+      {id:'osm',type:'circle',source:'osm',paint:{'circle-radius':['interpolate',['linear'],['zoom'],11,2.5,16,6],'circle-color':['get','c'],'circle-stroke-color':'#fff','circle-stroke-width':1}}]},
+    bounds:[[ref.bbox[0],ref.bbox[1]],[ref.bbox[2],ref.bbox[3]]]});
+  map.addControl(new maplibregl.AttributionControl({compact:true,customAttribution:'Rues et lieux © OpenStreetMap'}),'bottom-right');
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+  map.on('click','osm',e=>{const f=e.features&&e.features[0];if(f)new maplibregl.Popup({offset:8}).setLngLat(e.lngLat).setHTML('<b>'+esc(f.properties.n)+'</b>').addTo(map)});
+  map.on('load',()=>rendre());
+}
+
+/* ---------- démarrage ---------- */
+$('ville').innerHTML=Object.entries(VILLES).map(([k,v])=>`<option value="${k}"${k===VILLE?' selected':''}>${esc(v.nom)}</option>`).join('');
+$('ville').onchange=()=>{location.search='?ville='+encodeURIComponent($('ville').value)};
+(async()=>{
+  CFG=await lireConfig();
+  if(!CFG||!CFG.supabase||!CFG.clePublique)montrerConfig();
+  majCompte();
+  try{ref=await CA.charger({base:VI.dossier})}catch(e){$('liste').innerHTML='<p class="g-vide">Plan de '+esc(VI.nom)+' introuvable sur ce site.</p>';return}
+  try{const r=await fetch(VI.dossier+'lieux.json',{cache:'no-cache'});STATIQUE=r.ok?((await r.json()).lieux||[]):[]}catch(e){STATIQUE=[]}
+  if(!SESSION)onglet='osm';
+  creerCarte();
+  if(SESSION)charger();else rendre();
+})();
+window.__gestion={get DONNEES(){return DONNEES},get OSM(){return OSM},fabriquer};
+})();
+</script>
+</body>
+</html>
