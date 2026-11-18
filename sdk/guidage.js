@@ -7,8 +7,10 @@
    Utilisation :  GuidageConakry.ouvrir(conteneur, referentiel, adresse, { mode: 'moto' })
    Dans une appli, la position peut venir du GPS du téléphone : { positions: 'externe' }, puis guidage.position({ lat, lng, … }).
    Comme sur Google Maps et Waze :
-   - guidage en direct (par défaut) : il suit le GPS ; si l'on est loin de la ville, il propose l'aperçu au lieu d'un guidage impossible ;
-   - aperçu du trajet ({ vue: 'apercu' }) : étape par étape, puis « Démonstration », qui joue le trajet avec la voix (position simulée).
+   - guidage en direct (par défaut) : il suit le GPS ; si l'on est loin de la ville, il attend la personne et démarre tout seul
+     quand elle arrive (jamais de faux guidage « à 4 690 km ») ;
+   - aperçu du trajet ({ vue: 'apercu' }) : étape par étape, sans position simulée ;
+   - { demonstration: true } (facultatif, désactivé par défaut) : « Démonstration », qui joue le trajet avec une position simulée.
    Comme sur Waze (options facultatives) :
    - { signalements: [{ id, type, lat, lng }] } : embouteillage, accident, police, travaux, route inondée ou coupée, danger ;
      ceux qui sont sur l'itinéraire sont montrés et annoncés à l'approche (« Accident signalé dans 300 mètres ») ;
@@ -151,6 +153,10 @@ class Moteur {
     this.s = 0; this.nHors = 0; this.horsDepuis = 0; this.tCalcul = -1e12; this.dit = new Set(); this.fini = false;
     this.premier = true; this.cap = null; this.nContre = 0; this.tContre = -1e12; this.dernier = null; this.ecartDepart = 0;
     this.eviter = Array.isArray(opts.eviter) && opts.eviter.length ? opts.eviter : null;
+    /* réseau national : on part d'une petite rue, on va vers un village loin des grandes routes (rayons d'accroche élargis) */
+    this.rayon = +opts.rayon || 0; this.rayonArrivee = +opts.rayonArrivee || 0; this.repliSens = !!opts.repliSens;
+    /* étape d'un trajet en plusieurs parties (les rues de la ville de départ, avant la route) : sa fin n'est pas la destination */
+    this.etape = !!opts.etape;
     this.annoncerSig = opts.annoncerSignalements !== false; this.ditSig = new Set(); this.signalements(opts.signalements);
   }
   /* signalements connus [{ id, type, lat, lng }] : ceux de l'itinéraire sont montrés et annoncés à l'approche */
@@ -171,7 +177,8 @@ class Moteur {
   }
   _calculer(pos, t) {
     this.tCalcul = t;
-    const it = this.ref.itineraire({ lat: pos.lat, lng: pos.lng }, { lat: this.dest.lat, lng: this.dest.lng }, this.eviter ? { mode: this.mode, eviter: this.eviter } : { mode: this.mode });
+    const o = { mode: this.mode }; if (this.eviter) o.eviter = this.eviter; if (this.rayon) o.rayon = this.rayon; if (this.rayonArrivee) o.rayonArrivee = this.rayonArrivee; if (this.repliSens) o.repliSens = true;
+    const it = this.ref.itineraire({ lat: pos.lat, lng: pos.lng }, { lat: this.dest.lat, lng: this.dest.lng }, o);
     if (!it || !it.ligne || it.ligne.length < 2) return false;
     this.P = preparer(it); this.s = 0; this.nHors = 0; this.horsDepuis = 0; this.nContre = 0;
     /* distance entre la position et la rue de départ (cour, parking…) : pas encore « hors de l'itinéraire » */
@@ -277,14 +284,14 @@ class Moteur {
         this.dit.add('pres:' + k); this.dit.add('loin:' + k);
         let tx = prochaine.instruction; const suite = E[k + 1];
         if (suite && suite.debut - prochaine.debut <= 60) { tx += ', puis ' + minuscule(suite.instruction); this.dit.add('loin:' + (k + 1)); }
-        else if (!suite && P.total - prochaine.debut <= 60) { tx += ', puis vous serez à destination'; this.dit.add('fin'); }
+        else if (!suite && !this.etape && P.total - prochaine.debut <= 60) { tx += ', puis vous serez à destination'; this.dit.add('fin'); }
         annonces.push({ texte: tx + '.', prio: 2 });
       } else if (D <= loin && D > pres + 40 && !this.dit.has('loin:' + k) && prochaine.manoeuvre !== 'tout-droit' && avant > pres + 60) {
         this.dit.add('loin:' + k);
         annonces.push({ texte: 'Dans ' + distanceVoix(D) + ', ' + minuscule(prochaine.instruction) + '.', prio: 1 });
       }
     }
-    if (!prochaine && !arrive && reste <= (pied ? 40 : 120) && reste > (pied ? 15 : 30) && !this.dit.has('fin')) {
+    if (!this.etape && !prochaine && !arrive && reste <= (pied ? 40 : 120) && reste > (pied ? 15 : 30) && !this.dit.has('fin')) {
       this.dit.add('fin');
       annonces.push({ texte: 'Dans ' + distanceVoix(reste) + ', vous serez à destination' + (cote ? ', porte à votre ' + cote : '') + '.', prio: 1 });
     }
@@ -300,19 +307,21 @@ class Moteur {
     }
     if (arrive) {
       this.fini = true;
-      annonces.push({ texte: 'Vous êtes à destination' + (this.dest.titre ? ' : ' + this.dest.titre : '') + '.' + (cote ? ' La porte est à votre ' + cote + '.' : ''), prio: 3 });
+      if (!this.etape) annonces.push({ texte: 'Vous êtes à destination' + (this.dest.titre ? ' : ' + this.dest.titre : '') + '.' + (cote ? ' La porte est à votre ' + cote + '.' : ''), prio: 3 });
     }
     /* 4. affichage */
     if (surRoute && pr.cap != null) { const a = pointA(P, s), b = pointA(P, Math.min(P.total, s + 12)); this.cap = Math.hypot(b.x - a.x, b.y - a.y) > 2 ? capDe(b.x - a.x, b.y - a.y) : pr.cap; }
     else if (capGps != null && v != null && v > 2) this.cap = capGps;
     if (this.cap == null && P.pts.length > 1) this.cap = capDe(P.pts[1].x - P.pts[0].x, P.pts[1].y - P.pts[0].y);
     const aff = surRoute && pr.d <= seuil ? { lat: pr.lat, lng: pr.lng } : { lat: pos.lat, lng: pos.lng };
-    const bandeau = arrive ? { icone: 'arrivee', distance: null, verbe: 'Vous êtes à destination', nom: this.dest.titre || '', sous: cote ? 'Porte à votre ' + cote : (this.dest.sousTitre || '') }
+    const vers = this.etape ? { icone: 'tout-droit', distance: arrive ? null : reste, verbe: 'Continuez', nom: 'vers ' + (this.dest.titre || 'la destination'), sous: this.dest.sousTitre || '' } : null;
+    const bandeau = vers && (arrive || !prochaine) ? vers
+      : arrive ? { icone: 'arrivee', distance: null, verbe: 'Vous êtes à destination', nom: this.dest.titre || '', sous: cote ? 'Porte à votre ' + cote : (this.dest.sousTitre || '') }
       : this.nContre >= 4 ? { icone: 'demi-tour', distance: null, verbe: 'Faites demi-tour', nom: 'dès que possible' }
       : prochaine ? { icone: prochaine.manoeuvre, distance: D, verbe: prochaine.verbe, nom: prochaine.nom }
       : { icone: 'arrivee', distance: reste, verbe: 'Destination', nom: this.dest.titre || '', sous: cote ? 'Porte à votre ' + cote : '' };
     const sv = prochaine && E[k + 1] && E[k + 1].debut - prochaine.debut <= 100 ? { icone: E[k + 1].manoeuvre, verbe: E[k + 1].verbe, nom: E[k + 1].nom }
-      : prochaine && k === E.length - 1 && P.total - prochaine.debut <= 100 ? { icone: 'arrivee', verbe: 'Destination', nom: 'destination' } : null;
+      : prochaine && !this.etape && k === E.length - 1 && P.total - prochaine.debut <= 100 ? { icone: 'arrivee', verbe: 'Destination', nom: 'destination' } : null;
     const debutLigne = surRoute && pr ? pr.i : indice(P, s);
     const ligne = [[aff.lng, aff.lat]].concat(P.pts.slice(debutLigne).map(q => [q.lng, q.lat]));
     const etat = arrive ? 'arrive' : recalcul && !debut ? 'recalcul' : surRoute ? 'route' : 'hors-route';
@@ -361,28 +370,29 @@ const MODE_TXT = { voiture: 'en voiture', moto: 'à moto', pied: 'à pied' };
 const VITESSE_DEMO = { voiture: 16, moto: 16, pied: 5 };
 const LOIN = 25000;          /* au-delà de 25 km du plan : pas de guidage en direct, mais l'aperçu */
 const FONT = 'var(--body,"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)', TITRE = 'var(--display,"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif)';
-const CSS = `.gc{--gc-ui:#fff;--gc-tx:#111827;--gc-mu:#5f6b7a;--gc-bt:#eef1f4;--gc-li:#e4e8ee;--gc-band:#17212d;--gc-puis:#0c141d;position:fixed;inset:0;z-index:60;background:#ece6d9;color:var(--gc-tx);font-family:${FONT};-webkit-tap-highlight-color:transparent;overflow:hidden}
-.gc.sombre{--gc-ui:#1b222c;--gc-tx:#eef2f7;--gc-mu:#9aa6b5;--gc-bt:#28313d;--gc-li:#2c3542;--gc-band:#26313f;--gc-puis:#18212c;background:#141b24;color-scheme:dark}
+const CSS = `.gc{--gc-ui:#fff;--gc-tx:#0a1220;--gc-mu:#526073;--gc-bt:rgba(10,22,40,.07);--gc-li:#e2e8ef;--gc-band:#0a111b;--gc-puis:#05090f;--gc-ac:#0a7a47;--gc-vif:#19d67c;--gc-fil:rgba(10,22,40,.1);--gc-ease:cubic-bezier(.23,1,.32,1);position:fixed;inset:0;z-index:60;background:#e9eef2;color:var(--gc-tx);font-family:${FONT};-webkit-tap-highlight-color:transparent;overflow:hidden}
+.gc.sombre{--gc-ui:#0c121b;--gc-tx:#e9eff7;--gc-mu:#8d9aae;--gc-bt:rgba(255,255,255,.08);--gc-li:#1b2431;--gc-band:#0c1420;--gc-puis:#070c13;--gc-ac:#3df59e;--gc-vif:#2bf08f;--gc-fil:rgba(255,255,255,.09);background:#070c13;color-scheme:dark}
 .gc-carte{position:absolute;inset:0}
 .gc-haut{position:absolute;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:2}
-.gc-band{display:flex;gap:14px;align-items:center;background:var(--gc-band);color:#fff;border-radius:22px;padding:12px 16px 12px 12px;box-shadow:0 8px 24px rgba(0,0,0,.35);min-height:84px}
-.gc.sans .gc-band{background:#8a5a00}.gc.arrive .gc-band{background:#0f8a4f}.gc.hors .gc-band{background:#4a5563}.gc.apercu .gc-band{background:#1f4a7a}
-.gc-ic{flex:none;width:62px;height:62px;display:grid;place-items:center;border-radius:16px;background:rgba(255,255,255,.09)}
-.gc-ic svg{width:48px;height:48px;fill:none;stroke:#fff;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s}
+.gc-band{display:flex;gap:14px;align-items:center;background:var(--gc-band);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:12px 16px 12px 12px;box-shadow:0 14px 30px -10px rgba(0,0,0,.6);min-height:84px}
+.gc.sans .gc-band{background:#7a4f00}.gc.arrive .gc-band{background:#0b6b3f}.gc.hors .gc-band{background:#3a4454}.gc.apercu .gc-band{background:#123a66}
+.gc-ic{flex:none;width:62px;height:62px;display:grid;place-items:center;border-radius:16px;background:var(--gc-vif);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.gc-ic svg{width:48px;height:48px;fill:none;stroke:#03170c;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s}
 .gc-tx{min-width:0;flex:1}
-.gc-d{font:800 32px/1 ${TITRE};letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.gc-v{font-size:14px;line-height:1.25;color:#a7dcff;font-weight:600;margin-top:4px}
-.gc-n{font-weight:800;font-size:21px;line-height:1.15;margin-top:2px;letter-spacing:-.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.gc-d{font:700 34px/1 ${TITRE};font-stretch:87.5%;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.gc-v{font-size:14px;line-height:1.25;color:#7fe3ff;font-weight:600;margin-top:4px;letter-spacing:.01em}
+.gc-n{font-weight:700;font-size:22px;line-height:1.15;margin-top:2px;letter-spacing:-.01em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .gc-s{font-size:14px;opacity:.88;margin-top:3px}
 .gc-puis{display:inline-flex;gap:8px;align-items:center;margin:0 0 0 16px;background:var(--gc-puis);color:#fff;border-radius:0 0 14px 14px;padding:6px 14px 7px;font-size:14px;font-weight:700;box-shadow:0 6px 14px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
 .gc-puis span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gc-puis svg{flex:none;width:22px;height:22px;fill:none;stroke:#fff;stroke-width:4.6;stroke-linecap:round;stroke-linejoin:round}
-.gc-b{border:0;border-radius:14px;min-height:50px;min-width:50px;padding:0 16px;font:700 15px ${FONT};background:var(--gc-bt);color:var(--gc-tx);cursor:pointer;display:grid;place-items:center}
+.gc-b{border:0;border-radius:16px;min-height:50px;min-width:50px;padding:0 16px;font:650 15px ${FONT};background:var(--gc-bt);color:var(--gc-tx);cursor:pointer;display:grid;place-items:center;transition:transform .14s var(--gc-ease),background-color .18s}
+.gc-b:active,.gc-sigbt:active,.gc-sigb:active{transform:scale(.97)}
 .gc-b svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .gc-b svg .plein{fill:currentColor;stroke:none}
 .gc-b[disabled]{opacity:.4;cursor:default}
 .gc-droite{position:absolute;z-index:2;right:12px;top:calc(env(safe-area-inset-top,0px) + var(--gc-haut,96px) + 18px);display:flex;flex-direction:column;gap:10px}
-.gc-rond{width:50px;height:50px;padding:0;border-radius:50%;background:var(--gc-ui);color:var(--gc-tx);box-shadow:0 3px 12px rgba(0,0,0,.28)}
+.gc-rond{width:50px;height:50px;padding:0;border-radius:16px;background:color-mix(in srgb,var(--gc-ui) 84%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);border:1px solid var(--gc-fil);color:var(--gc-tx);box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}
 .gc-boussole svg{width:28px;height:28px;stroke:none;transition:transform .25s}
 .gc-boussole[aria-pressed="true"]{outline:3px solid #2bb4f0;outline-offset:-3px}
 .gc-alerte{position:absolute;z-index:2;left:10px;top:calc(env(safe-area-inset-top,0px) + var(--gc-haut,96px) + 18px);width:min(330px,calc(100% - 86px));background:var(--gc-ui);color:var(--gc-tx);border-radius:18px;padding:10px 12px;box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -394,37 +404,43 @@ const CSS = `.gc{--gc-ui:#fff;--gc-tx:#111827;--gc-mu:#5f6b7a;--gc-bt:#eef1f4;--
 .gc-mks svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .gc-pied{position:absolute;z-index:2;left:12px;right:12px;bottom:calc(var(--gc-bas,90px) + 12px);display:flex;align-items:flex-end;gap:10px;pointer-events:none}
 .gc-pied>*{pointer-events:auto}
-.gc-vit{flex:none;width:64px;height:64px;border-radius:50%;background:var(--gc-ui);color:var(--gc-tx);box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
-.gc-vit b{font:800 24px/1 ${TITRE};font-variant-numeric:tabular-nums}.gc-vit small{font-size:10px;font-weight:700;color:var(--gc-mu);margin-top:3px}
+.gc-vit{position:relative;flex:none;width:64px;height:64px;border-radius:50%;background:var(--gc-ui);color:var(--gc-tx);box-shadow:0 3px 12px rgba(0,0,0,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.gc-vit::before{content:"";position:absolute;inset:4px;border-radius:50%;background:conic-gradient(from 225deg,var(--gc-vif) calc(var(--p,0) * 270deg),var(--gc-li) 0 270deg,transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4.5px))}
+.gc-vit b{font:700 25px/1 ${TITRE};font-stretch:87.5%;font-variant-numeric:tabular-nums}.gc-vit small{font-size:10px;font-weight:700;color:var(--gc-mu);margin-top:3px}
 .gc-mid{flex:1;min-width:0;display:flex;justify-content:center;align-items:flex-end;padding-bottom:6px}
-.gc-rue{max-width:100%;padding:9px 16px;border-radius:999px;background:var(--gc-ui);color:var(--gc-tx);font-weight:700;font-size:15px;box-shadow:0 3px 12px rgba(0,0,0,.25);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-rue{max-width:100%;padding:9px 16px;border-radius:14px;background:rgba(6,10,16,.92);color:#fff;border:1px solid rgba(255,255,255,.1);font-weight:650;font-size:15px;letter-spacing:.01em;box-shadow:0 10px 24px -10px rgba(0,0,0,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gc-centre{display:flex;gap:6px;align-items:center;border-radius:999px;background:var(--gc-ui);box-shadow:0 3px 12px rgba(0,0,0,.28)}
 .gc-sigbt{flex:none;margin-left:auto;width:60px;height:60px;border:0;border-radius:18px;background:#ffc400;color:#2b2100;box-shadow:0 4px 14px rgba(0,0,0,.35);display:grid;place-items:center;cursor:pointer}
 .gc-sigbt svg{width:32px;height:32px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
-.gc-msg{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(var(--gc-bas,90px) + 90px);background:#111827;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.gc-msg{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(var(--gc-bas,90px) + 90px);background:rgba(6,10,16,.94);color:#fff;border:1px solid rgba(255,255,255,.1);padding:10px 16px;border-radius:14px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.35)}
 .gc-bas{position:absolute;z-index:3;left:0;right:0;bottom:0;background:var(--gc-ui);color:var(--gc-tx);border-radius:22px 22px 0 0;box-shadow:0 -4px 18px rgba(0,0,0,.22);padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .gc-ctrl{flex:1 0 100%;order:-2;display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:2px}
-.gc-b.gc-jouer{flex:1;max-width:300px;display:flex;gap:8px;align-items:center;justify-content:center;background:#12a05c;color:#fff}
+.gc-b.gc-jouer{flex:1;max-width:300px;display:flex;gap:8px;align-items:center;justify-content:center;background:var(--gc-vif);color:#03170c}
 .gc-details{flex:1 0 100%;min-width:0;max-width:100%;order:-1;border-bottom:1px solid var(--gc-li);padding:2px 2px 12px;margin-bottom:2px}
 .gc-dest b{display:block;font-size:17px;line-height:1.25}.gc-dest span{display:block;font-size:14px;color:var(--gc-mu)}
 .gc-et{list-style:none;margin:10px 0 0;padding:0}
 .gc-et li{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:14.5px}
 .gc-et li svg{flex:none;width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
 .gc-et li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gc-et li em{font-style:normal;color:var(--gc-mu);font-variant-numeric:tabular-nums}
-.gc-ev{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:600;color:#12a05c}.gc-ev.al{color:#c2410c}.gc.sombre .gc-ev{color:#2fd27e}.gc.sombre .gc-ev.al{color:#fdba74}
+.gc-ev{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;font-weight:600;color:var(--gc-ac)}.gc-ev.al{color:#c2410c}.gc.sombre .gc-ev{color:var(--gc-ac)}.gc.sombre .gc-ev.al{color:#fdba74}
 .gc-ev svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .gc-dact{display:flex;gap:8px;margin-top:10px}.gc-dact .gc-b{flex:1;display:flex;gap:8px;align-items:center;justify-content:center;padding:0 10px}
-.gc-etab{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;color:inherit;text-align:left;padding:0;cursor:pointer;font:inherit}
-.gc-eta{display:block;flex:1;min-width:0}.gc-eta b{display:block;font:800 28px/1.05 ${TITRE};color:var(--gc-tx);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.gc-eta span{display:block;font-size:14.5px;font-weight:600;color:var(--gc-mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.gc-eta small{display:block;font-size:10.5px;color:var(--gc-mu);opacity:.8;margin-top:2px}
+.gc-etab{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;color:inherit;text-align:left;padding:2px 0 0;cursor:pointer;font:inherit}
+.gc-eta{display:block;flex:1;min-width:0}
+.gc-tri{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;gap:8px}
+.gc-tri b{font:700 22px/1.1 ${TITRE};font-stretch:87.5%;color:var(--gc-tx);font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
+.gc-tri .gc-du{justify-self:start;color:var(--gc-ac)}.gc-tri .gc-hr{justify-self:center;font-size:29px;letter-spacing:-.02em}.gc-tri .gc-km{justify-self:end}
+.gc-sous{display:block;text-align:center;font-size:13.5px;font-weight:600;color:var(--gc-mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.gc-eta small{display:block;text-align:center;font-size:10.5px;color:var(--gc-mu);opacity:.8;margin-top:2px}
 .gc-chev{flex:none;width:26px;height:26px;fill:none;stroke:var(--gc-mu);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
 .gc.details .gc-chev{transform:rotate(180deg)}
-.gc-fin{background:#e5383b;color:#fff}
+.gc-b.gc-fin{flex:none;width:50px;height:50px;padding:0;border-radius:50%;background:#e5383b;color:#fff}.gc-b.gc-fin svg{width:24px;height:24px;stroke-width:2.8}
+.gc-prog{position:absolute;left:22px;right:22px;top:0;height:4px;border-radius:0 0 4px 4px;background:var(--gc-li);overflow:hidden}
+.gc-prog i{display:block;height:100%;width:0;background:var(--gc-vif);transition:width .9s linear}
 .gc-loin{position:absolute;z-index:4;left:12px;right:12px;bottom:calc(var(--gc-bas,90px) + 12px);max-width:460px;margin:0 auto;background:var(--gc-ui);color:var(--gc-tx);border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.28)}
 .gc-loin b{display:block;font:800 20px/1.2 ${TITRE}}
 .gc-loin p{margin:6px 0 12px;font-size:14px;line-height:1.45;color:var(--gc-mu)}
-.gc-b.gc-voir{width:100%;background:#12a05c;color:#fff}
+.gc-b.gc-voir{width:100%;background:var(--gc-vif);color:#03170c}
 .gc-sig{position:absolute;inset:0;z-index:6;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
 .gc-sigc{width:min(520px,100%);background:var(--gc-ui);color:var(--gc-tx);border-radius:24px 24px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px rgba(0,0,0,.35)}
 .gc-sigt{display:flex;align-items:center;justify-content:space-between;font:800 21px ${TITRE};margin-bottom:12px}
@@ -437,8 +453,8 @@ const CSS = `.gc{--gc-ui:#fff;--gc-tx:#111827;--gc-mu:#5f6b7a;--gc-bt:#eef1f4;--
 .gc-pin{width:30px;height:42px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 @media (min-width:760px){.gc-haut{right:auto;width:min(540px,calc(100% - 20px))}.gc-bas{left:12px;right:auto;bottom:12px;width:min(540px,calc(100% - 24px));border-radius:22px;padding-bottom:12px}.gc-pied{bottom:calc(var(--gc-bas,90px) + 24px)}.gc-msg{bottom:calc(var(--gc-bas,90px) + 100px)}.gc-sig{align-items:center}.gc-sigc{border-radius:24px}}`;
 const COUL = {
-  clair: { fond: '#ece6d9', rue: '#ffffff', rueB: '#d3c9b6', maj: '#ffe08a', majB: '#d4a64a', txt: '#2a2f2b', halo: '#ffffff', impair: '#8a4b0f', route: '#1a73e8', routeB: '#0d4fb0', moi: '#1a73e8' },
-  sombre: { fond: '#141b24', rue: '#323e4e', rueB: '#0c1118', maj: '#5b6b83', majB: '#1b2431', txt: '#dfe6ee', halo: '#141b24', impair: '#ffb86b', route: '#33ccff', routeB: '#0a3d55', moi: '#2b9bff' }
+  clair: { fond: '#e9eef2', rue: '#ffffff', rueB: '#c6cfda', maj: '#ffd76a', majB: '#d6a536', txt: '#283241', halo: '#f7fafc', impair: '#8a4b0f', route: '#0a6cff', routeB: '#0548b8', moi: '#0a6cff' },
+  sombre: { fond: '#070c13', rue: '#26334a', rueB: '#03060a', maj: '#3e4f6b', majB: '#0b111a', txt: '#d3dbe6', halo: '#070c13', impair: '#ffb86b', route: '#2ee6ff', routeB: '#05303d', moi: '#2ee6ff' }
 };
 const glyphOk = c => { const n = c.codePointAt(0); return n < 1024 || (n >= 7680 && n < 7936) || (n >= 8192 && n < 8448); };
 const sur = t => [...String(t || '')].map(c => glyphOk(c) ? c : [...c.normalize('NFD')].filter(glyphOk).join('')).join('');
@@ -460,18 +476,24 @@ function voixNavigateur() {
   parler.taire = () => { try { S.cancel(); } catch (e) { } };
   return parler;
 }
+/* l'appli appelle debloquerVoix() pendant un toucher (« Y aller ») : sur iPhone, la voix peut ensuite parler même si le guidage
+   démarre tout seul quelques secondes plus tard (départ automatique), hors du geste */
+let voixPartagee = null;
+function debloquerVoix() { try { if (!voixPartagee) voixPartagee = voixNavigateur(); if (voixPartagee && voixPartagee.debloquer) voixPartagee.debloquer(); } catch (e) { } }
 const lire = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } };
 
 /* ouvre le guidage plein écran dans conteneur (élément ou id) ; renvoie { position(p), arreter(), moteur, apercu(), jouer(), signalements(liste) }
-   opts.vue : 'direct' (GPS, par défaut) ou 'apercu' (trajet étape par étape et démonstration, sans GPS) */
+   opts.vue : 'direct' (GPS, par défaut) ou 'apercu' (trajet étape par étape et démonstration, sans GPS)
+   trajet en plusieurs parties : opts.etape (cette partie ne finit pas à la destination : ni « vous serez à destination » ni arrivée annoncée)
+   et opts.apres { distance, duree } (le reste du trajet après cette partie, compté dans le temps, l'heure d'arrivée et la distance) */
 function ouvrir(conteneur, ref, adresse, opts) {
   opts = opts || {};
   const ML = opts.maplibregl || (typeof maplibregl !== 'undefined' ? maplibregl : null);
   if (!ML) throw new Error('MapLibre GL est nécessaire pour le guidage.');
   const box = typeof conteneur === 'string' ? document.getElementById(conteneur) : conteneur;
   let sigs = Array.isArray(opts.signalements) ? opts.signalements.slice() : [];
-  const optsMoteur = it => ({ mode: opts.mode, itineraire: it, eviter: opts.eviter, signalements: sigs, annoncerSignalements: opts.annoncesSignalements !== false });
+  const optsMoteur = it => ({ mode: opts.mode, itineraire: it, eviter: opts.eviter, signalements: sigs, annoncerSignalements: opts.annoncesSignalements !== false, rayon: opts.rayon, rayonArrivee: opts.rayonArrivee, repliSens: opts.repliSens, etape: opts.etape });
   const M = new Moteur(ref, adresse, optsMoteur(opts.itineraire));
   if (!document.getElementById('gc-style')) { const st = document.createElement('style'); st.id = 'gc-style'; st.textContent = CSS; document.head.appendChild(st); }
   const th = document.documentElement.dataset.theme;
@@ -479,6 +501,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   const C = sombre ? COUL.sombre : COUL.clair;
   const el = document.createElement('div'); el.className = 'gc' + (sombre ? ' sombre' : ''); el.setAttribute('role', 'application'); el.setAttribute('aria-label', 'Guidage');
   const peutSignaler = typeof opts.surSignalement === 'function';
+  const DEMO_OK = opts.demonstration === true;          /* position simulée : seulement sur demande explicite */
   el.innerHTML = `<div class="gc-carte"></div>
     <div class="gc-haut"><div class="gc-band" role="status" aria-live="polite"><div class="gc-ic"><svg viewBox="0 0 48 48" aria-hidden="true">${SVG.gps}</svg></div><div class="gc-tx"><div class="gc-d"></div><div class="gc-v">Recherche de votre position…</div><div class="gc-n"></div><div class="gc-s"></div></div></div><div class="gc-puis" hidden></div></div>
     <div class="gc-alerte" hidden><span class="gc-sr"></span><div class="gc-at"><b></b><span></span></div><div class="gc-aa" hidden><button type="button" class="gc-b gc-oui">Toujours là</button><button type="button" class="gc-b gc-non">Plus là</button></div></div>
@@ -489,15 +512,32 @@ function ouvrir(conteneur, ref, adresse, opts) {
     <div class="gc-pied"><div class="gc-vit" hidden aria-label="Vitesse"><b>0</b><small>km/h</small></div>
       <div class="gc-mid"><div class="gc-rue" hidden></div><button type="button" class="gc-b gc-centre" hidden>${BT.centre}Recentrer</button></div>
       ${peutSignaler ? `<button type="button" class="gc-sigbt" aria-label="Signaler un événement">${BT.signaler}</button>` : ''}</div>
-    <div class="gc-loin" hidden role="dialog" aria-label="Trop loin pour le guidage"><b></b><p></p><button type="button" class="gc-b gc-voir">Voir l'aperçu du trajet</button></div>
-    <div class="gc-bas"><div class="gc-ctrl" hidden><button type="button" class="gc-b gc-prec" aria-label="Étape précédente">${BT.prec}</button><button type="button" class="gc-b gc-jouer" aria-pressed="false"></button><button type="button" class="gc-b gc-suiv" aria-label="Étape suivante">${BT.suiv}</button></div>
+    <div class="gc-loin" hidden role="dialog" aria-label="Trop loin pour le guidage"><b></b><p></p>${DEMO_OK ? '<button type="button" class="gc-b gc-voir">Voir l\'aperçu du trajet</button>' : ''}</div>
+    <div class="gc-bas"><div class="gc-prog" hidden aria-hidden="true"><i></i></div><div class="gc-ctrl" hidden><button type="button" class="gc-b gc-prec" aria-label="Étape précédente">${BT.prec}</button><button type="button" class="gc-b gc-jouer" aria-pressed="false"></button><button type="button" class="gc-b gc-suiv" aria-label="Étape suivante">${BT.suiv}</button></div>
       <div class="gc-details" hidden></div>
-      <button type="button" class="gc-etab" aria-expanded="false" aria-label="Détails du trajet"><span class="gc-eta"><b>—</b><span>${esc(M.dest.titre)}</span><small>Rues © OpenStreetMap · plan provisoire</small></span><svg class="gc-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
-      <button type="button" class="gc-b gc-fin">Terminer</button></div>
+      <button type="button" class="gc-etab" aria-expanded="false" aria-label="Détails du trajet"><span class="gc-eta"><span class="gc-tri"><b class="gc-du"></b><b class="gc-hr">—</b><b class="gc-km"></b></span><span class="gc-sous">${esc(M.dest.titre)}</span><small>Rues © OpenStreetMap · plan provisoire</small></span><svg class="gc-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button>
+      <button type="button" class="gc-b gc-fin" aria-label="Terminer le guidage" title="Terminer">${BT.fermer}</button></div>
     ${peutSignaler ? `<div class="gc-sig" hidden role="dialog" aria-modal="true" aria-label="Signaler"><div class="gc-sigc"><div class="gc-sigt">Signaler<button type="button" class="gc-b gc-sigx" aria-label="Fermer">${BT.fermer}</button></div>
       <div class="gc-sigg">${Object.keys(SIGNALEMENTS).map(k => `<button type="button" class="gc-sigb" data-sig="${k}"><span class="gc-sr" style="background:${SIGNALEMENTS[k].c}">${icSig(k)}</span>${esc(SIGNALEMENTS[k].nom)}</button>`).join('')}</div></div></div>` : ''}`;
   box.appendChild(el);
   const q = s => el.querySelector(s);
+  /* trajet en plusieurs parties : ce qui reste après cette étape ({ distance, duree }) s'ajoute au temps, à l'heure d'arrivée et à la distance */
+  const apres = opts.apres && isFinite(opts.apres.distance) ? { distance: Math.max(0, +opts.apres.distance), duree: Math.max(0, +opts.apres.duree || 0) } : null;
+  const total = r => apres && r && r.duree != null && isFinite(r.distance) ? { distance: r.distance + apres.distance, duree: r.duree + apres.duree } : r;
+  /* barre du bas : durée restante | heure d'arrivée | distance restante, puis la destination (vide = case laissée blanche) */
+  const eta = (du, hr, kmTxt, sous) => {
+    q('.gc-du').textContent = du || ''; q('.gc-hr').textContent = hr || ''; q('.gc-km').textContent = kmTxt || ''; q('.gc-sous').textContent = sous || '';
+    q('.gc-etab').setAttribute('aria-label', [hr && /\d:\d/.test(hr) ? 'Arrivée à ' + hr : hr, du ? 'dans ' + du : '', kmTxt, sous].filter(Boolean).join(', ') + '. Détails du trajet');
+  };
+  /* progression vers la destination (fine barre en haut de la barre du bas) : part du trajet déjà fait */
+  let totalVu = 0;
+  const progression = e => {
+    const pr = q('.gc-prog'), r = total(e.restant);
+    if (e.etat === 'arrive') { pr.hidden = false; q('.gc-prog i').style.width = '100%'; return; }
+    if (!r || r.duree == null || !isFinite(r.distance)) { pr.hidden = true; return; }
+    totalVu = Math.max(totalVu, r.distance);
+    pr.hidden = false; q('.gc-prog i').style.width = (totalVu > 0 ? Math.max(0, Math.min(1, 1 - r.distance / totalVu)) * 100 : 0).toFixed(1) + '%';
+  };
   const parlerDefaut = voixNavigateur();
   const parler = opts.parler || parlerDefaut;
   let voixOn = (opts.voix != null ? !!opts.voix : lire('conakry-guidage-voix') !== '0') && !!parler;
@@ -566,7 +606,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   const numeros = () => {
     if (!pret || !ref.numerosDans) return;
     const e = actif().dernier, cible = d0.porte || d0;
-    const pres = vue === 'apercu' && !lecture ? PA && etape >= PA.etapes.length - 1 : e && (e.restant.distance < 400 || e.etat === 'arrive');
+    const pres = !opts.etape && (vue === 'apercu' && !lecture ? PA && etape >= PA.etapes.length - 1 : e && (e.restant.distance < 400 || e.etat === 'arrive'));
     if (map.getZoom() < 17.2 || !pres) { map.getSource('nums').setData(FC()); return; }
     /* numéros des portes autour de la destination, pour compter les portes à l'arrivée */
     const kx = 111320 * Math.cos(cible.lat * RAD), R = 170, dl = R / 110574, dg = R / kx;
@@ -657,12 +697,12 @@ function ouvrir(conteneur, ref, adresse, opts) {
     const s = apercuFixe ? (PA && etape > 0 && etape < PA.etapes.length ? PA.etapes[etape].debut : 0) : A.s || 0;
     const prochaines = P ? P.etapes.filter(x => x.debut > s + 3).slice(0, 4) : [];
     const ev = sigSur(P).filter(x => x.s > s - 8);
-    const e = A.dernier, r = apercuFixe || !e ? null : e.restant;
+    const e = A.dernier, r = apercuFixe || !e ? null : total(e.restant);
     D.innerHTML = `<div class="gc-dest"><b>${esc(d0.titre)}</b><span>${esc(d0.sousTitre || '')}${r && r.duree != null && e.etat !== 'arrive' ? ' · arrivée ' + heureTexte(new Date(Date.now() + r.duree * 1000)) : ''}</span></div>
       ${prochaines.length ? `<ul class="gc-et">${prochaines.map(x => `<li><svg viewBox="0 0 48 48" aria-hidden="true">${SVG[x.manoeuvre] || SVG['tout-droit']}</svg><span>${esc(x.verbe)}${x.nom ? ' · <b>' + esc(x.nom) + '</b>' : ''}</span><em>${distanceTexte(Math.max(0, x.debut - s))}</em></li>`).join('')}</ul>` : ''}
       <div class="gc-ev${ev.length ? ' al' : ''}">${ev.length ? BT.alerte + esc(ev.length + (ev.length > 1 ? ' signalements' : ' signalement') + ' sur la suite du trajet : ' + ev.slice(0, 2).map(x => SIGNALEMENTS[x.g.type].nom.toLowerCase() + ' à ' + distanceTexte(Math.max(0, x.s - s))).join(', ')) : BT.ok + 'Aucun événement sur la suite du trajet'}</div>
       ${typeof opts.surPartage === 'function' || peutSignaler ? `<div class="gc-dact">${typeof opts.surPartage === 'function' && !apercuFixe ? `<button type="button" class="gc-b gc-partage">${BT.partager}Partager l'arrivée</button>` : ''}${peutSignaler ? `<button type="button" class="gc-b gc-sig2">${BT.alerte}Signaler</button>` : ''}</div>` : ''}`;
-    const pa = q('.gc-partage'); if (pa) pa.onclick = () => { const e2 = actif().dernier; if (!e2 || e2.restant.duree == null) return; try { opts.surPartage({ arrivee: new Date(Date.now() + e2.restant.duree * 1000), duree: e2.restant.duree, distance: e2.restant.distance, destination: { titre: d0.titre, sousTitre: d0.sousTitre } }); } catch (x) { } };
+    const pa = q('.gc-partage'); if (pa) pa.onclick = () => { const e2 = actif().dernier, r2 = e2 && total(e2.restant); if (!r2 || r2.duree == null) return; try { opts.surPartage({ arrivee: new Date(Date.now() + r2.duree * 1000), duree: r2.duree, distance: r2.distance, destination: { titre: d0.titre, sousTitre: d0.sousTitre } }); } catch (x) { } };
     const s2 = q('.gc-sig2'); if (s2) s2.onclick = ouvrirSig;
   }
   const basculerDetails = o => { detailsOuvert = o == null ? !detailsOuvert : o; el.classList.toggle('details', detailsOuvert); q('.gc-details').hidden = !detailsOuvert; q('.gc-etab').setAttribute('aria-expanded', detailsOuvert ? 'true' : 'false'); if (detailsOuvert) remplirDetails(); };
@@ -689,12 +729,13 @@ function ouvrir(conteneur, ref, adresse, opts) {
     if (!pret) { enAttente = e; return; }
     el.classList.toggle('sans', e.etat === 'sans-chemin'); el.classList.toggle('arrive', e.etat === 'arrive'); el.classList.toggle('hors', e.etat === 'hors-route');
     bandeau(e.bandeau, e.suite);
-    const r = e.restant;
-    q('.gc-eta b').textContent = e.etat === 'arrive' ? 'Arrivée' : r.duree == null ? distanceTexte(r.distance) : heureTexte(new Date(Date.now() + r.duree * 1000));
-    q('.gc-eta span').textContent = e.etat === 'arrive' ? (M.dest.titre + (M.dest.sousTitre ? ' · ' + M.dest.sousTitre : ''))
-      : r.duree == null ? 'à vol d\'oiseau, aucun chemin sur le plan' : 'arrivée · ' + dureeTexte(r.duree) + ' · ' + distanceTexte(r.distance);
+    const r = total(e.restant);
+    if (e.etat === 'arrive') eta('', 'Arrivée', '', M.dest.titre + (M.dest.sousTitre ? ' · ' + M.dest.sousTitre : ''));
+    else if (r.duree == null) eta('', distanceTexte(r.distance), '', 'à vol d\'oiseau, aucun chemin sur le plan');
+    else eta(dureeTexte(r.duree), heureTexte(new Date(Date.now() + r.duree * 1000)), distanceTexte(r.distance), 'vers ' + M.dest.titre);
+    progression(e);
     const vt = q('.gc-vit'), v = e.vitesse;
-    if (v != null && isFinite(v) && actif().mode !== 'pied' && e.etat !== 'arrive') { vt.hidden = false; q('.gc-vit b').textContent = Math.round(Math.max(0, v) * 3.6); } else vt.hidden = true;
+    if (v != null && isFinite(v) && actif().mode !== 'pied' && e.etat !== 'arrive') { const kmh = Math.round(Math.max(0, v) * 3.6); vt.hidden = false; q('.gc-vit b').textContent = kmh; vt.style.setProperty('--p', Math.min(kmh / 130, 1).toFixed(3)); } else vt.hidden = true;
     q('.gc-rue').textContent = e.etat === 'arrive' ? '' : e.rue || ''; majPied();
     montrerAlerte(e.alerte);
     if (detailsOuvert) remplirDetails();
@@ -711,7 +752,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
     if (!e) return null;
     /* la voix et l'état partent tout de suite, même si la carte n'est pas encore affichée */
     if (voixOn && parler) for (const a of e.annonces) parler(a.texte, a.prio);
-    if (!demo && opts.surEtat) try { opts.surEtat(e); } catch (x) { }
+    if (!demo && opts.surEtat) try { opts.surEtat(e, p); } catch (x) { }
     afficher(e); return e;
   }
   /* trop loin de la ville (par exemple en France) : pas de faux guidage « à 4 690 km », mais la destination et l'aperçu */
@@ -720,17 +761,35 @@ function ouvrir(conteneur, ref, adresse, opts) {
     q('.gc-loin b').textContent = 'Vous êtes à ' + (d >= 100 ? Math.round(d).toLocaleString('fr-FR') : nombre(d, d < 10 ? 1 : 0)) + ' km de ' + ville;
     if (loin) return;
     loin = true;
-    q('.gc-loin p').textContent = 'Le guidage en direct démarre quand vous êtes sur place, avec le GPS du téléphone. En attendant, regardez le trajet étape par étape, ou jouez-le en démonstration' + (M.P ? '.' : ', depuis une rue proche de la destination.');
+    q('.gc-loin p').textContent = DEMO_OK ? 'Le guidage en direct démarre quand vous êtes sur place, avec le GPS du téléphone. En attendant, regardez le trajet étape par étape, ou jouez-le en démonstration' + (M.P ? '.' : ', depuis une rue proche de la destination.')
+      : 'Le guidage démarre tout seul dès que vous arrivez' + (ref.ville && ref.ville.nom ? ' à ' + ref.ville.nom : ' près de la destination') + ', avec le GPS du téléphone. Laissez cet écran ouvert, ou touchez « Terminer » et relancez « Y aller » une fois sur place.';
     q('.gc-loin').hidden = false; message('');
     el.classList.remove('sans', 'hors', 'arrive');
     bandeau({ icone: 'arrivee', distance: null, verbe: 'Destination', nom: d0.titre, sous: d0.sousTitre }, null);
-    q('.gc-eta b').textContent = '—'; q('.gc-eta span').textContent = d0.titre;
+    eta('', '—', '', d0.titre); q('.gc-prog').hidden = true;
     q('.gc-vit').hidden = true; q('.gc-rue').textContent = ''; majPied(); montrerAlerte(null);
     moi.remove(); affiche = null;
     if (pret) map.jumpTo({ center: [d0.lng, d0.lat], zoom: 15.5, pitch: 0, bearing: 0 });
   }
+  /* vitesse et sens de marche : ceux du GPS ; sinon (certains téléphones ne les donnent pas, iOS envoie -1) estimés d'après
+     les deux dernières positions, pour que le compteur et l'orientation de la carte marchent partout, comme sur Waze ou Coyote */
+  let precPos = null;
+  function completer(p) {
+    const t = isFinite(p.t) ? p.t : Date.now(), q0 = precPos, out = Object.assign({}, p);
+    const num = x => typeof x === 'number' && isFinite(x) && x >= 0;     /* null >= 0 est vrai en JavaScript : on teste le type */
+    if (!num(out.vitesse)) out.vitesse = null;
+    if (!num(out.cap)) out.cap = null;
+    precPos = { lat: p.lat, lng: p.lng, t };
+    if (!q0 || !(p.precision == null || p.precision <= 60)) return out;
+    const dt = (t - q0.t) / 1000, d = km(q0, p) * 1000;
+    if (!(dt > 0.4 && dt < 15)) return out;
+    if (out.vitesse == null) out.vitesse = d < 1.5 ? 0 : Math.min(d / dt, 70);
+    if (out.cap == null && d > 4) { const pr = plan(p.lat), a = pr(q0), b = pr(p); out.cap = capDe(b.x - a.x, b.y - a.y); }
+    return out;
+  }
   function position(p) {
     if (fini || !p || !isFinite(p.lat) || !isFinite(p.lng)) return null;
+    p = completer(p);
     tPos = Date.now();
     if (vue === 'apercu') return null;                 /* l'aperçu ne suit pas le GPS */
     if (horsPlan(ref, p) > LOIN) { montrerLoin(p); return null; }
@@ -741,7 +800,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   /* ---------- aperçu du trajet et démonstration ---------- */
   function passerApercu() {
     if (!PA && M.P) PA = M.P;
-    if (!PA) { const it = departDemo(ref, d0, M.mode); if (it) { PA = preparer(it); demoProche = true; } }
+    if (!PA && DEMO_OK) { const it = departDemo(ref, d0, M.mode); if (it) { PA = preparer(it); demoProche = true; } }
     if (!PA) { message('Aucun trajet à montrer : choisissez un départ sur la carte.'); return false; }
     vue = 'apercu'; loin = false; el.classList.add('apercu');
     q('.gc-loin').hidden = true; q('.gc-ctrl').hidden = false; q('.gc-ens').hidden = false; q('.gc-centre').hidden = true; message('');
@@ -751,6 +810,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   const arreterLecture = () => { if (lecture) { clearInterval(lecture); lecture = null; } };
   function majCtrl() {
     const n = PA ? PA.etapes.length : 0, j = q('.gc-jouer');
+    j.hidden = !DEMO_OK;
     j.innerHTML = lecture ? BT.pause + 'Pause' : MD && MD.fini ? BT.jouer + 'Rejouer' : BT.jouer + 'Démonstration';
     j.setAttribute('aria-pressed', lecture ? 'true' : 'false');
     q('.gc-prec').disabled = etape <= -1; q('.gc-suiv').disabled = etape >= n;
@@ -775,7 +835,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
       pt = pointLL(PA, PA.total);
     }
     bandeau(b, null);
-    q('.gc-eta b').textContent = dureeTexte(PA.it.duree); q('.gc-eta span').textContent = distanceTexte(PA.total) + ' par la route · ' + (MODE_TXT[M.mode] || '');
+    eta(dureeTexte(PA.it.duree), '', distanceTexte(PA.total), 'par la route · ' + (MODE_TXT[M.mode] || ''));
     q('.gc-vit').hidden = true; q('.gc-rue').textContent = etape >= 0 && etape < n ? PA.etapes[etape].nom || '' : ''; majPied();
     const devant = etape >= 0 && etape < n ? sigSur(PA).find(x => x.s > (etape > 0 ? PA.etapes[etape].debut : 0) - 8) : null;
     montrerAlerte(devant ? { id: devant.g.id, type: devant.g.type, nom: SIGNALEMENTS[devant.g.type].nom, distance: Math.round(Math.max(0, devant.s - PA.etapes[etape].debut)) } : null);
@@ -798,6 +858,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
     simS = Math.min(PA.total, simS + v);
   }
   function jouer() {
+    if (!DEMO_OK) return false;                          /* pas de position simulée sans { demonstration: true } */
     if (!PA && !passerApercu()) return;
     if (lecture) { arreterLecture(); majCtrl(); return; }
     const n = PA.etapes.length;
@@ -811,7 +872,7 @@ function ouvrir(conteneur, ref, adresse, opts) {
   q('.gc-prec').onclick = () => montrerEtape(etape - 1);
   q('.gc-suiv').onclick = () => montrerEtape(etape + 1);
   q('.gc-jouer').onclick = jouer;
-  q('.gc-voir').onclick = passerApercu;
+  if (q('.gc-voir')) q('.gc-voir').onclick = passerApercu;
 
   /* GPS du navigateur, sauf si l'appli donne la position elle-même (pas de GPS pour l'aperçu) */
   let veille = null, idGps = null;
@@ -847,5 +908,5 @@ function ouvrir(conteneur, ref, adresse, opts) {
   return api;
 }
 
-return { ouvrir, Moteur, preparer, destination, distanceTexte, distanceVoix, dureeTexte, versCap, pointLL, km, horsPlan, departDemo, SIGNALEMENTS };
+return { ouvrir, Moteur, preparer, destination, distanceTexte, distanceVoix, dureeTexte, versCap, pointLL, km, horsPlan, departDemo, debloquerVoix, SIGNALEMENTS };
 }));

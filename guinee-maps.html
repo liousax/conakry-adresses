@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-qVXC300sNwkX27NkHZ7QDmkq0Y2ttvENhhJ2x1DfsOg='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-yMv84V8cTrl9kqFm5OL1Ojev57BsNcRfCF6ieHhhWe0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' https://server.arcgisonline.com; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -61,8 +61,10 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(-
 .poignee{display:none}
 @media (max-width:760px){
   .haut{width:auto;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px)}
-  .panneau{left:0;right:0;top:auto;bottom:0;width:auto;max-height:46vh;border-radius:22px 22px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom,0px))}
+  .panneau{left:0;right:0;top:auto;bottom:0;width:auto;max-height:36vh;border-radius:22px 22px 0 0;padding:0 16px calc(16px + env(safe-area-inset-bottom,0px))}
   .panneau.grande{max-height:86vh}
+  .panneau.replie{max-height:calc(30px + env(safe-area-inset-bottom,0px));overflow:hidden}
+  .lead,.legende{display:none}
   .poignee{display:block;position:sticky;top:0;z-index:2;width:100%;height:26px;margin:0;border:0;background:var(--panel);cursor:pointer}
   .poignee::before{content:"";display:block;width:40px;height:5px;margin:8px auto 0;border-radius:3px;background:var(--line)}
 }
@@ -179,7 +181,7 @@ const S={pub:{},stats:{},geo:null,ix:[],charges:new Map(),enCours:{},actif:null,
 const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/';
 const GLYPHES=window.ITINA_GLYPHES||new URL('glyphs/{fontstack}/{range}.pbf',location.href).href.replace('%7Bfontstack%7D','{fontstack}').replace('%7Brange%7D','{range}');
 const map=(()=>{try{return new maplibregl.Map({container:'map',attributionControl:false,dragRotate:false,pitchWithRotate:false,maxPitch:0,
-  minZoom:4,bounds:BORNES,fitBoundsOptions:{padding:{top:90,bottom:tel()?Math.round(innerHeight*.46)+10:30,left:tel()?20:450,right:80}},
+  minZoom:4,bounds:BORNES,fitBoundsOptions:{padding:{top:90,bottom:tel()?Math.round(innerHeight*.36)+10:30,left:tel()?20:450,right:80}},
   style:{version:8,glyphs:GLYPHES,
     sources:SANS_FOND?{}:{plan:{type:'raster',tiles:[ESRI+'Canvas/'+(sombre()?'World_Dark_Gray_Base':'World_Light_Gray_Base')+'/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:16,attribution:'Fond © Esri'},
       sat:{type:'raster',tiles:[ESRI+'World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:18,attribution:'Images © Esri, Maxar'}},
@@ -326,7 +328,9 @@ if(window.ResizeObserver)new ResizeObserver(feuille).observe($('panneau'));
 function panneau(html,vue){
   const p=$('panneau');S.vue=vue;
   p.innerHTML=`<button type="button" class="poignee" id="poignee" aria-label="Agrandir ou réduire le panneau"></button>`+html;p.hidden=false;
-  $('poignee').onclick=()=>p.classList.toggle('grande');
+  /* la barre grise : normal → grand → replié → normal */
+  $('poignee').onclick=()=>{const c=p.classList;if(c.contains('replie'))c.remove('replie');else if(c.contains('grande')){c.remove('grande');c.add('replie')}else c.add('grande')};
+  p.classList.remove('grande','replie');
   p.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>ouvrirPlan(b.dataset.plan));
   p.querySelectorAll('[data-copie]').forEach(b=>b.onclick=()=>copier(b.dataset.copie,b.dataset.msg||'Copié'));
   p.querySelectorAll('[data-aller]').forEach(b=>b.onclick=()=>{const [la,ln,zz]=b.dataset.aller.split(',').map(Number);voler(la,ln,zz||13)});

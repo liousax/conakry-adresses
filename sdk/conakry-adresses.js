@@ -227,6 +227,8 @@ class Referentiel {
       segs: v.g.map(decodeLine), ow: v.o || v.g.map(() => 0)
     }));
     this.voieParCode = {}; this.voies.forEach(v => { this.voieParCode[v.code] = v; });
+    /* vitesses par type de route (m/s) : celles de la ville par défaut ; le réseau national donne les siennes (routes entre les villes) */
+    this.vitesses = index.vitesses && typeof index.vitesses === 'object' ? Object.assign({}, VITESSE, index.vitesses) : VITESSE;
     /* anciens codes d'une rue renommée (règles de nommage du 15 novembre 2026) : un identifiant déjà partagé ouvre toujours la même adresse */
     this.voieParAncienCode = {}; this.voies.forEach(v => { for (const c of v.anciensCodes) if (!this.voieParCode[c]) this.voieParAncienCode[c] = v; });
     this._grid = null; this._graph = {}; this._search = null;
@@ -422,12 +424,12 @@ class Referentiel {
   /* ---------- ITINÉRAIRE ---------- */
   _graphe(mode) {
     if (this._graph[mode]) return this._graph[mode];
-    const pied = mode === 'pied', ids = new Map(), pts = [], adj = [];
+    const pied = mode === 'pied', libre = mode === 'libre', ids = new Map(), pts = [], adj = [];
     const id = p => { const k = NK(p); let i = ids.get(k); if (i === undefined) { i = pts.length; ids.set(k, i); pts.push(p); adj.push([]); } return i; };
     this.voies.forEach((v, vi) => {
       if (!pied && v.highway === 'pedestrian') return;
-      const vit = pied ? 1.35 : (VITESSE[v.highway] || 5);
-      v.segs.forEach((g, gi) => { const ow = pied ? 0 : (v.ow[gi] || 0); for (let i = 1; i < g.length; i++) {
+      const vit = pied ? 1.35 : (this.vitesses[v.highway] || 5);
+      v.segs.forEach((g, gi) => { const ow = pied || libre ? 0 : (v.ow[gi] || 0); for (let i = 1; i < g.length; i++) {
         const a = id(g[i - 1]), b = id(g[i]); if (a === b) continue; const L = dist(g[i - 1], g[i]);
         if (ow >= 0) adj[a].push([b, L, L / vit, vi, gi, i]); if (ow <= 0) adj[b].push([a, L, L / vit, vi, gi, -i]);
       } });
@@ -458,10 +460,10 @@ class Referentiel {
         if (d <= 3 || comp[j] !== comp[u]) { dw = d; w = j; }
       }
       if (w < 0) continue;
-      const vi = rue[u], v = this.voies[vi], vit = pied ? 1.35 : ((v && VITESSE[v.highway]) || 5);
+      const vi = rue[u], v = this.voies[vi], vit = pied ? 1.35 : ((v && this.vitesses[v.highway]) || 5);
       adj[u].push([w, dw, dw / vit, vi, -1, 0]); adj[w].push([u, dw, dw / vit, vi, -1, 0]); voisins[u].add(w); voisins[w].add(u); raccords++;
     }
-    return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : 8.3 };
+    return this._graph[mode] = { pts, adj, ids, raccords, vmax: pied ? 1.35 : Math.max(8.3, ...Object.values(this.vitesses)) };
   }
   /* zones signalées [{ lat, lng, r (m), facteur }] → effets sur le réseau G, d'après la géométrie des tronçons (pas seulement leurs sommets) :
      - passage fermé (facteur Infinity : route coupée, inondée) : la coupure est sur la ou les rues les plus proches du signalement
@@ -519,18 +521,23 @@ class Referentiel {
     opts = opts || {}; const mode = ({ voiture: 'voiture', car: 'voiture', moto: 'moto', pied: 'pied', walk: 'pied' })[opts.mode || 'voiture'] || 'voiture';
     /* la moto prend les mêmes rues et les mêmes sens que la voiture, 1,2 fois plus vite partout : même chemin, durée ÷ 1,2.
        Un seul réseau sert aux deux (un réseau pèse environ autant que le plan lui-même en mémoire). */
-    const reseau = mode === 'moto' ? 'voiture' : mode, acc = mode === 'moto' ? 1.2 : 1;
+    const libre = !!opts._libre && mode !== 'pied', reseau = libre ? 'libre' : mode === 'moto' ? 'voiture' : mode, acc = mode === 'moto' ? 1.2 : 1;
     const G = this._graphe(reseau);
     const okV = v => mode === 'pied' || v.highway !== 'pedestrian';
-    const S = this._nearest(de.lat, de.lng, 150, okV), T = this._nearest(a.lat, a.lng, 150, okV);
+    /* départ et arrivée raccrochés à la rue la plus proche : 150 m par défaut ; opts.rayon (départ) et opts.rayonArrivee (arrivée)
+       l'élargissent pour le réseau national (on part d'une petite rue, on va vers un village loin des grandes routes).
+       La recherche s'élargit par paliers : la rue la plus proche est trouvée vite. */
+    const lim = (x, d) => Math.min(Math.max(+x || d, 10), 30000), RS = lim(opts.rayon, 150), RT = lim(opts.rayonArrivee || opts.rayon, 150);
+    const pres = (p, max) => { for (const r of [150, 600, 2500, 10000].filter(r => r < max).concat([max])) { const x = this._nearest(p.lat, p.lng, r, okV); if (x) return x; } return null; };
+    const S = pres(de, RS), T = pres(a, RT);
     if (!S || !T) return null;
     const node = p => this._idNode(G, p);
     /* points de départ et d'arrivée raccrochés à la rue la plus proche */
     const sA = node(S.v.segs[S.gi][S.i - 1]), sB = node(S.v.segs[S.gi][S.i]), tA = node(T.v.segs[T.gi][T.i - 1]), tB = node(T.v.segs[T.gi][T.i]);
     /* tronçons de départ et d'arrivée : même vitesse que le reste du trajet (la moto est accélérée à la fin, comme le reste) */
-    const vitS = mode === 'pied' ? 1.35 : (VITESSE[S.v.highway] || 5), vitT = mode === 'pied' ? 1.35 : (VITESSE[T.v.highway] || 5);
+    const vitS = mode === 'pied' ? 1.35 : (this.vitesses[S.v.highway] || 5), vitT = mode === 'pied' ? 1.35 : (this.vitesses[T.v.highway] || 5);
     const LS = dist(S.v.segs[S.gi][S.i - 1], S.v.segs[S.gi][S.i]), LT = dist(T.v.segs[T.gi][T.i - 1], T.v.segs[T.gi][T.i]);
-    const owS = mode === 'pied' ? 0 : (S.v.ow[S.gi] || 0), owT = mode === 'pied' ? 0 : (T.v.ow[T.gi] || 0);
+    const owS = mode === 'pied' || libre ? 0 : (S.v.ow[S.gi] || 0), owT = mode === 'pied' || libre ? 0 : (T.v.ow[T.gi] || 0);
     const N = G.pts.length, SRC = N, DST = N + 1;
     /* zones signalées (route coupée ou inondée, embouteillage…) : contrôlées sur la géométrie des tronçons parcourus (voir _zones) */
     const Z = Array.isArray(opts.eviter) && opts.eviter.length ? this._zones(G, opts.eviter, okV) : null;
@@ -572,8 +579,10 @@ class Referentiel {
         const nd = gu + cout; if (nd < (g.has(e[0]) ? g.get(e[0]) : Infinity)) { g.set(e[0], nd); prev.set(e[0], [u, e, c]); hpush([nd + (e[0] === DST ? 0 : h(e[0])), e[0]]); }
       }
     }
-    /* aucun passage en dehors des coupures (ou aucune rue praticable) : pas de chemin */
-    if (!prev.has(DST)) return null;
+    /* aucun passage en dehors des coupures (ou aucune rue praticable) : pas de chemin.
+       opts.repliSens (réseau national, qui ne garde que les grandes routes) : on réessaie sans les sens uniques, qui piègent
+       parfois un départ pris sur une voie à sens unique sans la rue de quartier qui permettrait de faire demi-tour */
+    if (!prev.has(DST)) return opts.repliSens && !libre && mode !== 'pied' ? this.itineraire(de, a, Object.assign({}, opts, { _libre: true, repliSens: false })) : null;
     const legs = []; let k = DST;
     while (k !== SRC) { const [u, e, c] = prev.get(k); legs.unshift({ a: P(u), b: P(k), len: e[1], t: c, t0: e[2], v: e[3] >= 0 ? this.voies[e[3]] : (u === SRC ? S.v : T.v) }); k = u; }
     const ligne = [[legs[0].a.lat, legs[0].a.lon]].concat(legs.map(l => [l.b.lat, l.b.lon]));

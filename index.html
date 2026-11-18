@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-TX/4nZPJFXnFKreKTm77ttMRwfwIHrXoOO21UjrkGPU='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-erpgPQsWSg7L1IApO40DJ6EcDCeM4tLrYBgwzbXCOwk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#12a05c">
@@ -18,16 +18,24 @@
 <link rel="stylesheet" href="lib/maplibre-gl.css">
 <link rel="stylesheet" href="style.css">
 <script>if(window.top!==window.self){document.documentElement.style.display='none';try{window.top.location=window.self.location.href}catch(e){}}</script>
+<link rel="preload" href="fonts/saira.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-/* Itina Geo : jour (plan de ville) et nuit (comme Waze) ; vert, jaune et rouge du drapeau pour aller, signaler et arriver */
-:root{--accent:#12a05c;--on-accent:#ffffff;--accent-soft:#e2f5eb;--cyan:#0b8fd6;--jaune:#ffc400;--rouge:#e5383b;--panel2:#f1f3f6;
-  --ombre:0 6px 24px rgba(16,24,40,.18);--font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--display:var(--font);--body:var(--font);
-  --bg:#eef1f4;--panel:#ffffff;--fg:#111827;--muted:#5f6b7a;--line:#e4e8ee;--soft:#f1f3f6;--green:#12a05c;--on-green:#fff;--green-soft:#e2f5eb;--yellow:#e8b100;--red:#e5383b;--warn:#8a6100;--blue:#3e5a8a;
-  --paper:#f2ede3;--street:#ffffff;--casing:#cdc3b1;--major:#ffd977;--major-casing:#cf9f35;--text:#3b3128;--halo:#fffdf6;--quartier:#a34a3a;--provisoire:#7a6e5c;
+/* Itina Geo, design « Phare » : une police à nous (Saira), la nuit en encre profonde, le jour en gris froid ; le vert lumineux pour agir
+   (texte foncé dessus, lisible en plein soleil), le bleu électrique pour le trajet ; le jaune et le rouge du drapeau pour signaler et arriver */
+@font-face{font-family:"Saira";src:url(fonts/saira.woff2) format("woff2");font-weight:400 800;font-stretch:75% 100%;font-display:swap}
+:root{--accent:#0a7a47;--on-accent:#ffffff;--accent-soft:#e3f6ec;--vif:#19d67c;--on-vif:#03170c;--cyan:#0b63c9;--jaune:#ffc400;--rouge:#e5383b;--panel2:#eef2f6;
+  --ombre:0 10px 28px -8px rgba(10,22,40,.30),0 2px 6px rgba(10,22,40,.07);--verre:rgba(255,255,255,.84);--fil:rgba(10,22,40,.10);
+  --font:"Saira",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--display:var(--font);--body:var(--font);--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1);
+  --bg:#eef2f6;--panel:#ffffff;--fg:#0a1220;--muted:#526073;--line:#e2e8ef;--soft:#eef2f6;--green:#0a7a47;--on-green:#fff;--green-soft:#e3f6ec;--yellow:#e8b100;--red:#e5383b;--warn:#8a5a00;--blue:#2f5fa8;
+  --route:#0a6cff;--route-c:#ffffff;--route-alt:#9aa7b8;--on-route:#ffffff;--moi:#0a6cff;
+  --paper:#e9eef2;--dehors:#d6dde5;--street:#ffffff;--casing:#c6cfda;--major:#ffd76a;--major-casing:#d6a536;--text:#283241;--halo:#f7fafc;--quartier:#a8483b;--provisoire:#677485;
   --street-prop:#0f7a46;--street-keep:#3e5a8a;--street-todo:#b9a07a;--circ:#d9650b;--tram:#7b2d8e}
-:root[data-theme="dark"]{--accent:#2fd27e;--on-accent:#04190c;--accent-soft:#163528;--cyan:#33ccff;--jaune:#ffcf33;--rouge:#ff5a5f;--panel2:#262e39;--ombre:0 8px 28px rgba(0,0,0,.55);
-  --bg:#0f141b;--panel:#1b222c;--fg:#eef2f7;--muted:#9aa6b5;--line:#2c3542;--soft:#262e39;--green:#2fd27e;--on-green:#04190c;--green-soft:#163528;--yellow:#ffcf33;--red:#ff5a5f;--warn:#ffcf33;--blue:#7fb2ff;
-  --paper:#16202a;--street:#334050;--casing:#0d131a;--major:#5a6a82;--major-casing:#19222e;--text:#d9e0ea;--halo:#16202a;--quartier:#eaa796;--provisoire:#a9b4c2;
+:root[data-theme="dark"]{--accent:#3df59e;--on-accent:#02140a;--accent-soft:#0e271b;--vif:#2bf08f;--on-vif:#02140a;--cyan:#4fd9ff;--jaune:#ffcf33;--rouge:#ff5a5f;--panel2:#141c27;
+  --ombre:0 14px 36px -10px rgba(0,0,0,.8),0 2px 8px rgba(0,0,0,.45);--verre:rgba(12,18,27,.80);--fil:rgba(255,255,255,.09);
+  --bg:#05080d;--panel:#0c121b;--fg:#e9eff7;--muted:#8d9aae;--line:#1b2431;--soft:#141c27;--green:#3df59e;--on-green:#02140a;--green-soft:#0e271b;--yellow:#ffcf33;--red:#ff5a5f;--warn:#ffcf33;--blue:#7fb2ff;
+  --route:#2ee6ff;--route-c:#05242e;--route-alt:#5b687c;--on-route:#03141a;--moi:#2ee6ff;
+  --paper:#070c13;--dehors:#04070b;--street:#202c3c;--casing:#03060a;--major:#3a4a64;--major-casing:#0b111a;--text:#c9d3df;--halo:#070c13;--quartier:#ff9f8a;--provisoire:#8794a6;
   --street-prop:#3fc483;--street-keep:#8fb0ea;--street-todo:#8a7a60;--circ:#ff9a45;--tram:#d08be6;color-scheme:dark}
 html,body{height:100%;overflow:hidden}
 body{font-family:var(--font);background:var(--bg)}
@@ -48,6 +56,9 @@ button{font-family:inherit}
 .menu-villes a:hover,.menu-villes a:focus-visible{background:var(--panel2)}
 .menu-villes .sep{padding:10px 14px 4px;font:700 11px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .menu-villes .gm{margin-top:4px;border-top:1px solid var(--line);padding-top:4px}.menu-villes .gm a{font-weight:500;color:var(--muted)}
+.menu-villes .tout button{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:none;color:var(--accent);font:700 15px var(--font);cursor:pointer;text-align:left}
+.menu-villes .tout button:hover,.menu-villes .tout button:focus-visible{background:var(--panel2)}.menu-villes .tout .ic{width:20px;height:20px}
+.menu-villes .tout{border-bottom:1px solid var(--line);margin-bottom:4px;padding-bottom:4px}
 .menu-villes a[aria-current="page"]{color:var(--accent)}.menu-villes a[aria-current="page"]::after{content:"";margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--accent)}
 /* boutons ronds sur la carte */
 .fabs{position:fixed;z-index:15;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 80px);display:flex;flex-direction:column;gap:10px}
@@ -62,13 +73,18 @@ button{font-family:inherit}
 .fab.boussole svg{transition:transform .2s}
 .signaler{position:fixed;z-index:16;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(var(--feuille,160px) + 14px);width:62px;height:62px;border:0;border-radius:20px;background:var(--jaune);color:#2b2100;box-shadow:0 6px 18px rgba(0,0,0,.3);display:grid;place-items:center;cursor:pointer}
 .signaler svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+/* petits écrans (iPhone SE…) : colonne de boutons resserrée, pour ne pas passer sous le bouton jaune « Signaler » */
+@media (max-width:899px) and (max-height:700px){.fabs{top:calc(env(safe-area-inset-top,0px) + 72px);gap:6px}.fab{width:42px;height:42px}.fab-zoom .fab{font-size:24px}
+  .signaler{width:52px;height:52px;border-radius:17px}.signaler svg{width:28px;height:28px}}
+@media (max-width:899px) and (max-height:520px){.signaler{right:calc(max(12px,env(safe-area-inset-right,0px)) + 54px)}}
 /* feuille du bas (à gauche sur ordinateur) */
-.feuille{position:fixed;z-index:18;left:0;right:0;bottom:0;max-height:min(50vh,560px);overflow:auto;overscroll-behavior:contain;background:var(--panel);color:var(--fg);border-radius:24px 24px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.2);padding:0 18px calc(18px + env(safe-area-inset-bottom,0px));transition:max-height .25s}
+.feuille{position:fixed;z-index:18;left:0;right:0;bottom:0;max-height:min(40vh,560px);overflow:auto;overscroll-behavior:contain;background:var(--panel);color:var(--fg);border-radius:24px 24px 0 0;box-shadow:0 -6px 28px rgba(0,0,0,.2);padding:0 18px calc(18px + env(safe-area-inset-bottom,0px));transition:max-height .25s}
 .feuille.grande{max-height:88vh}
+.feuille.replie{max-height:calc(56px + env(safe-area-inset-bottom,0px));overflow:hidden}
 .poignee{position:sticky;top:0;z-index:2;display:block;width:100%;height:24px;margin:0 0 4px;border:0;background:var(--panel);cursor:pointer}
 .poignee::after{content:"";position:absolute;left:50%;top:9px;width:40px;height:5px;margin-left:-20px;border-radius:3px;background:var(--line)}
 .sur{font:700 13px var(--font);color:var(--muted);display:flex;align-items:center;gap:8px;min-height:24px}
-.sur.ici::before{content:"";width:10px;height:10px;border-radius:50%;background:#2a7de1;box-shadow:0 0 0 3px rgba(42,125,225,.25);flex:none}
+.sur.ici::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--moi);box-shadow:0 0 0 3px color-mix(in srgb,var(--moi) 25%,transparent);flex:none}
 .sur.tram::before{content:"";width:10px;height:10px;border-radius:50%;border:2.5px solid var(--tram);box-sizing:border-box;flex:none}
 .fermer{margin-left:auto;width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--panel2);color:var(--fg);display:grid;place-items:center;cursor:pointer}
 .fermer .ic{width:18px;height:18px}
@@ -120,7 +136,7 @@ button{font-family:inherit}
 .pied a{color:var(--muted);font-weight:600}
 /* itinéraire */
 .pts{display:grid;grid-template-columns:16px 1fr;gap:8px 10px;align-items:center;font-size:14.5px;margin:8px 0}
-.pts i{width:12px;height:12px;border-radius:50%;display:block;margin:0 auto}.pts .a{border:3px solid #2a7de1;box-sizing:border-box}.pts .b{background:var(--rouge)}
+.pts i{width:12px;height:12px;border-radius:50%;display:block;margin:0 auto}.pts .a{border:3px solid var(--moi);box-sizing:border-box}.pts .b{background:var(--rouge)}
 .pts span{min-width:0;overflow-wrap:anywhere}
 .lien{border:0;background:none;color:var(--cyan);font:700 13px var(--font);margin-left:8px;padding:4px 0;cursor:pointer}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--panel2);padding:4px;border-radius:14px;margin:10px 0}
@@ -197,7 +213,10 @@ details.commune summary small{color:var(--muted);font-weight:600}
 .mk-sig svg{width:20px;height:20px}
 /* repères, position, messages */
 .pin{width:32px;height:44px;margin:-44px 0 0 -16px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
-.me{width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#2a7de1;border:3px solid #fff;box-shadow:0 0 0 7px rgba(42,125,225,.25)}
+.me{width:20px;height:20px;border-radius:50%;background:var(--moi);border:3px solid #fff;box-shadow:0 0 0 7px color-mix(in srgb,var(--moi) 24%,transparent),0 2px 6px rgba(0,0,0,.3)}
+/* en mouvement : flèche tournée dans le sens de la marche (l'élément intérieur tourne ; la carte place l'élément extérieur) */
+.me i{display:none}.me.cap{width:34px;height:34px;background:none;border:0;box-shadow:none}
+.me.cap i{display:block;width:34px;height:34px}.me.cap svg{display:block;width:34px;height:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))}
 .toast{position:fixed;z-index:70;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 76px);background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .pick{position:fixed;z-index:25;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 78px);background:var(--panel);color:var(--fg);border:2px solid var(--cyan);border-radius:16px;padding:8px 8px 8px 14px;font-weight:700;display:flex;gap:10px;align-items:center;box-shadow:var(--ombre);max-width:calc(100% - 24px)}
 .pick .bt{min-height:40px;flex:none}
@@ -208,6 +227,11 @@ details.commune summary small{color:var(--muted);font-weight:600}
 .status .err-act{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:18px 0 0}.status .err-act .bt{text-decoration:none;flex:0 0 auto}
 .maplibregl-ctrl-bottom-right{bottom:calc(var(--feuille,160px) + 4px)}
 .maplibregl-ctrl-bottom-left{bottom:calc(var(--feuille,160px) + 4px)}
+.ici{position:fixed;z-index:16;left:50%;transform:translateX(-50%);bottom:calc(var(--feuille,160px) + 18px);max-width:min(56vw,420px);padding:10px 18px;border-radius:999px;background:#0b0f14;color:#fff;font:800 16px/1.2 var(--font);text-align:center;box-shadow:var(--ombre);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.vit{position:fixed;z-index:16;left:max(14px,env(safe-area-inset-left,0px));bottom:calc(var(--feuille,160px) + 14px);width:62px;height:62px;border-radius:50%;background:var(--panel);color:var(--fg);box-shadow:var(--ombre);display:grid;align-content:center;justify-items:center;line-height:1;pointer-events:none}
+.vit b{font:800 23px var(--font);font-variant-numeric:tabular-nums}.vit small{font:600 10px var(--font);color:var(--muted);margin-top:2px}
+body.avec-vit .maplibregl-ctrl-bottom-left{bottom:calc(var(--feuille,160px) + 84px)}
+
 .maplibregl-ctrl-attrib,.maplibregl-ctrl-attrib.maplibregl-compact{background:color-mix(in srgb,var(--panel) 85%,transparent);color:var(--fg)}.maplibregl-ctrl-attrib a{color:var(--fg)}
 .maplibregl-ctrl-group{background:var(--panel)}.maplibregl-ctrl-group button .maplibregl-ctrl-icon{filter:var(--icones,none)}
 :root[data-theme="dark"]{--icones:invert(1)}
@@ -277,6 +301,181 @@ textarea.a-in{resize:vertical;line-height:1.4}
 .a-ajph{justify-self:start;margin-top:8px;cursor:pointer;min-height:44px}
 .actions.defile{overflow-x:auto;scrollbar-width:none;margin-left:-18px;margin-right:-18px;padding:0 18px 2px}.actions.defile::-webkit-scrollbar{display:none}
 .actions.defile .bt{flex:none;white-space:nowrap}.actions.defile .bt.vert{padding:0 22px}.actions.defile .bt.carre{width:50px}
+/* ---------- bienvenue : premier lancement (présentation, position, moyen de transport, découverte), comme Coyote et Waze ---------- */
+.bv{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:var(--bg);color:var(--fg);overflow:hidden;
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);transition:opacity .28s}
+.bv.sortie{opacity:0;pointer-events:none}
+.bv-ecran{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;width:100%;max-width:520px;margin:0 auto;padding:12px 24px 22px;box-sizing:border-box;animation:bvIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes bvIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.bv-haut{display:flex;justify-content:flex-end;align-items:center;min-height:40px}
+.bv-passer{border:0;background:none;color:var(--muted);font:700 15px var(--font);padding:10px 6px;cursor:pointer}
+.bv-illu{flex:1;min-height:110px;display:grid;place-items:center;padding:4px 0 14px}
+.bv-illu svg{height:100%;width:auto;max-height:320px;max-width:100%}
+.bv-vide{flex:1;min-height:12px}
+.bv h1{font:800 clamp(25px,7vw,32px)/1.15 var(--font);letter-spacing:-.02em;margin:0 0 10px;outline:none}
+.bv p{font-size:16px;line-height:1.5;color:var(--muted);margin:0}
+.bv-bas{display:flex;flex-direction:column;gap:4px;margin-top:22px}
+.bv-go{min-height:56px;border:0;border-radius:18px;background:var(--accent);color:var(--on-accent);font:800 17px var(--font);cursor:pointer;width:100%;transition:background .2s,transform .1s}
+.bv-go:active{transform:scale(.98)}
+.bv-go:disabled{background:var(--panel2);color:var(--muted);cursor:default;transform:none}
+.bv-lien{border:0;background:none;color:var(--muted);font:700 15px var(--font);padding:12px;cursor:pointer}
+.bv-note{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;margin-top:16px;font-size:14.5px;line-height:1.45;color:var(--fg)}
+.bv-note .ic{width:22px;height:22px;color:var(--accent)}
+.bv .bv-disque{fill:var(--panel2)}.bv .bv-disque-rues{stroke:var(--panel)}
+/* l'écran d'accueil : le vert du logo, des rues et un trajet qui avance jusqu'à la porte */
+.bv.marque{background:#0d3a28;color:#fff;color-scheme:dark}
+.bv-fond{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.bv.marque .bv-ecran{justify-content:flex-end}
+.bv.marque p{color:#cfe6d8;font-size:17px}
+.bv-nom{display:inline-block;font:800 13px var(--font);letter-spacing:.14em;text-transform:uppercase;color:#fcd116;margin-bottom:12px}
+.bv.marque h1{font-size:clamp(30px,8.6vw,40px)}
+.bv-go.jaune{background:#fcd116;color:#1d1a00}
+.bv-trace{stroke-dasharray:16 14;animation:bvTrace 1.4s linear infinite}
+@keyframes bvTrace{to{stroke-dashoffset:-30}}
+.bv-onde{transform-box:fill-box;transform-origin:center;animation:bvOnde 2.2s ease-out infinite}
+.bv-onde.d2{animation-delay:1.1s}
+@keyframes bvOnde{from{transform:scale(.4);opacity:.75}to{transform:scale(1.7);opacity:0}}
+/* moyen de transport */
+.bv-modes{display:grid;gap:12px;margin-top:22px}
+.bv-mode{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;border:2px solid var(--line);background:var(--panel);color:var(--fg);font:inherit;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.bv-mode .ic{width:28px;height:28px;padding:11px;box-sizing:content-box;border-radius:15px;background:var(--panel2)}
+.bv-mode b{display:block;font-size:17px}
+.bv-mode small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.bv-mode::after{content:"";margin-left:auto;flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);box-sizing:border-box}
+.bv-mode[aria-checked="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.bv-mode[aria-checked="true"] .ic{background:var(--accent);color:var(--on-accent)}
+.bv-mode[aria-checked="true"]::after{border:7px solid var(--accent)}
+/* découverte : des écrans qui glissent au doigt, avec des points */
+.bv-fen{flex:1;min-height:0;overflow:hidden;margin:0 -24px;touch-action:pan-y}
+.bv-piste{display:flex;height:100%;transition:transform .38s cubic-bezier(.2,.8,.2,1)}
+.bv-piste.glisse{transition:none}
+.bv-diapo{flex:0 0 100%;min-width:0;display:flex;flex-direction:column;padding:0 24px;box-sizing:border-box}
+.bv-points{display:flex;gap:7px;justify-content:center;margin-top:18px}
+.bv-points i{width:8px;height:8px;border-radius:4px;background:var(--line);transition:width .25s,background .25s}
+.bv-points i.on{width:24px;background:var(--accent)}
+@media (prefers-reduced-motion:reduce){.bv,.bv *{animation:none!important;transition:none!important}}
+@media (max-height:640px){.bv-illu{min-height:80px;padding-bottom:8px}.bv p{font-size:15px}.bv-note{margin-top:10px;padding:10px 12px}.bv-modes{gap:8px;margin-top:14px}.bv-mode{padding:10px 14px}.bv-bas{margin-top:14px}}
+/* itinéraire : la durée de chaque trajet sur la carte, et le départ automatique (comme Coyote et Waze) */
+.bulle-m{padding-bottom:7px;cursor:pointer}
+.bulle{position:relative;display:block;border:0;padding:6px 10px;border-radius:12px;background:var(--panel);color:var(--fg);font:800 14px/1.1 var(--font);box-shadow:0 2px 10px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.bulle::after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:var(--panel)}
+.bulle.on{background:var(--route);color:var(--on-route)}.bulle.on::after{border-top-color:var(--route)}
+.trajet .bdg{align-self:center;font-size:12px;font-weight:800;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.trajet .bdg.court{background:var(--panel2);color:var(--muted)}
+#rGo{position:relative;overflow:hidden;isolation:isolate}
+#rGo.auto::before{content:"";position:absolute;inset:0;z-index:-1;background:rgba(0,0,0,.2);transform-origin:left center;animation:rAuto var(--auto,8s) linear forwards}
+@keyframes rAuto{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.auto-txt{margin:6px 0 0;font-size:13px;color:var(--muted);text-align:center}
+/* « Démarrer » reste en bas de la feuille, même quand les trajets la remplissent (comme Coyote) */
+.feuille[data-vue="itineraire"] .r-go.colle{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));z-index:2;margin:4px -18px 0;padding:0 18px calc(12px + env(safe-area-inset-bottom,0px));background:var(--panel);box-shadow:0 -1px 0 var(--line)}
+.feuille[data-vue="itineraire"] .r-go.colle .actions{margin-top:0;padding-top:12px}
+/* recherche dans toute la Guinée : les autres villes, en puces */
+.ailleurs{margin:16px 0 6px}.ailleurs>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:0 0 8px}
+.ailleurs .chips{flex-wrap:wrap;overflow:visible}
+/* compteur de vitesse : un anneau qui se remplit avec la vitesse, comme sur Coyote */
+.vit::before{content:"";position:absolute;inset:4px;border-radius:50%;background:conic-gradient(from 225deg,var(--accent) calc(var(--p,0) * 270deg),var(--line) 0 270deg,transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4.5px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4.5px))}
+/* ---------- Phare : finitions ----------
+   Une seule famille, Saira : titres 700, texte 450, mesures (temps, distances, vitesse) en chiffres tabulaires un peu serrés.
+   Au-dessus de la carte, les commandes sont en verre dépoli : on garde la carte en vue derrière. Filets fins, ombres décalées,
+   un rayon par taille (10, 14, 18, 26). Retour au toucher très court (140 ms) ; rien ne glisse en « mouvement réduit ». */
+html{-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body{font-weight:450;letter-spacing:.004em}
+::selection{background:color-mix(in srgb,var(--vif) 38%,transparent);color:var(--fg)}
+input,textarea{caret-color:var(--accent)}
+:focus-visible{outline:2px solid var(--vif);outline-offset:2px}
+.feuille,.p-corps,.m-boite,.a-cats{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--muted) 45%,transparent) transparent}
+/* verre au-dessus de la carte */
+.barre,.rond,.fab,.fab-zoom,.vit,.filtre-cat,.maj,.pick,.menu-villes{background:var(--verre);-webkit-backdrop-filter:blur(16px) saturate(1.6);backdrop-filter:blur(16px) saturate(1.6);border:1px solid var(--fil);box-shadow:var(--ombre)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.barre,.rond,.fab,.fab-zoom,.vit,.filtre-cat,.maj,.pick,.menu-villes{background:var(--panel)}}
+.fab-zoom .fab{background:transparent;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.barre{border-radius:18px}.barre-q{border-radius:18px;font:550 16px var(--font);letter-spacing:.01em}
+.ville{border-radius:12px;background:color-mix(in srgb,var(--fg) 7%,transparent);font:650 14px var(--font)}
+.rond,.fab{border-radius:16px}.fab-zoom{border-radius:16px}.fab-zoom .fab{border-radius:0}.fab-zoom .fab+.fab{border-top:1px solid var(--fil)}
+.fab[aria-pressed="true"]{background:var(--vif);color:var(--on-vif);border-color:transparent}
+.menu-villes{border-radius:18px}.menu-villes a,.menu-villes .tout button{border-radius:12px}.menu-villes .sep{font:650 11.5px var(--font);letter-spacing:.08em}
+.menu-villes a[aria-current="page"]::after{border-radius:2px;background:var(--vif)}
+.pick{border:1.5px solid var(--route)}
+.maj button{background:var(--vif);color:var(--on-vif)}
+/* la rue où l'on est, et le compteur de vitesse : des instruments */
+.ici{border-radius:14px;background:rgba(6,10,16,.92);border:1px solid rgba(255,255,255,.1);font:650 16px/1.2 var(--font);letter-spacing:.01em}
+.vit{border-radius:50%}.vit b{font:700 24px var(--display);font-stretch:87.5%}.vit small{font:600 10px var(--font);letter-spacing:.04em}
+.vit::before{background:conic-gradient(from 225deg,var(--vif) calc(var(--p,0) * 270deg),var(--line) 0 270deg,transparent 0)}
+.signaler{border-radius:20px;box-shadow:0 10px 24px -8px rgba(120,80,0,.55),0 2px 6px rgba(0,0,0,.18)}
+/* feuille du bas */
+.feuille{border-radius:26px 26px 0 0;border-top:1px solid var(--fil);box-shadow:0 -14px 40px -14px rgba(10,22,40,.32)}
+:root[data-theme="dark"] .feuille{box-shadow:0 -16px 44px -12px rgba(0,0,0,.85)}
+.poignee::after{top:10px;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:color-mix(in srgb,var(--muted) 45%,transparent)}
+.sur{font:600 12.5px var(--font);letter-spacing:.03em;color:var(--muted);min-height:38px}
+.sur:not(.ici):not(.tram)::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--vif)}
+.fermer{width:36px;height:36px;background:color-mix(in srgb,var(--fg) 7%,transparent)}
+.feuille h1{font:700 26px/1.12 var(--display);letter-spacing:-.012em}
+.feuille h2,.m-boite h2{font:700 22px/1.15 var(--display);letter-spacing:-.008em;text-wrap:balance}
+.feuille h3{font:650 11.5px var(--font);letter-spacing:.09em}
+.salut{font:700 26px/1.12 var(--display);letter-spacing:-.012em}
+.p-titre{font:700 21px var(--display);letter-spacing:-.006em}
+.l2{font-weight:500}.info{font-size:13.5px;line-height:1.5}
+.ded{border-left:0;border-radius:12px;background:color-mix(in srgb,var(--quartier) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--quartier) 22%,transparent)}
+#fc.entre>*{animation:fcIn .26s var(--ease-drawer) both}
+@keyframes fcIn{from{opacity:0;transform:translateY(8px)}}
+/* identifiants et codes : des données, en chasse fixe */
+.puce{font:600 12.5px var(--mono);border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
+.puce.pc{background:color-mix(in srgb,var(--fg) 5%,transparent);box-shadow:inset 0 0 0 1px var(--fil)}
+.code-box{border-radius:18px;background:color-mix(in srgb,var(--accent) 9%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}
+.code-box b{font-family:var(--mono)}
+/* boutons : un seul jeu, un rayon, un retour au toucher */
+.bt{min-height:52px;border-radius:16px;font:650 15.5px var(--font);letter-spacing:.01em;background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.bt.vert,.bv-go{background:var(--vif);color:var(--on-vif);box-shadow:inset 0 0 0 1px rgba(0,0,0,.06),0 10px 22px -12px color-mix(in srgb,var(--vif) 80%,#000)}
+.bt.carre{flex-basis:52px}
+.bt,.rond,.fab,.fermer,.racc,.chip,.sig-b,.trajet,.ville,.signaler,.bv-go,.tuile,.bv-mode,.modes button,.segs button,.lien,.bulle{transition:transform .14s var(--ease-out),background-color .18s,border-color .18s,color .18s,box-shadow .18s}
+.bt:active,.rond:active,.fab:active,.fermer:active,.racc:active,.chip:active,.sig-b:active,.trajet:active,.ville:active,.signaler:active,.bv-go:active,.tuile:active,.bv-mode:active,.modes button:active,.segs button:active,.bulle:active{transform:scale(.97)}
+.ligne:active,.reglage>summary:active{background:color-mix(in srgb,var(--fg) 5%,transparent)}
+@media (hover:hover) and (pointer:fine){.bt:hover{filter:brightness(1.04)}.ligne:hover{background:color-mix(in srgb,var(--fg) 4%,transparent)}}
+/* accueil */
+.racc{border-radius:18px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--fil)}
+.emoji,.e-maison,.e-travail,.e-etoile,.e-histo,.e-quartier,.e-gps,.e-alerte,.e-tram,.e-ajout{border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,transparent)!important;color:var(--accent)!important}
+.e-alerte{background:color-mix(in srgb,var(--jaune) 22%,transparent)!important;color:var(--warn)!important}
+/* itinéraire */
+.modes,.segs{border-radius:14px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--fil)}
+.modes button,.segs button{border-radius:11px;font-weight:650}
+.modes button[aria-pressed="true"],.segs button[aria-pressed="true"]{background:var(--panel);color:var(--fg);box-shadow:0 1px 2px rgba(10,22,40,.14),inset 0 0 0 1px var(--fil)}
+.modes button[aria-pressed="true"] .ic{color:var(--accent)}
+.trajet{border:1.5px solid var(--line);border-radius:18px}
+.trajet[aria-pressed="true"]{border-color:var(--vif);background:color-mix(in srgb,var(--vif) 9%,var(--panel))}
+.trajet .du{font:700 30px/1.05 var(--display);font-stretch:87.5%;letter-spacing:-.01em}
+.trajet .ar{font-weight:600;font-variant-numeric:tabular-nums}
+.trajet .bdg{border-radius:8px;font-weight:700;letter-spacing:.02em;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.lien{color:var(--cyan);font-weight:650}
+.bulle{border-radius:12px;font:700 14px/1.1 var(--display);font-stretch:87.5%;border:1px solid var(--fil);box-shadow:0 6px 16px -6px rgba(0,0,0,.45)}
+.feuille[data-vue="itineraire"] .r-go.colle{box-shadow:0 -1px 0 var(--fil)}
+/* panneaux, réglages, signalements, formulaires */
+.champ{border-radius:16px;background:var(--panel2);box-shadow:inset 0 0 0 1px var(--fil)}
+.champ input{font:550 17px var(--font)}
+.tuile{border-radius:18px;box-shadow:inset 0 0 0 1px var(--fil)}
+.reglage .pastille{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,var(--panel))!important;color:var(--accent)}
+.reglage>summary{font-weight:600}
+.inter[aria-checked="true"]{background:var(--vif)}
+.m-boite{border-radius:26px 26px 0 0;border-top:1px solid var(--fil)}
+.sig-b{border-radius:18px;box-shadow:inset 0 0 0 1px var(--fil);font-weight:650}
+.a-in,.mini input,.mini textarea{border-radius:14px}
+.a-in:focus{outline:2px solid var(--vif)}
+.chip{border-radius:12px;border-color:var(--fil);font-weight:600}
+body:has(.gc) .toast{top:calc(env(safe-area-inset-top,0px) + var(--gc-haut,96px) + 76px)}
+.toast{border-radius:14px;background:rgba(6,10,16,.94);color:#eef3f8;border:1px solid rgba(255,255,255,.1);font-weight:600;box-shadow:0 12px 30px -10px rgba(0,0,0,.6)}
+.status h3{font:700 21px var(--display)}
+/* bienvenue : la marque, sans surtitre ; le vert de la nuit et le jaune du drapeau */
+.bv h1{font:700 clamp(26px,7.4vw,34px)/1.12 var(--display);letter-spacing:-.014em}
+.bv.marque{background:radial-gradient(120% 70% at 75% 18%,#0e4a31 0%,#05150e 58%,#030b07 100%)}
+.bv-nom{font:700 16px var(--display);letter-spacing:.01em;text-transform:none;display:inline-flex;align-items:center;gap:8px}
+.bv-nom::before{content:"";width:10px;height:10px;border-radius:3px;background:#fcd116;box-shadow:0 0 0 3px rgba(252,209,22,.18)}
+.bv-go{border-radius:16px;font:700 17px var(--font);letter-spacing:.01em}
+.bv-go.jaune{background:#fcd116;color:#1d1a00;box-shadow:0 12px 26px -12px rgba(252,209,22,.7)}
+.bv-mode{border-width:1.5px}.bv-mode[aria-checked="true"]{border-color:var(--vif);background:color-mix(in srgb,var(--vif) 9%,var(--panel))}
+.bv-mode[aria-checked="true"] .ic{background:var(--vif);color:var(--on-vif)}.bv-mode[aria-checked="true"]::after{border-color:var(--vif)}
+.bv-points i.on{background:var(--vif)}
+.bv-note{border-radius:18px;border-color:var(--fil)}
+@media (prefers-reduced-motion:reduce){#fc.entre>*{animation:fcFondu .2s ease both}@keyframes fcFondu{from{opacity:0}}
+  .bt:active,.rond:active,.fab:active,.fermer:active,.racc:active,.chip:active,.sig-b:active,.trajet:active,.ville:active,.signaler:active,.bv-go:active,.tuile:active,.bv-mode:active,.modes button:active,.segs button:active,.bulle:active{transform:none}}
 /* ordinateur : la feuille et la recherche à gauche, comme une appli */
 @media (min-width:900px){
   .haut{right:auto;width:400px}
@@ -289,6 +488,7 @@ textarea.a-in{resize:vertical;line-height:1.4}
   #param.panneau{left:auto;right:0}
   .menu-villes{right:auto;left:300px}
   .maplibregl-ctrl-bottom-right{bottom:96px}.maplibregl-ctrl-bottom-left{bottom:4px;left:432px}
+  .ici{bottom:24px;left:calc(50% + 216px)}.vit{display:none}body.avec-vit .maplibregl-ctrl-bottom-left{bottom:4px}
   .modal{align-items:center}.m-boite{border-radius:26px}
 }
 </style>
@@ -307,6 +507,7 @@ textarea.a-in{resize:vertical;line-height:1.4}
   <button class="fab" type="button" id="fabLoc" aria-label="Ma position"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4.5 20.3l.7.7L12 18l6.8 3 .7-.7z"/></svg></button>
 </div>
 <div class="maj" id="maj" role="status" hidden><span id="majTxt"></span><button type="button" id="majGo">Mettre à jour</button><button type="button" class="majx" id="majX" aria-label="Plus tard">×</button></div>
+<div class="ici" id="ici" hidden aria-live="polite"></div><div class="vit" id="vit" hidden aria-label="Vitesse"><b id="vitN">0</b><small>km/h</small></div>
 <button class="signaler" type="button" id="btnSignaler" aria-label="Signaler un événement sur la route"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 5 36 33H4z"/><path d="M20 15v11M14.5 20.5h11"/></svg></button>
 <section class="feuille" id="feuille" aria-live="polite"><button type="button" class="poignee" id="poignee" aria-label="Agrandir ou réduire"></button><div class="c" id="fc"></div></section>
 
@@ -340,6 +541,7 @@ textarea.a-in{resize:vertical;line-height:1.4}
 <div class="visio" id="visio" hidden role="dialog" aria-modal="true" aria-label="Photos du lieu"><div class="v-haut"><span id="vTitre"></span><button type="button" class="v-fermer" id="vFermer" aria-label="Fermer"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><img id="vImg" alt=""><button type="button" class="v-nav v-prec" id="vPrec" aria-label="Photo précédente"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><button type="button" class="v-nav v-suiv" id="vSuiv" aria-label="Photo suivante"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><div class="v-compte" id="vCompte"></div></div>
 <div class="pick" id="pick" hidden><span id="pickTxt">Touchez la carte</span><button class="bt" type="button" id="pickMoi" hidden>Ma position</button><button class="bt" type="button" id="pickNo">Annuler</button></div>
 <div class="toast" id="toast" role="status" hidden></div>
+<div class="bv" id="bienvenue" hidden role="dialog" aria-modal="true" aria-labelledby="bvT"></div>
 <div class="status" id="status"><div><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><clipPath id="logoC"><rect width="64" height="64" rx="16"/></clipPath><g clip-path="url(#logoC)"><rect width="64" height="64" fill="#0d3a28"/><path d="M-4 43 68 29M19 -4 28 68M45 -4 53 68" stroke="#22603f" stroke-width="5.5" stroke-linecap="round" fill="none"/></g><path d="M32 55s15-15.8 15-27a15 15 0 0 0-30 0c0 11.2 15 27 15 27z" fill="#fcd116"/><circle cx="32" cy="28" r="6" fill="#ce1126"/></svg><h3>Itina Geo</h3><p class="hint">Chargement du plan…</p></div></div>
 <script src="lib/maplibre-gl.js"></script>
 <script src="sdk/conakry-adresses.js"></script>
@@ -386,7 +588,9 @@ const I={
   wa:P('<path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/>'),
   web:P('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>'),
   crayon:P('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>'),
-  photo:P('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>')
+  photo:P('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  aide:P('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4M12 17v.4"/>'),
+  cadenas:P('<rect x="5" y="11" width="14" height="10" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')
 };
 /* ---------- signalements : comme sur Waze, ce que les conducteurs voient sur la route ---------- */
 const GS=(window.GuidageConakry&&GuidageConakry.SIGNALEMENTS)||{};
@@ -426,7 +630,12 @@ const cleLien=(id,lat,lng)=>(id?id+'@':'')+(+lat).toFixed(6)+','+(+lng).toFixed(
 const VILLE_MEMO='conakry-ville',lireMemo=()=>{try{return localStorage.getItem(VILLE_MEMO)}catch(e){return null}};
 const H0=dec(location.hash.slice(1)),PT0=H0.match(LIEN);
 let VILLE=villeDuCode(H0),deMemoire=false;
-if(!aVille(VILLE)&&PT0)VILLE=villeDuPoint(+PT0[2],+PT0[3]);
+/* ville ouverte d'office (ni identifiant, ni position, ni ?ville= dans le lien) : le GPS peut ouvrir celle où l'on est */
+const VILLE_IMPLICITE=!VILLE&&!PT0&&!new URLSearchParams(location.search).get('ville');
+/* plans publiés connus de la dernière visite : un lien vers un endroit sans plan publié ne choisit pas ce plan-là */
+const PUB0=(()=>{try{const x=JSON.parse(localStorage.getItem('itina-geo-publies')||'null');return Array.isArray(x)?x:null}catch(e){return null}})();
+const LIEU_SEUL=new URLSearchParams(location.search).get('lieu')==='1'||(()=>{try{const x=sessionStorage.getItem('itina-lieu')==='1';sessionStorage.removeItem('itina-lieu');return x}catch(e){return false}})();
+if(!aVille(VILLE)&&PT0&&!LIEU_SEUL){const c=villeDuPoint(+PT0[2],+PT0[3]);if(!PUB0||PUB0.includes(c))VILLE=c}
 if(!aVille(VILLE))VILLE=new URLSearchParams(location.search).get('ville');
 if(!aVille(VILLE)&&(location.hash.length<2||PT0)&&aVille(lireMemo())){VILLE=lireMemo();deMemoire=true}
 if(!aVille(VILLE))VILLE='conakry';
@@ -449,7 +658,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 let VLIST=null;
 
 /* ---------- réglages (gardés sur l'appareil) ---------- */
-const REG=Object.assign({theme:'auto',sat:false,grille:false,circ:false,lim:true,tram:false,couleur:'plan',annonces:true,mode:'voiture',eviter:true,bis:true,alertes:true},lire('itina-geo-reglages',{}));
+const REG=Object.assign({theme:'auto',sat:false,grille:false,circ:false,lim:true,tram:false,couleur:'plan',annonces:true,mode:'voiture',eviter:true,bis:true,alertes:true,auto:true},lire('itina-geo-reglages',{}));
 (()=>{const r=lire('conakry-rendu',null);if(r&&!localStorage.getItem('itina-geo-reglages')){if(r.mode==='suivi')REG.couleur='suivi';for(const k of['grille','circ','lim','tram'])if(typeof r[k]==='boolean')REG[k]=r[k]}})();
 if(!['voiture','moto','pied'].includes(REG.mode))REG.mode='voiture';
 const garderReg=()=>ecrire('itina-geo-reglages',REG);
@@ -537,12 +746,17 @@ function addLayers(){
   const width=add=>[...z,...W.flatMap(([zz,M,m])=>[zz,['case',['==',['get','m'],1],M+add,m+add]])];
   map.addSource('zones',Object.assign({type:'geojson',data:zonesFC()},ref.zones.some(q=>q.source==='officiel')?{attribution:'Limites des communes © <a href="https://www.geoboundaries.org" target="_blank" rel="noopener noreferrer">geoBoundaries</a> (PAM, OCHA, CC BY 3.0 IGO)'}:{}));
   map.addSource('voies',{type:'geojson',data:voiesFC(),tolerance:.25,buffer:64});
-  for(const s of['route','route-alt','nums'])map.addSource(s,{type:'geojson',data:FC()});
+  for(const s of['route','route-alt','nums'])map.addSource(s,{type:'geojson',data:FC(),lineMetrics:s==='route'});
   map.addSource('quartiers',{type:'geojson',data:quartiersFC()});map.addSource('communes',{type:'geojson',data:communesFC()});
   map.addLayer({id:'zones',type:'line',source:'zones',paint:{'line-width':[...z,10,1,15,2.4],'line-dasharray':[4,2,1,2],'line-opacity':.7}});
+  /* les rues des autres villes publiées, quand on regarde là-bas (sous celles du plan ouvert) */
+  map.addSource('voies-ailleurs',{type:'geojson',data:FC(),tolerance:.3,buffer:64});
+  map.addLayer({id:'casing-ailleurs',type:'line',source:'voies-ailleurs',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':width(2.2),'line-opacity':['interpolate',['linear'],['zoom'],11,0,12.5,1]}});
+  map.addLayer({id:'voies-ailleurs',type:'line',source:'voies-ailleurs',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':width(0)}});
   map.addLayer({id:'casing',type:'line',source:'voies',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':width(2.2),'line-opacity':['interpolate',['linear'],['zoom'],11,0,12.5,1]}});
   map.addLayer({id:'voies',type:'line',source:'voies',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':width(0)}});
   map.addLayer({id:'route-alt',type:'line',source:'route-alt',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#8a96a8','line-width':[...z,11,4,16,9,18,15],'line-opacity':.85}});
+  map.addLayer({id:'route-lueur',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':[...z,11,14,16,26,18,38],'line-blur':[...z,11,6,16,12,18,18],'line-opacity':0}});
   map.addLayer({id:'route-c',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':[...z,11,6,16,13,18,21]}});
   map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':[...z,11,3.5,16,8,18,14]}});
   map.addSource('moi',{type:'geojson',data:FC()});
@@ -553,23 +767,193 @@ function addLayers(){
   lab('noms-p',['==',['get','p'],1],16.3,['interpolate',['linear'],['zoom'],16,9.5,18,12]);
   lab('noms',['all',['==',['get','p'],0],['==',['get','m'],0]],14.8,['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14]);
   lab('noms-m',['all',['==',['get','p'],0],['==',['get','m'],1]],12.5,['interpolate',['linear'],['zoom'],12.5,10,15,12,18,15],.05);
+  map.addLayer({id:'noms-ailleurs',type:'symbol',source:'voies-ailleurs',minzoom:14.8,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14],'symbol-placement':'line','text-max-angle':38,'symbol-spacing':280,'text-padding':2,'text-rotation-alignment':'map','text-pitch-alignment':'viewport'},paint:{'text-halo-width':1.6}});
   map.addLayer({id:'quartiers',type:'symbol',source:'quartiers',minzoom:13,maxzoom:17.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],13,10.5,16,13],'text-transform':'uppercase','text-letter-spacing':.18,'text-max-width':9,'text-padding':6},paint:{'text-halo-width':1.8,'text-opacity':.9}});
   map.addLayer({id:'communes',type:'symbol',source:'communes',maxzoom:13.2,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],9,11,12,15],'text-transform':'uppercase','text-letter-spacing':.22},paint:{'text-halo-width':2}});
   couchesEtab();
   peindre();
+}
+/* ---------- fond de secours, dessiné avec nos propres données ----------
+   Le fond gris d'Esri ne vient pas toujours : dans la version d'essai (l'hébergeur refuse les images d'autres sites), ou hors connexion.
+   Sans lui, le plan flottait sur une couleur unie. Désormais, sous le plan : la Guinée en couleur « terre » (334 communes,
+   limites geoBoundaries de data/guinee.json, déjà gardé pour le hors-ligne), le reste en couleur « hors Guinée » (mer, pays voisins),
+   les limites des communes, les chefs-lieux des 34 préfectures, les sous-préfectures et l'océan.
+   Sur le site, ce fond reste dessous et le fond Esri semi-transparent se pose dessus. Près des rues (zoom 14 et plus), il s'efface. */
+let GN_OK=false;
+function fondLocal(){
+  fetch('data/guinee.json').then(r=>r.ok?r.json():null).then(j=>{
+    if(!j||!Array.isArray(j.plans)||!map.getLayer('zones')||map.getSource('gn'))return;
+    const terre=[],noms=[],poly=(r,c)=>{if(Array.isArray(r)&&r.length>3)terre.push({type:'Feature',properties:{c},geometry:{type:'Polygon',coordinates:[r]}})},
+      point=(ll,pr)=>{if(Array.isArray(ll)&&ll.length===2)noms.push({type:'Feature',properties:pr,geometry:{type:'Point',coordinates:[ll[1],ll[0]]}})};
+    const D={communes:[],plans:{},regions:{},naturelles:{},bb:[180,90,-180,-90]};
+    (j.regions||[]).forEach(r=>D.regions[r.code]=r.nom);(j.naturelles||[]).forEach(r=>D.naturelles[r.code]=r.nom);
+    const garde=(c,plan,type)=>{const rings=(c.rings||[]).filter(r=>Array.isArray(r)&&r.length>3);if(!rings.length)return;const bb=[180,90,-180,-90];
+      for(const r of rings)for(const [x,y] of r){if(x<bb[0])bb[0]=x;if(y<bb[1])bb[1]=y;if(x>bb[2])bb[2]=x;if(y>bb[3])bb[3]=y}
+      for(let i=0;i<2;i++){D.bb[i]=Math.min(D.bb[i],bb[i]);D.bb[i+2]=Math.max(D.bb[i+2],bb[i+2])}
+      D.communes.push({nom:c.nom,code:c.code||null,cp:c.cp||null,type,centre:c.centre,rings,bb,plan})};
+    for(const p of j.plans){
+      let chef=null;
+      for(const c of p.communes||[]){(c.rings||[]).forEach(r=>poly(r,p.code));const u=c.type==='urbaine';if(u&&!chef)chef=c.centre;point(c.centre,{t:'s',n:c.nom,c:p.code,u:u?1:0});garde(c,p.code,u?'urbaine':'rurale')}
+      for(const l of p.limites||[]){(l.rings||[]).forEach(r=>poly(r,p.code));garde(l,p.code,'conakry')}
+      const vl=(VLIST||[]).find(x=>x&&x.code===p.code),ville=(vl&&Array.isArray(vl.centre)&&vl.centre)||CENTRES[p.code]||chef||p.centre;
+      point(ville,{t:'v',n:p.nom,c:p.code});
+      D.plans[p.code]={nom:p.nom,region:p.region,naturelle:p.naturelle,cp:p.cp,ville};
+    }
+    if(!terre.length)return;
+    GN_DATA=D;
+    point([9.1,-14.6],{t:'o',n:'Océan Atlantique',z:0});point([9.36,-13.93],{t:'o',n:'Océan Atlantique',z:1});
+    map.addSource('gn',{type:'geojson',data:FC(terre),tolerance:.4});map.addSource('gn-noms',{type:'geojson',data:FC(noms)});
+    const F=['NotoSansMedium'],L=(o,av)=>map.addLayer(o,av);
+    L({id:'gn-terre',type:'fill',source:'gn',paint:{'fill-antialias':false}},map.getLayer('plan')?'plan':'zones');
+    L({id:'gn-lim',type:'line',source:'gn',maxzoom:12.5,filter:['!=',['get','c'],VILLE],paint:{'line-width':[...z,6,.4,11,1],'line-dasharray':[3,2],'line-opacity':.5}},'zones');
+    L({id:'gn-villes',type:'symbol',source:'gn-noms',minzoom:4.2,maxzoom:10.5,filter:['==',['get','t'],'v'],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,4.2,10,6,11.5,10,14.5],'text-padding':3},paint:{'text-halo-width':1.6}},'zones');
+    L({id:'gn-sp',type:'symbol',source:'gn-noms',minzoom:8.5,maxzoom:13.5,filter:['all',['==',['get','t'],'s'],['!',['all',['==',['get','c'],VILLE],['==',['get','u'],1]]]],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,8.5,10.5,12,12.5],'text-padding':6},paint:{'text-halo-width':1.4}},'zones');
+    L({id:'gn-ocean',type:'symbol',source:'gn-noms',minzoom:5,maxzoom:9.5,filter:['all',['==',['get','t'],'o'],['==',['get','z'],0]],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,5,12,9.5,15],'text-letter-spacing':.2},paint:{'text-halo-width':1.2}},'zones');
+    L({id:'gn-ocean2',type:'symbol',source:'gn-noms',minzoom:9.5,maxzoom:13,filter:['all',['==',['get','t'],'o'],['==',['get','z'],1]],layout:{'text-field':['get','n'],'text-font':F,'text-size':14,'text-letter-spacing':.2},paint:{'text-halo-width':1.2}},'zones');
+    GN_OK=true;peindre();
+    if(LOC_ATTENTE){const l=LOC_ATTENTE;LOC_ATTENTE=null;toucherAilleurs(l.lat,l.lng)}
+  }).catch(()=>{});
+}
+/* ---------- toute la Guinée : une fiche pour chaque lieu du pays, même sans plan des rues ----------
+   Touché sur la carte, trouvé par la recherche ou reçu en lien (#lat,lng) : la commune ou la sous-préfecture (limites geoBoundaries),
+   la préfecture, la région, le code postal et le Plus Code, à 3 m près. Si un plan publié couvre l'endroit, « Voir l'adresse exacte »
+   l'ouvre sur la porte ; sinon « Y aller » prend le GPS habituel jusqu'au lieu (Itina Geo n'a pas encore les routes entre les villes). */
+let GN_DATA=null,LOC_ATTENTE=null;const COUV=new Map();
+const publie=c=>VLIST?VLIST.some(v=>v&&v.code===c):PUB0?PUB0.includes(c):true;
+const dansAnneau=(x,y,r)=>{let c=false;for(let i=0,k=r.length-1;i<r.length;k=i++){const xi=r[i][0],yi=r[i][1],xk=r[k][0],yk=r[k][1];if(((yi>y)!==(yk>y))&&x<(xk-xi)*(y-yi)/(yk-yi)+xi)c=!c}return c};
+function localiteDe(lat,lng){
+  if(!GN_DATA)return null;
+  for(const c of GN_DATA.communes)if(lng>=c.bb[0]&&lng<=c.bb[2]&&lat>=c.bb[1]&&lat<=c.bb[3]&&c.rings.some(r=>dansAnneau(lng,lat,r)))return c;
+  return null;
+}
+/* un plan publié couvre-t-il cette commune ? (les plans de ville couvrent pour l'instant la commune urbaine, Conakry tout entier) */
+function couvre(lc){
+  if(!lc||!publie(lc.plan))return false;
+  if(lc.plan==='conakry'||!lc.code)return true;
+  if(lc.plan===VILLE&&ref)return ref.communes.some(c=>c.code===lc.code);
+  const s=COUV.get(lc.plan);return !!(s&&s.has(lc.code));
+}
+const genre=lc=>lc.type==='urbaine'?'Commune urbaine':lc.type==='conakry'?'Commune de Conakry':'Sous-préfecture';
+function sousTitre(lc){const pl=GN_DATA.plans[lc.plan]||{},reg=GN_DATA.regions[pl.region];return genre(lc)+(lc.plan==='conakry'?'':' · Préfecture de '+(pl.nom||''))+(reg&&reg!==pl.nom&&lc.plan!=='conakry'?' · Région de '+reg:'')}
+function toucherAilleurs(lat,lng){
+  if(!GN_DATA){toast('Hors de la zone de '+VI.nom+'.');return}
+  const lc=localiteDe(lat,lng);
+  if(!lc){toast('Hors de Guinée : Itina Geo couvre la Guinée.');return}
+  (IDX_AUTRES||indexAutres()||Promise.resolve()).then(()=>ficheLocalite(lat,lng,lc),()=>ficheLocalite(lat,lng,lc));
+}
+let LOC_JETON=0;
+function ficheLocalite(lat,lng,lc,etat){
+  if(!etat){effacerRoute();placePin({lat,lng});lieuOuvert=null}
+  const jeton=etat?LOC_JETON:++LOC_JETON;
+  const pl=GN_DATA.plans[lc.plan]||{nom:''},pc=CA.plusCode(lat,lng),autrePlan=couvre(lc)&&lc.plan!==VILLE,frais=mePos&&Date.now()-mePosT<600000,
+    d=frais?distLL([mePos.lat,mePos.lng],[lat,lng]):null,nomPlan=VILLES[lc.plan]?VILLES[lc.plan].nom:pl.nom,a=etat&&etat.a;
+  const info=a?`Adresse sur le plan de ${esc(nomPlan)}&nbsp;: ouvrez-la pour y aller, guidé jusqu'à la porte.`
+    :autrePlan&&!etat?`Recherche de l'adresse sur le plan de ${esc(nomPlan)}…`
+    :autrePlan||(lc.plan===VILLE&&couvre(lc))?`Pas encore de rue du plan de ${esc(nomPlan)} à cet endroit&nbsp;: le Plus Code le situe à 3 m près.`
+    :lc.plan===VILLE?`Le plan de ${esc(VI.nom)} couvre pour l'instant la ville&nbsp;: les rues de ${esc(lc.nom)} viendront avec le plan complet de la préfecture. En attendant, le Plus Code situe ce point à 3 m près.`
+    :`Les rues de ${esc(lc.nom)} ne sont pas encore sur Itina Geo. En attendant, le Plus Code situe ce point à 3 m près.`;
+  montrer(`<div class="sur">${a?'Adresse':'Lieu'}${FERMER}</div><h1>${esc(a?a.ligne1:lc.nom)}</h1><div class="l2">${esc(a?a.ligne2+(String(a.ligne2).includes(nomPlan)?'':' · '+nomPlan):sousTitre(lc))}</div>
+    <p class="info${a||(autrePlan&&!etat)?'':' prov'}">${info}${d!=null?' · à '+esc(fmtD(d))+' de vous':''}</p>
+    <div class="puces">${a&&a.id?`<button class="puce" type="button" data-copy="${esc(a.id)}" aria-label="Copier l'identifiant ${esc(a.id)}">${I.copie}${esc(a.id)}</button>`:''}<button class="puce pc" type="button" data-copy="${esc(pc)}" aria-label="Copier le Plus Code ${esc(pc)}">${I.copie}${esc(pc)}</button>${lc.cp&&!a?`<span class="puce">${esc(lc.cp)}</span>`:''}</div>
+    <div class="actions">${a?`<button class="bt vert" type="button" id="lPlan">${I.aller}Y aller</button>`:autrePlan&&!etat?'':`<button class="bt vert" type="button" id="lGo">${I.aller}Y aller</button>`}<button class="bt carre" type="button" id="lPart" aria-label="Partager ce lieu">${I.partager}</button></div>`,'localite');
+  fc.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copier(b.dataset.copy));
+  const cle=a?cleLien(a.id,lat,lng):lat.toFixed(6)+','+lng.toFixed(6),lien=location.origin+location.pathname+(a?'?ville='+lc.plan:SUFFIXE)+'#'+cle;
+  $('lPart').onclick=()=>envoyer(a?'Adresse':'Lieu',a?a.texte+(a.id?'\nIdentifiant : '+a.id:'')+'\nPlus Code : '+pc:lc.nom+' ('+sousTitre(lc)+')\nPlus Code : '+pc,lien);
+  /* l'adresse trouvée sur l'autre plan : on l'ouvre là-bas, « Y aller » guide depuis là où l'on est */
+  if($('lPlan'))$('lPlan').onclick=()=>{toast('Ouverture du plan de '+nomPlan+'…');allerVille(lc.plan,'#'+cle)};
+  if($('lGo'))$('lGo').onclick=()=>trajetLoin(lat,lng,lc);
+  if(autrePlan&&!etat)planAutre(lc.plan).then(r2=>{voiesAutres(lc.plan,r2);if(jeton!==LOC_JETON||feuille.dataset.vue!=='localite')return;const x=r2.adresse(lat,lng);ficheLocalite(lat,lng,lc,x?{a:x}:{sans:1})},
+    ()=>{if(jeton===LOC_JETON&&feuille.dataset.vue==='localite')ficheLocalite(lat,lng,lc,{sans:1})});
+}
+/* « Y aller » vers un lieu sans plan des rues : la route au plus près sur le réseau national, puis le guidage jusque-là */
+let TRAJET_LIEU=null;
+function trajetLoin(lat,lng,lc){
+  const frais=mePos&&Date.now()-mePosT<600000,d=frais?distLL([mePos.lat,mePos.lng],[lat,lng]):null,jeton={};TRAJET_LIEU=jeton;
+  const rendre=(etat,it,D)=>{
+    montrer(`<div class="sur">Itinéraire${FERMER}</div><h2>${esc(lc.nom)}</h2><div class="l2">${esc(sousTitre(lc))}</div>
+      ${it?(du=>`<div class="trajet pays" aria-pressed="true"><div class="ha"><span class="du">${fmtT(du)}</span><span class="ar">Arrivée ${heure(new Date(Date.now()+du*1000))}</span></div>
+        <div class="vi">${fmtD(it.distance+(D?D.dep.distance:0))}${it.via&&it.via.length?' · via '+esc(it.via.join(' et ')):''}</div><div class="ev">${I.ok}${D?'Par les rues de '+esc(D.nom)+', puis les routes':'Par les routes'} du réseau national, jusqu'au plus près du lieu</div></div>`)(it.duree+(D?D.dep.duree:0))
+      :`<p class="info${etat==='calcul'?'':' prov'}"${etat==='calcul'?' role="status"':''}>${etat==='calcul'?'Calcul du trajet jusqu\'à '+esc(lc.nom)+'…'
+        :(d!=null?'Vous êtes à '+esc(fmtD(d))+' de '+esc(lc.nom)+'. ':'')+(etat==='sans-gps'?'Votre position GPS est introuvable pour le moment : activez la localisation pour voir le trajet.'
+        :etat==='aucun'?'Aucune route trouvée jusqu\'à '+esc(lc.nom)+' sur le réseau national depuis votre position.'
+        :'Les routes jusqu\'à '+esc(lc.nom)+' ne sont pas encore sur Itina Geo&nbsp;: le trajet s\'affichera dès que le plan de tout le pays sera publié.')}</p>`}
+      <div class="actions">${it?`<button class="bt vert" type="button" id="lDem">${I.aller}Démarrer</button>`:''}<button class="bt" type="button" id="lRetour">Retour au lieu</button></div>`,'itineraire-loin');
+    $('lRetour').onclick=()=>{effacerRoute();ficheLocalite(lat,lng,lc)};
+    if(it){map.getSource('route').setData(FC((D?[ligneFC(D.dep.ligne)]:[]).concat([ligneFC(it.ligne)])));allumer(cleTrajet(it.ligne)+':lieu');cadrer((D?D.dep.ligne:[]).concat(it.ligne),13);$('lDem').onclick=()=>guiderLieu(it,lat,lng,lc)}
+  };
+  if(!frais||DEMO){rendre(DEMO?'absent':'sans-gps');return}
+  rendre('calcul');
+  reseauPays().then(N=>{if(TRAJET_LIEU!==jeton||feuille.dataset.vue!=='itineraire-loin')return;
+    if(!N){rendre('absent');return}
+    const o=Object.assign({mode:REG.mode},OPTS_PAYS),de={lat:mePos.lat,lng:mePos.lng},it=N.itineraire(de,{lat,lng},o);
+    if(!it){rendre('aucun');return}
+    return departVille(de,it,N,{lat,lng},o).then(D=>{if(TRAJET_LIEU!==jeton||feuille.dataset.vue!=='itineraire-loin')return;
+      const n=D?D.nat:it;TRAJET_LIEU={N,it:n,D};rendre('ok',n,D)})});
+}
+function guiderLieu(it,lat,lng,lc){
+  if(guide||!TRAJET_LIEU||!TRAJET_LIEU.N||!window.GuidageConakry)return;
+  const T=TRAJET_LIEU;
+  if(T.D&&!T.depFait){guiderDepart(T.D,{titre:lc.nom,sousTitre:sousTitre(lc)},{distance:it.distance,duree:it.duree},()=>{T.depFait=true;guiderLieu(it,lat,lng,lc)},
+    ()=>{effacerRoute();ficheLocalite(lat,lng,lc)});return}
+  const box=document.createElement('div');document.body.appendChild(box);suspendreSuivi();
+  try{
+    guide=GuidageConakry.ouvrir(box,TRAJET_LIEU.N,{lat,lng,titre:lc.nom,sousTitre:sousTitre(lc)},Object.assign({mode:REG.mode,itineraire:it,vue:'direct',demonstration:false,fond:!SANS_FOND,glyphs:GLYPHES,
+      theme:themeEffectif()==='dark'?'sombre':'clair',signalements:REG.alertes?actifs():[],annoncesSignalements:REG.annonces,surSignalement:(type,p)=>ajouterSignal(type,p,true),
+      surFin:raison=>{guide=null;box.remove();reprendreSuivi();dessinerSignaux();effacerRoute();ficheLocalite(lat,lng,lc)}},OPTS_PAYS));
+  }catch(e){guide=null;box.remove();reprendreSuivi();toast('Le guidage ne peut pas démarrer : '+e.message)}
+}
+/* une seule carte du pays : regarder une autre ville publiée (zoom 11 et plus) y dessine ses rues, sans changer de plan ;
+   toucher une de ses portes donne l'adresse exacte (fiche du lieu). Deux autres villes au plus en mémoire. */
+const VOIES_AUTRES=new Map();
+function voiesAutres(code,r2){
+  if(!map.getSource('voies-ailleurs')||!r2||!r2.voies)return;
+  if(!VOIES_AUTRES.has(code)){if(VOIES_AUTRES.size>=2)VOIES_AUTRES.delete(VOIES_AUTRES.keys().next().value);
+    VOIES_AUTRES.set(code,r2.voies.map(v=>({type:'Feature',properties:{n:safe(v.nom),m:CA._interne.MAJEUR[v.highway]?1:0,t:v.highway==='track'?1:0},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(q=>[q.lon,q.lat]))}})))}
+  map.getSource('voies-ailleurs').setData(FC([...VOIES_AUTRES.values()].flat()));
+}
+function regarderAilleurs(){
+  if(!ref||!VLIST||map.getZoom()<11)return;
+  const c=map.getCenter();
+  for(const v of autresVilles()){const ce=Array.isArray(v.centre)?v.centre:CENTRES[v.code];
+    if(ce&&distLL([c.lat,c.lng],ce)<18000){if(!VOIES_AUTRES.has(v.code))planAutre(v.code).then(r2=>voiesAutres(v.code,r2),()=>{});return}}
+}
+map.on('moveend',()=>{clearTimeout(regarderAilleurs.t);regarderAilleurs.t=setTimeout(regarderAilleurs,350)});
+/* les autres plans publiés : quelles communes ils couvrent (petits index, chargés une fois) */
+function couvertureAutres(ix,code){COUV.set(code,new Set((ix.communes||[]).map(c=>c&&c.code).filter(Boolean)))}
+/* recherche : les chefs-lieux et les communes de tout le pays (même sans plan des rues) */
+function localitesCherchees(v){
+  if(!GN_DATA||v.length<3)return[];
+  const q=NORM(v),o=mePos?[mePos.lat,mePos.lng]:CENTRES[VILLE],l=[],vu=new Set();
+  for(const c of GN_DATA.communes){
+    if(c.plan===VILLE&&couvre(c))continue;
+    const n=NORM(c.nom),sc=n===q?3:n.startsWith(q)?2:(' '+n).includes(' '+q)?1:0;if(!sc)continue;
+    const k=c.plan+'|'+n;if(vu.has(k))continue;vu.add(k);
+    const pl=GN_DATA.plans[c.plan]||{},chef=c.type!=='rurale'&&NORM(pl.nom)===n;
+    const pos=chef?pl.ville:c.centre;l.push({c,sc:sc+(chef?.5:0),chef,pos,d:o&&Array.isArray(pos)?distLL(o,pos):0});
+  }
+  return l.sort((a,b)=>b.sc-a.sc||a.d-b.d).slice(0,6);
 }
 /* couleurs de la carte d'après le thème (jour : plan de ville ; nuit : comme Waze) */
 function peindre(){
   if(!map.getLayer('voies'))return;
   const p=(id,k,v)=>{if(map.getLayer(id))map.setPaintProperty(id,k,v)};
   const sat=REG.sat;
-  p('bg','background-color',sat?'#20251f':css('--paper'));
+  const papier=css('--paper');
+  p('bg','background-color',sat?'#20251f':GN_OK?['interpolate',['linear'],['zoom'],12.5,css('--dehors'),14.5,papier]:papier);
+  p('gn-terre','fill-color',papier);p('gn-lim','line-color',css('--quartier'));
+  for(const id of['gn-villes','gn-sp','gn-ocean','gn-ocean2'])p(id,'text-halo-color',css('--halo'));
+  p('gn-villes','text-color',['case',['in',['get','c'],['literal',(VLIST||[]).filter(v=>v&&v.code).map(v=>v.code)]],css('--accent'),css('--fg')]);p('gn-sp','text-color',css('--muted'));
+  for(const id of['gn-ocean','gn-ocean2'])p(id,'text-color',themeEffectif()==='dark'?'#5f86a6':'#58809e');
   p('zones','line-color',css('--quartier'));
   p('casing','line-color',['case',['==',['get','m'],1],css('--major-casing'),css('--casing')]);
   p('voies','line-color',REG.couleur==='suivi'?['match',['get','s'],0,css('--street-keep'),1,css('--street-prop'),2,css('--street-todo'),css('--street')]
     :['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],themeEffectif()==='dark'?'#2a3441':'#efe9dd',css('--street')]);
+  p('casing-ailleurs','line-color',['case',['==',['get','m'],1],css('--major-casing'),css('--casing')]);
+  p('voies-ailleurs','line-color',['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],themeEffectif()==='dark'?'#2a3441':'#efe9dd',css('--street')]);
+  p('noms-ailleurs','text-color',css('--text'));p('noms-ailleurs','text-halo-color',css('--halo'));
   const sombre=themeEffectif()==='dark';
-  p('route-c','line-color',sombre?'#0a3d55':'#ffffff');p('route','line-color',sombre?'#33ccff':'#1a73e8');
+  p('route-c','line-color',css('--route-c'));p('route-alt','line-color',css('--route-alt'));p('route-lueur','line-color',css('--route'));
+  p('moi-f','fill-color',css('--moi'));p('moi-l','line-color',css('--moi'));allumer(null);
   for(const id of['noms-p','noms','noms-m'])p(id,'text-color',id==='noms-p'?css('--provisoire'):css('--text'));
   for(const id of['noms-p','noms','noms-m','nums','quartiers','communes'])p(id,'text-halo-color',css('--halo'));
   p('nums','text-color',['case',['==',['get','i'],1],css('--quartier'),css('--text')]);
@@ -684,9 +1068,11 @@ if(SANS_FOND){$('fabSat').hidden=true;REG.sat=false}
 const feuille=$('feuille'),fc=$('fc');
 const hauteurFeuille=()=>document.documentElement.style.setProperty('--feuille',(tel()?feuille.offsetHeight:0)+'px');
 new ResizeObserver(hauteurFeuille).observe(feuille);addEventListener('resize',hauteurFeuille);
-$('poignee').onclick=()=>feuille.classList.toggle('grande');
+/* la barre grise du panneau : normal → grand → replié (la carte prend presque tout l'écran) → normal */
+$('poignee').onclick=()=>{const c=feuille.classList;if(c.contains('replie'))c.remove('replie');else if(c.contains('grande')){c.remove('grande');c.add('replie')}else c.add('grande')};
 const FERMER=`<button class="fermer" type="button" data-fermer aria-label="Fermer">${I.fermer}</button>`;
-function montrer(html,v){feuille.dataset.vue=v;fc.innerHTML=html;feuille.classList.remove('grande');feuille.scrollTop=0;const b=fc.querySelector('[data-fermer]');if(b)b.onclick=fermer}
+let BULLES=[],AUTO_T=null;
+function montrer(html,v){if(v!=='itineraire'){arreterAuto();effacerBulles()}const nv=feuille.dataset.vue!==v;feuille.dataset.vue=v;fc.innerHTML=html;if(nv){clearTimeout(montrer.t);fc.classList.add('entre');montrer.t=setTimeout(()=>fc.classList.remove('entre'),320)}feuille.classList.remove('grande','replie');setTimeout(()=>{if(typeof majIci==='function')majIci()},0);feuille.scrollTop=0;const b=fc.querySelector('[data-fermer]');if(b)b.onclick=fermer}
 function fermer(){pin&&pin.remove();effacerRoute();if(GL&&filtreCat)filtrer(null);etabOuvert=null;accueil();if(location.hash)history.replaceState(null,'',location.pathname+location.search)}
 const marges=()=>({top:tel()?100:96,bottom:tel()?feuille.offsetHeight+24:40,left:tel()?28:448,right:tel()?76:80});
 /* fitBounds ajoute sa marge à celle qu'easeTo a laissée sur la carte : on la remet à zéro d'abord */
@@ -701,7 +1087,7 @@ function accueil(){
   montrer(`<div class="salut">${salut}</div><div class="info" style="margin-top:2px">Où allez-vous${VI?' à '+esc(VI.nom):''} ?</div>
     <div class="raccourcis">${raccourci('domicile',LIEUX.domicile)}${raccourci('travail',LIEUX.travail)}</div>
     ${rec.length?`<h3>Récemment</h3><ul class="liste">${rec.map((o,i)=>`<li><button type="button" class="ligne" data-recent="${i}"><span class="emoji e-histo">${I.histo}</span><span class="tx"><b>${esc(o.t)}</b><small>${esc(o.s)}${esc(nomVilleDe(o))}</small></span>${kmDe(o)}</button></li>`).join('')}</ul>`:''}
-    ${DEMO?'<p class="info prov">Version d\'essai : ici, le navigateur ne donne pas la position. Pour essayer le guidage, ouvrez une adresse, touchez « Y aller », choisissez le départ sur la carte, puis « Aperçu » et « Démonstration ». Les lieux marqués « exemple » sont fictifs : ajoutez le vôtre avec « Ajouter un lieu ».</p>':''}
+    ${DEMO?'<p class="info prov">Version d\'essai : ici, le navigateur ne donne pas la position, donc pas de guidage. Sur le téléphone, Itina Geo vous guide avec le GPS, comme Waze. Les lieux marqués « exemple » sont fictifs : ajoutez le vôtre avec « Ajouter un lieu ».</p>':''}
     <div class="actions"><button type="button" class="bt" id="ouSuisJe">${I.gps}Où suis-je ?</button>${GL?`<button type="button" class="bt" id="aAjout">${I.ajout}Ajouter un lieu</button>`:`<button type="button" class="bt" id="aSignaler">${I.alerte}Signaler</button>`}</div>
     <div class="pied"><span>${ref&&ref.info.avertissement?'Plan provisoire, non officiel':''}${nb?' · '+nb:''}</span><a href="#" id="aPropos">En savoir plus</a></div>`,'accueil');
   fc.querySelectorAll('[data-racc]').forEach(b=>b.onclick=()=>allerLieu(b.dataset.racc));
@@ -833,16 +1219,109 @@ $('signal').addEventListener('click',e=>{if(e.target===$('signal'))$('signal').h
 /* ---------- itinéraire : comme Waze, le meilleur trajet et un bis, l'heure d'arrivée, les signalements sur le chemin ---------- */
 let RT={de:null,deTxt:'',deGps:false,a:null,mode:REG.mode,routes:[],choix:0};
 const MODES=[['voiture','Voiture',I.voiture],['moto','Moto',I.moto],['pied','À pied',I.pied]];
+/* « Y aller » part toujours de la position GPS, comme Waze : hors du plan (en France par exemple) ou sans GPS, pas de trajet
+   simulé ; le guidage attend la personne et démarre tout seul quand elle arrive. Un départ choisi sur la carte sert à voir le trajet. */
+const kmDuPlan=p=>CENTRES[VILLE]?distLL([p.lat,p.lng],CENTRES[VILLE]):null;
 function startRoute(a){
-  RT.a=a;RT.de=null;RT.routes=[];RT.choix=0;RT.mode=REG.mode;
-  const choisir=m=>{if(m)toast(m);choisirDepart()};
-  const depuis=p=>{RT.de=p;RT.deTxt='Ma position';RT.deGps=true;calculer()};
-  if(mePos&&Date.now()-mePosT<120000&&ref.quartierDe(mePos.lat,mePos.lng))return depuis(mePos);
-  if(!navigator.geolocation||window.isSecureContext===false)return choisir('Touchez la carte pour choisir le départ.');
+  RT.a=a;RT.de=null;RT.deTxt='';RT.deGps=false;RT.loin=null;RT.routes=[];RT.choix=0;RT.mode=REG.mode;RT.auto=false;RT.pays=null;RT.paysEtat=null;
+  try{if(window.GuidageConakry&&GuidageConakry.debloquerVoix&&localStorage.getItem('conakry-guidage-voix')!=='0')GuidageConakry.debloquerVoix()}catch(e){}
+  const depuis=p=>{RT.de=p;RT.deTxt='Ma position';RT.deGps=true;RT.loin=null;RT.auto=!!REG.auto;calculer()};
+  const sans=p=>{RT.loin=p?kmDuPlan(p):null;RT.routes=[];RT.pays=null;RT.paysEtat=null;if(p&&!DEMO)trajetPays(p);rendreTrajet(false)};
+  if(mePos&&Date.now()-mePosT<120000)return ref.quartierDe(mePos.lat,mePos.lng)?depuis(mePos):sans(mePos);
+  if(DEMO||!navigator.geolocation||window.isSecureContext===false)return sans(null);
   toast('Recherche de votre position…');
-  navigator.geolocation.getCurrentPosition(p=>{setMe(p);$('toast').hidden=true;
-    if(ref.quartierDe(mePos.lat,mePos.lng))depuis(mePos);else choisir('Vous n\'êtes pas à '+VI.nom+' : touchez la carte pour choisir le départ.')},
-    ()=>choisir('Position introuvable : touchez la carte pour choisir le départ.'),{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+  navigator.geolocation.getCurrentPosition(p=>{setMe(p);$('toast').hidden=true;ref.quartierDe(mePos.lat,mePos.lng)?depuis(mePos):sans(mePos)},
+    ()=>{$('toast').hidden=true;sans(null)},{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
+/* ---------- naviguer dans tout le pays : le réseau national des routes ----------
+   data/reseau/ (fabriqué par le studio avec « Tout le pays ») : les grandes routes de toutes les préfectures, raccordées entre elles.
+   Vers une autre ville : la route entre les villes sur ce réseau, puis les rues de la ville d'arrivée jusqu'à la porte ; le guidage
+   passe tout seul au plan de la ville à son entrée. Vers un lieu sans plan des rues : la route au plus près. Départ d'une ville qui a
+   son plan (Labé, Kindia…) : d'abord ses rues jusqu'à la sortie de la ville, puis la route (guidage en trois temps, de porte à porte).
+   Tant que le réseau n'est pas publié : le guidage attend l'arrivée en ville, comme avant. */
+let RESEAU=null,BASCULE=false;
+const OPTS_PAYS={rayon:3000,rayonArrivee:25000,repliSens:true};
+function reseauPays(){
+  if(!RESEAU)RESEAU=fetch(new URL('data/reseau/index.json',location.href).href,{cache:'no-cache'}).then(r=>r.ok?CA.charger({base:new URL('data/reseau/',location.href).href}):null).catch(()=>null);
+  return RESEAU;
+}
+/* départ d'une autre ville qui a son plan des rues (Labé, Kindia…) : ses rues jusqu'à la sortie de la ville, puis la route.
+   La sortie : le dernier point de la route entre les villes encore dans le plan de départ ; la route est recalculée depuis ce point.
+   → { L (plan de départ), nom, mode, dep (trajet dans ses rues), sortie [lat,lng], nat (la route depuis la sortie) } ou null */
+function departVille(p,nat,N,dest,o){
+  const lc=localiteDe(p.lat,p.lng),c=lc&&lc.plan;
+  const pr=!c?null:c===VILLE&&ref?Promise.resolve(ref):VILLES[c]&&publie(c)?planAutre(c):null;
+  if(!pr)return Promise.resolve(null);
+  return pr.then(L=>{
+    if(!L||!L.quartierDe(p.lat,p.lng))return null;
+    const ln=nat.ligne;let k=-1;
+    for(let i=0;i<ln.length;i++){if(L.quartierDe(ln[i][0],ln[i][1]))k=i;else if(k>=0)break}
+    if(k<0||k>=ln.length-2)return null;
+    const s={lat:ln[k][0],lng:ln[k][1]},dep=L.itineraire({lat:p.lat,lng:p.lng},s,{mode:o.mode,rayon:600});
+    if(!dep||dep.distance<80)return null;
+    const n2=N.itineraire(s,dest,o);
+    return n2?{L,nom:(VILLES[c]&&VILLES[c].nom)||lc.nom,mode:o.mode,dep,sortie:[s.lat,s.lng],nat:n2}:null;
+  }).catch(()=>null);
+}
+function trajetPays(p){
+  const j=RT.jetonPays={},fini=()=>{if(feuille.dataset.vue==='itineraire')rendreTrajet(true)};
+  RT.pays=null;RT.paysEtat='calcul';
+  reseauPays().then(N=>{
+    if(RT.jetonPays!==j||!RT.a||RT.loin==null)return;
+    if(!N){RT.paysEtat='absent';fini();return}
+    const dest={lat:RT.a.position.lat,lng:RT.a.position.lng},o=Object.assign({mode:RT.mode},OPTS_PAYS),nat0=N.itineraire({lat:p.lat,lng:p.lng},dest,o);
+    if(!nat0){RT.paysEtat='aucun';fini();return}
+    return departVille(p,nat0,N,dest,o).then(D=>{
+      if(RT.jetonPays!==j||!RT.a||RT.loin==null)return;
+      const nat=D?D.nat:nat0,fin=nat.ligne[nat.ligne.length-1],ville=ref.itineraire({lat:fin[0],lng:fin[1]},dest,{mode:RT.mode,rayon:600,eviter:eviterListe(RT.mode)});
+      RT.pays={N,nat,ville,dep:D,distance:(D?D.dep.distance:0)+nat.distance+(ville?ville.distance:0),duree:(D?D.dep.duree:0)+nat.duree+(ville?ville.duree:0)};
+      RT.paysEtat='ok';fini();
+    });
+  });
+}
+/* étape 1 d'un trajet qui part d'une autre ville : ses rues jusqu'à la sortie. À la sortie (ou hors de son plan), la route prend le relais
+   (ensuite) ; « Terminer » : arret. apres : { distance, duree } du reste du trajet, pour le temps et l'heure d'arrivée affichés */
+function guiderDepart(D,d0,apres,ensuite,arret){
+  arreterAuto();effacerBulles();
+  const box=document.createElement('div');document.body.appendChild(box);suspendreSuivi();let passe=false;
+  const passer=p=>{if(passe)return;passe=true;
+    if(p&&isFinite(p.lat)){mePos={lat:p.lat,lng:p.lng,acc:Math.round(p.precision||p.acc||0)};mePosT=Date.now()}
+    if(guide&&guide.arreter)try{guide.arreter('route')}catch(e){}
+    guide=null;toast('Vous quittez '+D.nom+' : guidage sur la route.');ensuite()};
+  try{
+    guide=GuidageConakry.ouvrir(box,D.L,{lat:D.sortie[0],lng:D.sortie[1],titre:d0.titre,sousTitre:d0.sousTitre},{mode:D.mode,itineraire:D.dep,vue:'direct',demonstration:false,
+      fond:!SANS_FOND,glyphs:GLYPHES,theme:themeEffectif()==='dark'?'sombre':'clair',signalements:REG.alertes?actifs():[],annoncesSignalements:REG.annonces,
+      surSignalement:(type,p)=>ajouterSignal(type,p,true),etape:true,apres,
+      surEtat:(e,p)=>{if(!passe&&p&&isFinite(p.lat)&&(!D.L.quartierDe(p.lat,p.lng)||(e&&(e.etat==='arrive'||(e.etat==='route'&&e.restant&&e.restant.distance<150)))))setTimeout(()=>passer(p),0)},
+      surFin:raison=>{guide=null;box.remove();if(passe)return;
+        if(raison==='arrive'){passer(mePos);return}
+        reprendreSuivi();dessinerSignaux();arret()}});
+  }catch(e){guide=null;box.remove();reprendreSuivi();toast('Le guidage ne peut pas démarrer : '+e.message)}
+}
+/* le guidage entre les villes, sur le réseau national ; à l'entrée de la ville d'arrivée, le plan de la ville prend le relais */
+function guiderPays(){
+  if(guide||!RT.pays||!window.GuidageConakry)return;
+  const P=RT.pays,V=P.ville?{distance:P.ville.distance,duree:P.ville.duree}:null;
+  if(P.dep&&!P.depFait){guiderDepart(P.dep,{titre:RT.a.ligne1,sousTitre:VI.nom},{distance:P.nat.distance+(V?V.distance:0),duree:P.nat.duree+(V?V.duree:0)},
+    ()=>{P.depFait=true;guiderPays()},()=>rendreTrajet(false));return}
+  arreterAuto();effacerBulles();
+  const fin=P.nat.ligne[P.nat.ligne.length-1],box=document.createElement('div');document.body.appendChild(box);suspendreSuivi();BASCULE=false;
+  try{
+    guide=GuidageConakry.ouvrir(box,P.N,{lat:fin[0],lng:fin[1],titre:RT.a.ligne1,sousTitre:VI.nom},Object.assign({mode:RT.mode,itineraire:P.nat,vue:'direct',demonstration:false,fond:!SANS_FOND,glyphs:GLYPHES,
+      theme:themeEffectif()==='dark'?'sombre':'clair',signalements:REG.alertes?actifs():[],annoncesSignalements:REG.annonces,
+      surSignalement:(type,p)=>ajouterSignal(type,p,true),apres:V,
+      surEtat:(e,p)=>{if(!BASCULE&&p&&isFinite(p.lat)&&ref.quartierDe(p.lat,p.lng)){BASCULE=true;setTimeout(()=>basculerVille(p),0)}},
+      surFin:raison=>{guide=null;box.remove();if(BASCULE)return;reprendreSuivi();dessinerSignaux();if(raison==='arrive'&&mePos){BASCULE=true;basculerVille(mePos)}else rendreTrajet(false)}},OPTS_PAYS));
+  }catch(e){guide=null;box.remove();reprendreSuivi();toast('Le guidage ne peut pas démarrer : '+e.message)}
+}
+function basculerVille(p){
+  if(guide&&guide.arreter)try{guide.arreter('ville')}catch(e){}
+  guide=null;
+  if(p&&isFinite(p.lat)){mePos={lat:p.lat,lng:p.lng,acc:Math.round(p.precision||p.acc||0)};mePosT=Date.now()}
+  toast('Vous entrez à '+VI.nom+' : guidage jusqu\'à la porte.');
+  RT.de={lat:mePos.lat,lng:mePos.lng};RT.deTxt='Ma position';RT.deGps=true;RT.loin=null;RT.pays=null;RT.auto=false;
+  calculer();
+  if(RT.routes.length)guider();
 }
 function choisirDepart(){picking={but:'depart'};$('pickTxt').textContent='Touchez la carte pour choisir le départ';$('pick').hidden=false}
 $('pickNo').onclick=()=>{const pk=picking;picking=null;$('pick').hidden=true;if(pk&&pk.but==='etab-pos')$('ajout').hidden=false};
@@ -854,37 +1333,97 @@ function departGps(){
     else toast('Vous n\'êtes pas à '+VI.nom+' : gardez le départ choisi sur la carte.')},
     ()=>toast('Position introuvable : autorisez la localisation.'),{enableHighAccuracy:true,timeout:15000,maximumAge:0});
 }
-const effacerRoute=()=>{for(const s of['route','route-alt'])if(map.getSource(s))map.getSource(s).setData(FC())};
+const effacerRoute=()=>{for(const s of['route','route-alt'])if(map.getSource(s))map.getSource(s).setData(FC());ALLUME.cle='';effacerBulles()};
+/* ---------- comme Coyote et Waze : départ automatique, et la durée de chaque trajet sur la carte ----------
+   Itinéraire calculé depuis le GPS : « Démarrer » se remplit et le guidage part tout seul après AUTO_S secondes.
+   Un toucher n'importe où (carte, trajet, mode, recherche…) l'annule : on regarde tranquillement. Réglage : Navigation. */
+const AUTO_S=8;
+function arreterAuto(){RT.auto=false;if(AUTO_T){clearTimeout(AUTO_T);AUTO_T=null}const b=$('rGo');if(b)b.classList.remove('auto');const t=$('rAutoTxt');if(t)t.remove()}
+document.addEventListener('pointerdown',e=>{if(AUTO_T&&!(e.target&&e.target.closest&&e.target.closest('#rGo')))arreterAuto()},true);
+document.addEventListener('keydown',()=>{if(AUTO_T)arreterAuto()},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&AUTO_T)arreterAuto()});
+function effacerBulles(){BULLES.forEach(m=>m.remove());BULLES=[]}
+/* où poser la bulle d'un trajet : là où il s'écarte le plus des autres (au milieu s'il est seul) */
+function pointBulle(rs,i){
+  const L=rs[i].ligne||[],n=L.length;if(!n)return null;if(rs.length<2||n<3)return L[Math.floor(n/2)];
+  const k=Math.cos(L[0][0]*Math.PI/180),d2=(a,b)=>{const x=(a[1]-b[1])*k,y=a[0]-b[0];return x*x+y*y};
+  const autres=rs.filter((x,j)=>j!==i).flatMap(x=>{const p=x.ligne||[],s=Math.max(1,Math.floor(p.length/400));return p.filter((q,m)=>m%s===0)});
+  let best=L[Math.floor(n/2)],bd=-1;
+  for(let c=0;c<=24;c++){const q=L[Math.min(n-1,Math.floor(n*(.18+.64*c/24)))];let m=Infinity;for(const o of autres){const v=d2(q,o);if(v<m)m=v}if(m>bd){bd=m;best=q}}
+  return best;
+}
+function dessinerBulles(){
+  effacerBulles();const rs=RT.routes;if(!rs.length||guide)return;
+  rs.forEach((x,i)=>{const p=pointBulle(rs,i);if(!p)return;
+    const el=document.createElement('div');el.className='bulle-m';el.style.zIndex=i===RT.choix?2:1;
+    el.innerHTML=`<button type="button" class="bulle${i===RT.choix?' on':''}" aria-pressed="${i===RT.choix}" aria-label="Trajet ${i+1} : ${esc(fmtT(x.duree))}">${esc(fmtT(x.duree))}</button>`;
+    el.addEventListener('click',ev=>{ev.stopPropagation();arreterAuto();if(RT.choix!==i){RT.choix=i;rendreTrajet(false)}});
+    BULLES.push(new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([p[1],p[0]]).addTo(map))});
+}
 const ligneFC=l=>({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:l.map(p=>[p[1],p[0]])}});
 function calculer(){
   const opts={mode:RT.mode,eviter:eviterListe(RT.mode)};
   RT.routes=REG.bis?ref.itineraires(RT.de,RT.a.position,opts):[ref.itineraire(RT.de,RT.a.position,opts)].filter(Boolean);
   RT.choix=0;rendreTrajet(true);
 }
+/* le moment signature du design : un nouveau trajet s'allume, une lumière le parcourt du départ à l'arrivée (une seule fois, 1,2 s) ;
+   ensuite il reste bleu électrique avec sa lueur. allumer(clé) : nouvelle clé = nouvelle traversée ; allumer(null) : repeindre (thème) */
+const ALLUME={cle:'',t:1,raf:0};
+function degradeRoute(t){
+  const c=css('--route'),tete=themeEffectif()==='dark'?'#e6fdff':'#9fd0ff',rien='rgba(0,0,0,0)';
+  if(t>=1)return['interpolate',['linear'],['line-progress'],0,c,1,c];
+  const b=Math.max(.002,Math.min(t,.996)),a=b-.08,L=['interpolate',['linear'],['line-progress'],0,a>0?c:tete];
+  if(a>0)L.push(a,c);
+  L.push(b,tete,b+.003,rien,1,rien);return L;
+}
+function allumer(cle){
+  if(!map.getLayer('route'))return;
+  const peindreT=t=>{map.setPaintProperty('route','line-gradient',degradeRoute(t));map.setPaintProperty('route-lueur','line-opacity',(themeEffectif()==='dark'?.5:.32)*Math.min(1,t*1.4))};
+  if(cle===null||cle===ALLUME.cle){if(ALLUME.t>=1)peindreT(1);return}
+  ALLUME.cle=cle;cancelAnimationFrame(ALLUME.raf);
+  if(!cle||matchMedia('(prefers-reduced-motion: reduce)').matches){ALLUME.t=1;peindreT(1);return}
+  const t0=performance.now(),D=1200;
+  const pas=now=>{const x=Math.min(1,(now-t0)/D);ALLUME.t=x>=1?1:1-Math.pow(1-x,3);peindreT(ALLUME.t);if(x<1)ALLUME.raf=requestAnimationFrame(pas)};
+  ALLUME.t=0;peindreT(.001);ALLUME.raf=requestAnimationFrame(pas);
+}
+const cleTrajet=l=>l&&l.length?l.length+':'+l[0].join()+':'+l[l.length-1].join():'';
 function dessinerTrajets(){
   const r=RT.routes[RT.choix];
-  map.getSource('route').setData(FC(r?[ligneFC(r.ligne)]:[]));
+  map.getSource('route').setData(FC(r?[ligneFC(r.ligne)]:[]));allumer(r?cleTrajet(r.ligne)+':'+RT.mode:'');
   map.getSource('route-alt').setData(FC(RT.routes.filter((x,i)=>i!==RT.choix).map(x=>ligneFC(x.ligne))));
+  dessinerBulles();
 }
 function rendreTrajet(cadre){
   dessinerTrajets();
-  const rs=RT.routes,r=rs[RT.choix],gps=RT.deGps;
+  if(RT.loin!=null&&RT.pays){const P=RT.pays,L=(P.dep?[ligneFC(P.dep.dep.ligne)]:[]).concat([ligneFC(P.nat.ligne)],P.ville?[ligneFC(P.ville.ligne)]:[]);map.getSource('route').setData(FC(L));allumer(cleTrajet(P.nat.ligne)+':pays');
+    if(cadre)cadrer((P.dep?P.dep.dep.ligne:[]).concat(P.nat.ligne,P.ville?P.ville.ligne:[]),13)}
+  const rs=RT.routes,r=rs[RT.choix],gps=RT.deGps,auto=!!(RT.auto&&r&&gps&&!DEMO&&!guide);
+  const court=rs.length>1?rs.reduce((m,x,i)=>x.distance<rs[m].distance?i:m,0):-1;
   const carte=(x,i)=>{const ev=surTrajet(x),plus=i>0?x.duree-rs[0].duree:0;
-    return `<button type="button" class="trajet" data-t="${i}" aria-pressed="${i===RT.choix}"><div class="ha"><span class="du">${fmtT(x.duree)}</span><span class="ar">Arrivée ${heure(new Date(Date.now()+x.duree*1000))}</span>${plus>59?`<span class="ec">+${fmtT(plus)}</span>`:''}</div>
+    return `<button type="button" class="trajet" data-t="${i}" aria-pressed="${i===RT.choix}"><div class="ha"><span class="du">${fmtT(x.duree)}</span><span class="ar">Arrivée ${heure(new Date(Date.now()+x.duree*1000))}</span>${plus>59?`<span class="ec">+${fmtT(plus)}</span>`:''}${rs.length>1&&i===0?'<span class="bdg">Le plus rapide</span>':''}${i>0&&i===court&&x.distance<rs[0].distance*.95?'<span class="bdg court">Le plus court</span>':''}</div>
       <div class="vi">${fmtD(x.distance)}${x.via&&x.via.length?' · via '+esc(x.via.join(' et ')):''}</div>
       <div class="ev${ev.length?' al':''}">${ev.length?I.alerte+esc(ev.length+' signalement'+(ev.length>1?'s':'')+' : '+ev.map(e=>SIGS[e.s.type].nom.toLowerCase()+' à '+fmtD(e.le)).slice(0,2).join(', ')):I.ok+'Aucun événement sur l\'itinéraire'}${x.ralenti>60?' · '+fmtT(x.ralenti)+' perdues':''}</div></button>`};
   montrer(`<div class="sur">Itinéraire${FERMER}</div><h2>${esc(RT.a.ligne1)}</h2>
-    <div class="pts"><i class="a"></i><span>${esc(RT.deTxt)}<button class="lien" type="button" id="rDe">Changer</button>${gps?'':'<button class="lien" type="button" id="rMoi">Ma position</button>'}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
+    <div class="pts"><i class="a"></i><span>${esc(RT.deTxt||'Ma position')}<button class="lien" type="button" id="rDe">${RT.de?'Changer':'Choisir un départ'}</button>${gps||!RT.de?'':'<button class="lien" type="button" id="rMoi">Ma position</button>'}</span><i class="b"></i><span>${esc(RT.a.ligne1)} · ${esc(RT.a.ligne2)}</span></div>
     <div class="modes" role="group" aria-label="Mode de transport">${MODES.map(([k,t,ic])=>`<button type="button" data-m="${k}" aria-pressed="${RT.mode===k}">${ic}${t}</button>`).join('')}</div>
-    ${r?rs.map(carte).join(''):'<p class="info">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques et les routes coupées bloquent le passage.</p>'}
-    ${r?`<div class="actions">${gps?`<button class="bt vert" type="button" id="rGo">${I.aller}Y aller</button><button class="bt" type="button" id="rApercu">${I.apercu}Aperçu</button>`:`<button class="bt vert" type="button" id="rApercu">${I.apercu}Aperçu du trajet</button>`}<button class="bt carre" type="button" id="rPartage" aria-label="Partager l'heure d'arrivée">${I.partager}</button></div>
-      ${gps?'':'<p class="info">Départ choisi sur la carte : l\'aperçu montre le trajet étape par étape et le joue en démonstration. Le guidage en direct part de votre position GPS, une fois sur place.</p>'}
+    ${r?rs.map(carte).join(''):RT.de?'<p class="info">Aucun chemin trouvé : le départ ou l\'arrivée est trop loin d\'une rue, ou les sens uniques et les routes coupées bloquent le passage.</p>'
+      :DEMO?'<p class="info prov">Version d\'essai : ici, le navigateur ne donne pas la position. Le guidage suit le GPS du téléphone : ouvrez Itina Geo depuis le site pour être guidé. Pour voir le trajet, choisissez un départ sur la carte.</p>'
+      :RT.loin!=null&&RT.paysEtat==='calcul'?`<p class="info" role="status">Calcul du trajet jusqu'à ${esc(VI.nom)}…</p>`
+      :RT.loin!=null&&RT.pays?(P=>`<div class="trajet pays" aria-pressed="true"><div class="ha"><span class="du">${fmtT(P.duree)}</span><span class="ar">Arrivée ${heure(new Date(Date.now()+P.duree*1000))}</span></div>
+        <div class="vi">${fmtD(P.distance)}${P.nat.via&&P.nat.via.length?' · via '+esc(P.nat.via.join(' et ')):''}</div>
+        <div class="ev">${I.ok}${P.dep?'Les rues de '+esc(P.dep.nom)+', la route entre les villes':'Route entre les villes'}, puis les rues de ${esc(VI.nom)} jusqu'à la porte</div></div>
+        <p class="info">${P.dep?'Le guidage vous fait sortir de '+esc(P.dep.nom)+' par ses rues, prend la route, puis passe':'Le guidage passe'} tout seul au plan de ${esc(VI.nom)} à l'entrée de la ville. Durée estimée sans trafic en direct.</p>`)(RT.pays)
+      :`<p class="info prov">${RT.loin!=null?'Vous êtes à '+esc(fmtD(RT.loin))+' de '+esc(VI.nom)+'&nbsp;: '+(RT.paysEtat==='aucun'?'aucune route trouvée depuis votre position sur le réseau national. ':'')+'touchez «&nbsp;Démarrer&nbsp;», le guidage démarre tout seul à votre arrivée.'
+        :'Votre position GPS est introuvable pour le moment. Touchez «&nbsp;Démarrer&nbsp;»&nbsp;: le guidage démarre tout seul dès que vous êtes localisé. Pour voir le trajet dès maintenant, choisissez un départ sur la carte.'}</p>`}
+    ${DEMO&&!r?'':`<div class="r-go${r?' colle':''}"><div class="actions">${DEMO?'':`<button class="bt vert${auto?' auto':''}" type="button" id="rGo" style="--auto:${AUTO_S}s">${I.aller}Démarrer</button>`}${r?`<button class="bt carre" type="button" id="rPartage" aria-label="Partager l'heure d'arrivée">${I.partager}</button>`:''}</div>${auto?'<p class="auto-txt" id="rAutoTxt" role="status">Départ automatique · touchez l\'écran pour attendre</p>':''}</div>`}
+    ${r?`${gps?'':DEMO?'<p class="info prov">Version d\'essai : le guidage suit le GPS du téléphone ; ouvrez Itina Geo depuis le site pour être guidé.</p>':'<p class="info">Départ choisi sur la carte pour voir le trajet. «&nbsp;Démarrer&nbsp;» vous guide depuis votre position GPS.</p>'}
       <p class="info">Durée estimée sans trafic en direct${REG.eviter&&actifs().length?' ; les signalements sont pris en compte':''}.</p>
       <details class="etapes"><summary>Étapes (${r.etapes.length})</summary><ol>${r.etapes.map(e=>`<li><span>${esc(e.instruction)}</span><span>${fmtD(e.distance)}</span></li>`).join('')}</ol></details>`:''}`,'itineraire');
   fc.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{RT.mode=b.dataset.m;calculer()});
   fc.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{RT.choix=+b.dataset.t;rendreTrajet(false)});
-  if(r){if(gps)$('rGo').onclick=()=>guider('direct');$('rApercu').onclick=()=>guider('apercu');$('rPartage').onclick=partagerArrivee}
-  $('rDe').onclick=choisirDepart;if(!gps)$('rMoi').onclick=departGps;
+  if($('rGo'))$('rGo').onclick=()=>guider();if(r)$('rPartage').onclick=partagerArrivee;
+  $('rDe').onclick=choisirDepart;if($('rMoi'))$('rMoi').onclick=departGps;
+  if(auto){clearTimeout(AUTO_T);AUTO_T=setTimeout(()=>{AUTO_T=null;if(RT.auto&&feuille.dataset.vue==='itineraire'&&!guide&&!document.hidden){RT.auto=false;guider()}},AUTO_S*1000)}
   if(r&&cadre)cadrer(rs.flatMap(x=>x.ligne),17);
 }
 function partagerArrivee(){
@@ -895,18 +1434,21 @@ function partagerArrivee(){
 
 /* ---------- guidage pas à pas, sur cette carte ---------- */
 let guide=null;
-function guider(vueG){
+function guider(){
   if(guide)return;
+  if(RT.loin!=null&&RT.pays){guiderPays();return}
+  arreterAuto();effacerBulles();
   if(!window.GuidageConakry){toast('Guidage indisponible : rechargez la page.');return}
-  const box=document.createElement('div');document.body.appendChild(box);
+  const box=document.createElement('div');document.body.appendChild(box);suspendreSuivi();
   try{
-    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:RT.routes[RT.choix],vue:vueG==='apercu'?'apercu':'direct',fond:!SANS_FOND,glyphs:GLYPHES,
+    /* toujours en direct, depuis le GPS : un trajet tracé depuis un départ choisi sur la carte est recalculé depuis la position réelle */
+    guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:RT.deGps?RT.routes[RT.choix]:undefined,vue:'direct',demonstration:false,fond:!SANS_FOND,glyphs:GLYPHES,
       theme:themeEffectif()==='dark'?'sombre':'clair',signalements:REG.alertes?actifs():[],eviter:eviterListe(RT.mode),annoncesSignalements:REG.annonces,
       surSignalement:(type,p)=>ajouterSignal(type,p,true),
       surAvis:(id,la)=>{const x=SIG.find(y=>y.id===id);if(!x)return;if(la)x.vu=Date.now();else SIG=SIG.filter(y=>y.id!==id);garderSig()},
       surPartage:i=>envoyer('Mon heure d\'arrivée','J\'arrive vers '+heure(i.arrivee)+' à '+RT.a.ligne1+', '+RT.a.ligne2+' ('+fmtT(i.duree)+', '+fmtD(i.distance)+' avec Itina Geo).',lienDe(RT.a)),
-      surFin:raison=>{guide=null;box.remove();dessinerSignaux();if(raison==='arrive')showAddress(RT.a,'tap');else rendreTrajet(false)}});
-  }catch(e){guide=null;box.remove();toast('Le guidage ne peut pas démarrer : '+e.message)}
+      surFin:raison=>{guide=null;box.remove();reprendreSuivi();dessinerSignaux();if(raison==='arrive')showAddress(RT.a,'tap');else rendreTrajet(false)}});
+  }catch(e){guide=null;box.remove();reprendreSuivi();toast('Le guidage ne peut pas démarrer : '+e.message)}
 }
 
 /* ---------- recherche plein écran (comme Waze) ---------- */
@@ -958,6 +1500,77 @@ function rendreVide(onglet){
   C.querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>{const s=actifs().find(x=>x.id===b.dataset.sig);fermerRecherche();if(s)ficheSignal(s)});
 }
 const ICT={adresse:I.lieu,voie:I.rue,quartier:I.quartier,commune:I.ville,pluscode:I.code,position:I.gps};
+/* ---------- chercher dans toute la Guinée ----------
+   Depuis Labé, on trouve aussi une adresse de Conakry : « Kipé », « Rue Nana Asmaou », un code postal 88…, un identifiant GN-…
+   Les petits index des autres plans (noms des quartiers et des communes, quelques Ko) disent de quelle ville il s'agit ; le plan
+   de cette ville est alors chargé à la demande (deux au plus en mémoire, gardés ensuite pour le hors-ligne) et ses adresses
+   s'affichent avec le nom de la ville. Sinon, des puces « Chercher à : Conakry, Kindia… » le proposent.
+   Toucher un résultat ouvre ce plan sur la porte ; « Y aller » guide ensuite depuis l'endroit où l'on est. */
+const AUTRES=new Map(),RES_AILLEURS=new Map(),NOMS_AILLEURS=new Map();let IDX_AUTRES=null,CHOIX_AILLEURS=null;
+const NORM=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const autresVilles=()=>(VLIST||[]).filter(v=>v&&aVille(v.code)&&v.code!==VILLE);
+function nomAilleurs(nom,code){const k=NORM(nom);if(k.length<4||code===VILLE||!aVille(code))return;if(!NOMS_AILLEURS.has(k))NOMS_AILLEURS.set(k,new Set());NOMS_AILLEURS.get(k).add(code)}
+function indexAutres(){
+  if(IDX_AUTRES)return IDX_AUTRES;
+  if(!VLIST)return Promise.resolve();
+  const l=autresVilles();l.forEach(v=>nomAilleurs(VILLES[v.code].nom,v.code));
+  IDX_AUTRES=Promise.all(l.map(v=>fetch(new URL(VILLES[v.code].dossier+'index.json',location.href).href).then(r=>r.ok?r.json():null).then(ix=>{if(!ix)return;
+    couvertureAutres(ix,v.code);(ix.communes||[]).forEach(c=>nomAilleurs(c&&c.nom,v.code));(ix.quartiers||[]).forEach(q=>nomAilleurs(Array.isArray(q)?q[0]:q&&q.nom,v.code))}).catch(()=>{})))
+    .then(()=>{const q=$('q');if(q&&!$('recherche').hidden&&q.value.trim())rendreResultats()});
+  return IDX_AUTRES;
+}
+function planAutre(code){
+  if(!AUTRES.has(code)){if(AUTRES.size>=2)AUTRES.delete(AUTRES.keys().next().value);
+    const pr=CA.charger({base:new URL(VILLES[code].dossier,location.href).href});pr.catch(()=>AUTRES.delete(code));AUTRES.set(code,pr)}
+  return AUTRES.get(code);
+}
+/* quelles villes la recherche vise : identifiant GN-… ou code postal (sûr), sinon un nom de ville, de commune ou de quartier */
+function villesVisees(v){
+  const par=c=>c&&c!==VILLE&&autresVilles().some(x=>x.code===c)?c:null,id=v.toUpperCase().match(/GN-\d{5}-[A-Z0-9]{1,40}-\d{1,5}/),cp=v.match(/(?:^|\D)(\d{5})(?!\d)/);
+  if(id){const c=par(villeDuCode(id[0]));if(c)return{codes:[c],fort:true}}
+  if(cp){const pr=PREFIXES.find(([x])=>cp[1].startsWith(x)),c=par(pr&&pr[1]);if(c)return{codes:[c],fort:true}}
+  const n=' '+NORM(v)+' ',vus=new Map();
+  for(const [k,set] of NOMS_AILLEURS)if(n.includes(' '+k+' '))for(const c of set)if(par(c))vus.set(c,Math.max(vus.get(c)||0,k.length));
+  return{codes:[...vus.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),fort:false};
+}
+/* les autres villes : celles visées d'abord, puis Conakry, puis les plus proches */
+function ordreAutres(premiers){
+  const o=mePos?[mePos.lat,mePos.lng]:CENTRES[VILLE],d=c=>o&&CENTRES[c]?distLL(o,CENTRES[c]):0,rg=c=>{const i=premiers.indexOf(c);return i<0?99:i};
+  return autresVilles().map(v=>v.code).sort((a,b)=>rg(a)-rg(b)||((b==='conakry')-(a==='conakry'))||d(a)-d(b));
+}
+const sansNomVille=(v,code)=>{const n=NORM(VILLES[code].nom),w=v.split(/\s+/);if(!w.some(x=>NORM(x)===n))return v;return w.filter(x=>NORM(x)!==n&&!/^(à|a)$/i.test(x)).join(' ')};
+function chercherAilleurs(code,v){
+  const k=code+'|'+v;if(RES_AILLEURS.has(k))return RES_AILLEURS.get(k);
+  if(RES_AILLEURS.size>40)RES_AILLEURS.clear();
+  RES_AILLEURS.set(k,'charge');
+  planAutre(code).then(r2=>{const q=sansNomVille(v,code)||v;
+      RES_AILLEURS.set(k,r2.chercher(q,{max:8}).map(r=>{if(!r.adresse&&r.type!=='quartier'&&r.type!=='commune'){const a=r2.adresse(r.lat,r.lng);if(a)r.adresse=a}return r}))},
+    ()=>RES_AILLEURS.set(k,'erreur'))
+    .then(()=>{if(!$('recherche').hidden&&$('q').value.trim()===v)rendreResultats()});
+  return 'charge';
+}
+const hashAilleurs=r=>{const a=r.adresse;return '#'+(a&&a.id&&a.position?a.id+'@'+a.position.lat.toFixed(6)+','+a.position.lng.toFixed(6):(+r.lat).toFixed(6)+','+(+r.lng).toFixed(6))};
+function sectionAilleurs(v,l){
+  if(rBut||v.length<3)return null;
+  const autres=autresVilles();if(!autres.length&&!GN_DATA)return null;
+  indexAutres();
+  const vis=villesVisees(v),fortIci=l.some(r=>(r.score||0)>=.8);
+  let code=CHOIX_AILLEURS&&CHOIX_AILLEURS.q===v?CHOIX_AILLEURS.code:null;
+  if(!code&&vis.codes.length&&(vis.fort||!fortIci))code=vis.codes[0];
+  let h='';
+  if(code){const nom=VILLES[code].nom,st=chercherAilleurs(code,v),frais=mePos&&Date.now()-mePosT<600000;
+    h+=`<h3>À ${esc(nom)}</h3>`+(st==='charge'?`<p class="vide" role="status">Recherche dans le plan de ${esc(nom)}…</p>`
+      :st==='erreur'?`<p class="vide">Le plan de ${esc(nom)} n'a pas pu être chargé : vérifiez la connexion.</p>`
+      :st.length?`<ul class="liste">${st.map((r,i)=>{const t=r.adresse?r.adresse.ligne1:r.libelle.split(' · ')[0],x=r.adresse?r.adresse.ligne2:r.libelle.split(' · ').slice(1).join(' · ')||r.type;
+          return `<li><button type="button" class="ligne" data-ai="${code}:${i}"><span class="emoji ${r.type==='quartier'||r.type==='commune'?'e-quartier':'e-histo'}">${ICT[r.type]||I.lieu}</span><span class="tx"><b>${esc(t)}</b><small>${esc(x)}${String(x).includes(nom)?'':' · '+esc(nom)}</small></span>${frais?`<span class="km">${fmtD(distLL([mePos.lat,mePos.lng],[r.lat,r.lng]))}</span>`:''}</button></li>`}).join('')}</ul>`
+      :`<p class="vide">Aucun résultat à ${esc(nom)}.</p>`)}
+  const LC=localitesCherchees(v),frais2=mePos&&Date.now()-mePosT<600000;
+  if(LC.length){LOCS=LC;h+=`<h3>Lieux de Guinée</h3><ul class="liste">${LC.map((x,i)=>`<li><button type="button" class="ligne" data-loc="${i}"><span class="emoji e-quartier">${I.ville}</span><span class="tx"><b>${esc(x.c.nom)}</b><small>${esc(x.chef?'Chef-lieu de préfecture'+(GN_DATA.regions[(GN_DATA.plans[x.c.plan]||{}).region]?' · Région de '+GN_DATA.regions[GN_DATA.plans[x.c.plan].region]:''):sousTitre(x.c))}</small></span>${frais2&&Array.isArray(x.pos)?`<span class="km">${fmtD(distLL([mePos.lat,mePos.lng],x.pos))}</span>`:''}</button></li>`).join('')}</ul>`}
+  const reste=ordreAutres(vis.codes).filter(c=>c!==code);
+  if(reste.length)h+=`<div class="ailleurs"><span>${code?'Chercher aussi à':'Pas ici ? Chercher à'}</span><div class="chips">${reste.map(c=>`<button type="button" class="chip" data-av="${c}">${I.ville}${esc(VILLES[c].nom)}</button>`).join('')}</div></div>`;
+  return{html:h,ville:!!code||!!LC.length};
+}
+let LOCS=[];
 function rendreResultats(){
   const v=$('q').value.trim(),C=$('rCorps');$('rEffacer').hidden=!v;
   if(!v){rendreVide();return}
@@ -970,11 +1583,18 @@ function rendreResultats(){
   const cat=GL?GL.categorieDe(v):null,le=GL?GL.chercher(ETABS,v,{pres:centreRecherche(),max:cat?30:6}).filter(x=>cat?x.lieu.cat===cat||x.score>=0.85:x.score>=0.85):[];
   const htmlE=le.length?`<h3>${cat?esc(nomPluriel(cat))+' à proximité':'Lieux'}</h3><ul class="liste">${le.map(x=>ligneEtab(x.lieu,0,x.d)).join('')}</ul>${cat?`<div class="actions"><button class="bt" type="button" id="rVoirCat">${I.carte}Voir sur la carte</button></div>`:''}${l.length?'<h3>Adresses</h3>':''}`
     :cat?`<p class="vide">Aucun lieu de cette catégorie n'est encore enregistré. <button class="lien" type="button" id="rAjoutCat">Ajouter un lieu</button></p>`:'';
-  C.innerHTML=htmlE+(le.length&&!l.length?'':l.length?`<ul class="liste">${l.map((r,i)=>{const t=r.adresse?r.adresse.ligne1:r.libelle.split(' · ')[0],s=r.adresse?r.adresse.ligne2:r.libelle.split(' · ').slice(1).join(' · ')||r.type;
+  const A=sectionAilleurs(v,l);
+  C.innerHTML=htmlE+(A&&A.ville&&l.length?`<h3>À ${esc(VI.nom)}</h3>`:'')+(le.length&&!l.length?'':l.length?`<ul class="liste">${l.map((r,i)=>{const t=r.adresse?r.adresse.ligne1:r.libelle.split(' · ')[0],s=r.adresse?r.adresse.ligne2:r.libelle.split(' · ').slice(1).join(' · ')||r.type;
       return `<li><button type="button" class="ligne" data-i="${i}"><span class="emoji ${r.type==='quartier'||r.type==='commune'?'e-quartier':'e-histo'}">${ICT[r.type]||I.lieu}</span><span class="tx"><b>${esc(t)}</b><small>${esc(s)}${r.limite?' · la rue s\'arrête au n° '+r.limite:r.corrige?' · identifiant mis à jour':''}</small></span>${frais?`<span class="km">${fmtD(distLL([mePos.lat,mePos.lng],[r.lat,r.lng]))}</span>`:''}</button></li>`}).join('')}</ul>`
+    :A&&A.ville?`<p class="vide">Aucun résultat à ${esc(VI.nom)}.</p>`
     :autre&&autre!==VILLE&&aVille(autre)?`<p class="vide">Cet identifiant est une adresse de ${esc(VILLES[autre].nom)}. <a href="${esc(lienVille(autre,'#'+id))}">Ouvrir la carte de ${esc(VILLES[autre].nom)}</a></p>`
-    :cat?'':'<p class="vide">Aucun résultat. Essayez « 12 Avenue de la République », une pharmacie, un quartier, l\'identifiant GN-… reçu par WhatsApp ou un Plus Code.</p>');
+    :cat?'':'<p class="vide">Aucun résultat. Essayez « 12 Avenue de la République », une pharmacie, un quartier, l\'identifiant GN-… reçu par WhatsApp ou un Plus Code.</p>')+(A?A.html:'');
   C.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>choisirResultat(+b.dataset.i));
+  C.querySelectorAll('[data-av]').forEach(b=>b.onclick=()=>{CHOIX_AILLEURS={q:v,code:b.dataset.av};rendreResultats()});
+  C.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>{const x=LOCS[+b.dataset.loc];if(!x||!Array.isArray(x.pos))return;fermerRecherche();
+    const [la,lo]=x.pos;SUIVI.actif=false;map.flyTo({center:[lo,la],zoom:x.c.type==='rurale'?11.5:12.5,padding:marges()});toucherAilleurs(la,lo)});
+  C.querySelectorAll('[data-ai]').forEach(b=>b.onclick=()=>{const [c,i]=b.dataset.ai.split(':'),st=RES_AILLEURS.get(c+'|'+v),r=Array.isArray(st)&&st[+i];if(!r)return;
+    fermerRecherche();toast('Ouverture du plan de '+VILLES[c].nom+'…');allerVille(c,hashAilleurs(r))});
   C.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const x=etab(b.dataset.e);fermerRecherche();if(x)ficheEtab(x)});
   if($('rVoirCat'))$('rVoirCat').onclick=()=>listeCategorie(cat);
   if($('rAjoutCat'))$('rAjoutCat').onclick=()=>ajouterLieu(null,cat);
@@ -1028,7 +1648,7 @@ function rendreParam(ouvert){
       ${SANS_FOND?'':inter('sat',REG.sat,'Vue satellite')}${inter('lim',REG.lim,'Limites des communes')}${inter('circ',REG.circ,'Sens uniques','flèches dans le sens de circulation')}${inter('grille',REG.grille,'Quadrillage','carreaux A1, B2… comme un plan de ville')}
       ${VILLE==='conakry'?inter('tram',REG.tram,'Projet de tramway','Coyah – Conakry – Kaloum'):''}<div><div style="margin-bottom:6px">Couleur des rues</div>${segs('couleur',REG.couleur,[['plan','Plan de ville'],['suivi','Suivi des noms']])}</div>`,ouvert)+
     reglage('voix','#2bb4f0',I.voix,'Voix et son',`${inter('voix',voixOn,'Guidage vocal','en français')}${inter('annonces',REG.annonces,'Annoncer les signalements','« Embouteillage dans 500 mètres »')}<p class="hint" style="margin:0">Voix en poular, malinké et soussou : bientôt, avec les enregistrements du studio.</p>`,ouvert)+
-    reglage('navigation','#3b6cf6',I.nav,'Navigation',`<div><div style="margin-bottom:6px">Mode par défaut</div>${segs('mode',REG.mode,[['voiture','Voiture'],['moto','Moto'],['pied','À pied']])}</div>${inter('eviter',REG.eviter,'Éviter les routes signalées','coupées ou inondées ; temps perdu dans les embouteillages')}${inter('bis',REG.bis,'Proposer un itinéraire bis')}`,ouvert)+
+    reglage('navigation','#3b6cf6',I.nav,'Navigation',`<div><div style="margin-bottom:6px">Mode par défaut</div>${segs('mode',REG.mode,[['voiture','Voiture'],['moto','Moto'],['pied','À pied']])}</div>${inter('eviter',REG.eviter,'Éviter les routes signalées','coupées ou inondées ; temps perdu dans les embouteillages')}${inter('bis',REG.bis,'Proposer un itinéraire bis')}${inter('auto',REG.auto,'Départ automatique','le guidage part seul '+AUTO_S+' secondes après le calcul depuis votre position')}`,ouvert)+
     reglage('alertes','#f29d0b',I.alerte,'Alertes',`${inter('alertes',REG.alertes,'Signalements sur la carte')}<div class="r-ligne"><span>Signalements en cours<small>${actifs().length} sur cet appareil</small></span><button type="button" class="bt" id="pSigVider" style="flex:none;min-height:40px">Tout effacer</button></div><p class="hint" style="margin:0">Pour l'instant les signalements restent sur ce téléphone. Branchés sur Itina Geo Connect, ils seront partagés entre tous les utilisateurs.</p>`,ouvert)+
     reglage('lieux','#e5383b',I.etoile,'Mes lieux',`<div class="r-ligne"><span>Domicile<small>${LIEUX.domicile?esc(LIEUX.domicile.t):'non défini'}</small></span><button type="button" class="bt" data-lieu="domicile" style="flex:none;min-height:40px">${LIEUX.domicile?'Changer':'Définir'}</button></div>
       <div class="r-ligne"><span>Travail<small>${LIEUX.travail?esc(LIEUX.travail.t):'non défini'}</small></span><button type="button" class="bt" data-lieu="travail" style="flex:none;min-height:40px">${LIEUX.travail?'Changer':'Définir'}</button></div>
@@ -1038,6 +1658,7 @@ function rendreParam(ouvert){
     reglage('horsligne','#7c5cf0',I.nuage,'Hors ligne',DEMO?'<p style="margin:0">Dans la version en ligne du site, Itina Geo s\'installe comme une appli et marche sans internet. Ici, c\'est une version d\'essai.</p>':`<p style="margin:0">${hl?'Itina Geo est gardé sur ce téléphone : la carte, le plan et la recherche marchent sans internet.':'La carte se garde sur le téléphone après la première ouverture en ligne, pour marcher ensuite sans internet.'}</p>
       ${appli?'<p class="hint" style="margin:0">Vous utilisez l\'appli Itina Geo.</p>':installer?'<button type="button" class="bt vert" id="pInstaller">Installer l\'appli Itina Geo</button>':ios?'<p class="hint" style="margin:0">Pour l\'installer sur iPhone : bouton Partager de Safari, puis « Sur l\'écran d\'accueil ».</p>':'<p class="hint" style="margin:0">Pour l\'installer : menu du navigateur, puis « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</p>'}`,ouvert)+
     ((VLIST||[]).filter(v=>v&&aVille(v.code)).length>1?reglage('ville','#0d9488',I.ville,'Ville',`<ul class="liste">${VLIST.filter(v=>v&&aVille(v.code)).map(v=>`<li><a class="ligne" style="text-decoration:none" href="${lienVille(v.code)}"><span class="tx"><b>${esc(VILLES[v.code].nom)}</b></span>${v.code===VILLE?'<span class="km">ouverte</span>':''}</a></li>`).join('')}</ul>`,ouvert):'')+
+    reglage('aide','#0ea5e9',I.aide,'Aide',`<button type="button" class="bt" id="pBienvenue" style="flex:none;min-height:44px">Revoir la présentation</button><p class="hint" style="margin:0">Les écrans d'accueil : position, moyen de transport et découverte d'Itina Geo.</p>`,ouvert)+
     reglage('apropos','#64748b',I.info,'À propos',`<p style="margin:0">${ref?esc(ref.info.nom):'Itina Geo'} : plan d'adressage provisoire, non officiel. ${ref&&ref.info.avertissement?esc(ref.info.avertissement):''}</p>
       <p class="hint" style="margin:0">Rues © contributeurs OpenStreetMap (ODbL). Les noms proposés restent des propositions : nommer les rues revient aux communes et à l'État.</p>
       ${DEMO?'':`<div class="pied" style="margin:0"><a href="developpeurs.html${SUFFIXE}">Pour les applis</a><a href="choisir.html${SUFFIXE}">Choisir une adresse</a><a href="studio.html${SUFFIXE}">Comment modifier la carte</a><a href="gestion-lieux.html${SUFFIXE}">Gestion des lieux (équipe)</a></div>`}`,ouvert)+
@@ -1054,6 +1675,7 @@ function rendreParam(ouvert){
   const pa=$('pAjout');if(pa)pa.onclick=()=>ajouterLieu();
   const v=$('pSigVider');if(v)v.onclick=()=>{SIG=[];garderSig();dessinerSignaux();rendreParam('alertes');toast('Signalements effacés.')};
   const h=$('pHisto');if(h)h.onclick=()=>{LIEUX.recents=[];garderLieux();rendreParam('lieux');toast('Historique effacé.')};
+  const bvb=$('pBienvenue');if(bvb)bvb.onclick=()=>{$('param').hidden=true;ouvrirBienvenue(true)};
   const ins=$('pInstaller');if(ins)ins.onclick=async()=>{try{installer.prompt();await installer.userChoice}catch(e){}installer=null;rendreParam('horsligne')};
   if(ouvert){const d=P.querySelector(`[data-r="${ouvert}"]`);if(d)setTimeout(()=>d.scrollIntoView({block:'start'}),30)}
 }
@@ -1514,7 +2136,7 @@ function horsZone(p){
 /* ---------- position ---------- */
 function setMe(p){
   mePos={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)};mePosT=Date.now();
-  if(!me){const el=document.createElement('div');el.className='me';me=new maplibregl.Marker({element:el})}
+  if(!me){const el=document.createElement('div');el.className='me';el.innerHTML='<i><svg viewBox="0 0 34 34" aria-hidden="true"><path d="M17 2.5 29 31 17 23.5 5 31Z" fill="#2a7de1" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/></svg></i>';me=new maplibregl.Marker({element:el})}
   me.setLngLat([mePos.lng,mePos.lat]).addTo(map);
   const r=Math.min(mePos.acc,3000),k=111320*Math.cos(mePos.lat*Math.PI/180),c=[];
   if(r>=5)for(let i=0;i<=48;i++){const t=i/48*2*Math.PI;c.push([mePos.lng+r*Math.cos(t)/k,mePos.lat+r*Math.sin(t)/110574])}
@@ -1529,12 +2151,59 @@ function localiser(f){
     err=>toast(err.code===1?'Localisation refusée : autorisez-la pour ce site dans les réglages du navigateur, puis réessayez.':'Position introuvable : réessayez à découvert, loin des murs.'),{enableHighAccuracy:true,timeout:20000,maximumAge:0});
 }
 function ouSuisJe(){localiser(()=>{const a=ref.adresse(mePos.lat,mePos.lng);if(a)showAddress(a,'gps');else horsZone(mePos)})}
-$('fabLoc').onclick=()=>{if(mePos&&Date.now()-mePosT<60000){map.easeTo({center:[mePos.lng,mePos.lat],zoom:Math.max(map.getZoom(),16.5),padding:marges(),duration:500});return}ouSuisJe()};
+$('fabLoc').onclick=()=>{if(mePos&&Date.now()-mePosT<60000){SUIVI.actif=true;if(SUIVI.id==null)suivreMoi();centrerMoi(true);return}ouSuisJe();suivreMoi()};
+
+/* ---------- comme Waze : à l'ouverture, la carte se place sur ma position, au niveau de la rue, puis me suit ----------
+   - dernière position connue (gardée sur l'appareil) dès l'ouverture, puis le GPS ;
+   - la carte suit tant que l'on ne la déplace pas soi-même (le bouton de position la recentre) ;
+   - en bas : le nom de la rue où l'on est et la vitesse (celle du GPS, sinon estimée d'après les deux dernières positions) ;
+   - dans une autre ville publiée que celle ouverte d'office (mémoire, défaut), son plan s'ouvre. */
+const CLE_MOI='itina-geo-moi',SUIVI={id:null,actif:false,zoomer:true,prec:null,tGarde:0,ville:false,premier:true};
+const lireMoi=()=>{try{const v=JSON.parse(localStorage.getItem(CLE_MOI)||'null');return v&&isFinite(v.lat)&&isFinite(v.lng)&&Date.now()-v.t<12*3600e3?v:null}catch(e){return null}};
+function centrerMoi(zoomer){if(!mePos)return;map.easeTo({center:[mePos.lng,mePos.lat],zoom:zoomer?Math.max(map.getZoom(),17):map.getZoom(),padding:marges(),duration:zoomer?800:500})}
+function vitesseMoi(p){
+  /* vitesse et sens de marche du GPS ; vides (null, ou -1 sur iPhone) : estimés d'après les deux dernières positions.
+     Attention : en JavaScript, null >= 0 est vrai, d'où le test du type. */
+  const num=x=>typeof x==='number'&&isFinite(x)&&x>=0;
+  let v=p.coords.speed,c=p.coords.heading;const t=p.timestamp||Date.now(),q=SUIVI.prec,ici={lat:p.coords.latitude,lng:p.coords.longitude,t};SUIVI.prec=ici;
+  const dt=q?(t-q.t)/1000:0,d=q?distLL([q.lat,q.lng],[ici.lat,ici.lng]):0,fiable=q&&(p.coords.accuracy||0)<=60&&dt>0.4&&dt<15;
+  if(!num(v))v=fiable&&d>=1.5?Math.min(d/dt,70):0;
+  if(!num(c)&&fiable&&d>4){const k=Math.cos(ici.lat*Math.PI/180);c=(Math.atan2((ici.lng-q.lng)*k,ici.lat-q.lat)*180/Math.PI+360)%360}
+  $('vitN').textContent=Math.round(v*3.6);$('vit').style.setProperty('--p',Math.min(v*3.6/130,1).toFixed(3));
+  /* en mouvement, le point devient une flèche tournée dans le sens de la marche (0° = vers le haut de l'écran) */
+  const el=me&&me.getElement();if(el){const ok=num(c)&&v>1.5,i=el.firstElementChild;el.classList.toggle('cap',ok);if(i)i.style.transform=ok?'rotate('+(c-map.getBearing())+'deg)':''}
+}
+function majIci(){
+  const accueilVu=feuille.dataset.vue==='accueil'&&!guide,frais=mePos&&Date.now()-mePosT<120000;
+  let rue='';if(frais&&accueilVu&&ref){const a=ref.adresse(mePos.lat,mePos.lng);if(a&&a.voie&&!(a.distanceRue>60))rue=a.voie.nom}
+  $('ici').textContent=rue;$('ici').hidden=!rue;
+  const vitVue=!!(frais&&accueilVu&&SUIVI.id!=null);$('vit').hidden=!vitVue;document.body.classList.toggle('avec-vit',vitVue);
+}
+function suivreMoi(){
+  if(DEMO||!navigator.geolocation||window.isSecureContext===false||SUIVI.id!=null)return;
+  SUIVI.actif=true;
+  SUIVI.id=navigator.geolocation.watchPosition(p=>{
+    setMe(p);vitesseMoi(p);
+    if(Date.now()-SUIVI.tGarde>30000){SUIVI.tGarde=Date.now();try{localStorage.setItem(CLE_MOI,JSON.stringify({lat:mePos.lat,lng:mePos.lng,t:Date.now()}))}catch(e){}}
+    /* ville choisie (menu, lien) et position hors de son plan : la carte reste sur la ville choisie */
+    if(SUIVI.premier){SUIVI.premier=false;if(!VILLE_IMPLICITE&&!ref.quartierDe(mePos.lat,mePos.lng))SUIVI.actif=false}
+    if(SUIVI.ville){SUIVI.ville=false;const k=villeDuPoint(mePos.lat,mePos.lng);
+      if(k&&k!==VILLE&&(VLIST||[]).some(v=>v&&v.code===k)){toast('Vous êtes à '+VILLES[k].nom+' : ouverture de son plan…');setTimeout(()=>allerVille(k),900);return}
+      if(!ref.quartierDe(mePos.lat,mePos.lng))toast(k&&k!==VILLE?'Le plan de '+VILLES[k].nom+' n\'est pas encore en ligne : la carte vous montre quand même.':'Vous êtes hors des plans d\'Itina Geo : les adresses couvrent la Guinée. Choisissez une ville en haut.')}
+    if(SUIVI.actif&&!guide&&feuille.dataset.vue==='accueil'){centrerMoi(SUIVI.zoomer);SUIVI.zoomer=false}
+    majIci();
+  },err=>{if(err&&err.code===1){try{navigator.geolocation.clearWatch(SUIVI.id)}catch(x){}SUIVI.id=null;SUIVI.actif=false;majIci()}},{enableHighAccuracy:true,maximumAge:3000,timeout:25000});
+}
+/* pendant le guidage, un seul suivi GPS (celui du guidage) : celui de l'accueil se met en pause, puis reprend */
+function suspendreSuivi(){if(SUIVI.id!=null){try{navigator.geolocation.clearWatch(SUIVI.id)}catch(e){}SUIVI.id=null;SUIVI.repr=true}}
+function reprendreSuivi(){if(SUIVI.repr){SUIVI.repr=false;SUIVI.zoomer=false;suivreMoi()}}
+/* la carte déplacée au doigt : elle ne suit plus (le bouton de position la recentre) */
+map.on('dragstart',e=>{if(e&&e.originalEvent)SUIVI.actif=false});
 
 /* ---------- toucher la carte ---------- */
 map.on('click',e=>{
   if(!ref)return;
-  if(e.originalEvent&&e.originalEvent.target&&e.originalEvent.target.closest&&e.originalEvent.target.closest('.mk-sig'))return;
+  if(e.originalEvent&&e.originalEvent.target&&e.originalEvent.target.closest&&e.originalEvent.target.closest('.mk-sig,.bulle-m'))return;
   $('villeMenu').hidden=true;
   const ll=e.lngLat;
   if(picking){
@@ -1556,7 +2225,8 @@ map.on('click',e=>{
     if(f.length>1&&f[1].d-f[0].d<8&&map.getZoom()<14){map.easeTo({center:e.lngLat,zoom:Math.min(map.getZoom()+2.5,15),duration:500});return}
     if(f.length){station(f[0].k);return}
   }
-  showAddress(ref.adresse(ll.lat,ll.lng),'tap');
+  const a=ref.adresse(ll.lat,ll.lng);
+  if(a)showAddress(a,'tap');else toucherAilleurs(ll.lat,ll.lng);
 });
 
 /* ---------- liens partagés : #GN-…, #lat,lng, #q=… ---------- */
@@ -1565,11 +2235,12 @@ function openHash(){
   let a=null;
   if(GL&&ID_ETAB.test(h)){const l=etab(h);if(l){map.jumpTo({center:[l.lng,l.lat],zoom:17.5});ficheEtab(l,true);return true}return false}
   const m=h.match(LIEN),id=m?m[1]:/^GN-/i.test(h)?h:null,autre=villeDuCode(id)||(m&&!m[1]?villeDuPoint(+m[2],+m[3]):null);
-  if(autre&&autre!==VILLE&&aVille(autre)){allerVille(autre,location.hash);return true}
+  if(autre&&autre!==VILLE&&aVille(autre)&&publie(autre)&&!LIEU_SEUL){allerVille(autre,location.hash);return true}
   if(m)a=adresseLien(m[1]?m[1].toUpperCase():null,+m[2],+m[3]);
   else if(id)a=ref.position(id);
   else if(/^q=/.test(h)){const r=ref.chercher(h.slice(2));if(r[0])a=r[0].adresse||ref.adresse(r[0].lat,r[0].lng)}
   if(a){map.jumpTo({center:[a.position.lng,a.position.lat],zoom:17.5});showAddress(a,'hash');return true}
+  if(m&&!m[1]){const la=+m[2],lo=+m[3];map.jumpTo({center:[lo,la],zoom:13});if(GN_DATA)toucherAilleurs(la,lo);else LOC_ATTENTE={lat:la,lng:lo};return true}
   if(m||id)toast('Adresse introuvable sur le plan de '+VI.nom+'.');
   return false;
 }
@@ -1582,8 +2253,15 @@ function menuVilles(){
   $('villeNom').textContent=VI.nom;$('villeBtn').hidden=false;
   const NATS=window.GuineeMaps&&Array.isArray(window.GuineeMaps.naturelles)?window.GuineeMaps.naturelles:[],nat=k=>{const p=GMP.find(x=>x.code===k);return p?p.naturelle:''};
   const li=v=>`<li><a href="${lienVille(v.code)}"${v.code===VILLE?' aria-current="page"':''}>${esc(VILLES[v.code].nom)}</a></li>`;
-  $('villeMenu').innerHTML=(NATS.length?NATS.map(n=>{const g=l.filter(v=>nat(v.code)===n.code);return g.length?`<li class="sep" role="presentation">${esc(n.nom)}</li>`+g.map(li).join(''):''}).join('')+l.filter(v=>!nat(v.code)).map(li).join(''):l.map(li).join(''))
+  $('villeMenu').innerHTML='<li class="tout"><button type="button" id="vGuinee">'+I.carte+'Toute la Guinée</button></li>'+(NATS.length?NATS.map(n=>{const g=l.filter(v=>nat(v.code)===n.code);return g.length?`<li class="sep" role="presentation">${esc(n.nom)}</li>`+g.map(li).join(''):''}).join('')+l.filter(v=>!nat(v.code)).map(li).join(''):l.map(li).join(''))
     +(window.ITINA_DEMO?'':'<li class="gm"><a href="guinee-maps.html">Toutes les adresses du pays : Guinée Maps</a></li>');
+  $('vGuinee').onclick=e=>{e.stopPropagation();ouvrirVilles(false);toutLePays()};
+  peindre();
+}
+/* toute la Guinée d'un coup d'œil : les 34 chefs-lieux (en vert, les villes dont le plan est en ligne), les communes, l'océan */
+function toutLePays(){
+  SUIVI.actif=false;const b=GN_DATA?GN_DATA.bb:[-15.09,7.19,-7.64,12.68];
+  sansMarge();map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:marges(),duration:700});
 }
 const ouvrirVilles=o=>{$('villeMenu').hidden=!o;$('villeBtn').setAttribute('aria-expanded',o?'true':'false')};
 $('villeBtn').addEventListener('click',e=>{e.stopPropagation();ouvrirVilles($('villeMenu').hidden)});
@@ -1607,24 +2285,141 @@ $('majGo').onclick=()=>location.reload();$('majX').onclick=()=>{$('maj').hidden=
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifierMaj()});
 setInterval(verifierMaj,15*60000);setTimeout(verifierMaj,12000);
 
+/* ---------- bienvenue : au premier lancement, comme Coyote et Waze ----------
+   1. présentation ; 2. la position, expliquée AVANT que le téléphone pose la question (jamais de demande à froid) ;
+   3. le moyen de transport (les trajets s'y adaptent) ; 4. quatre écrans de découverte qui glissent au doigt.
+   Une seule fois (pour revoir : Paramètres › Aide). Jamais devant un lien partagé (#adresse) : l'adresse s'ouvre tout de suite,
+   la présentation attend la prochaine ouverture. Le suivi GPS de l'accueil ne démarre qu'après (BV.apres). */
+const CLE_BV='itina-geo-bienvenue',BV={ouvert:false,apres:null,revoir:false,choix:null,diapo:0,pos:'prompt',etat:null,plusTard:false,inertes:[]};
+const bvVu=()=>{try{return localStorage.getItem(CLE_BV)==='1'}catch(e){return true}};
+const PIN_IG=(x,y,k)=>`<g transform="translate(${x} ${y}) scale(${k}) translate(-32 -55)"><path d="M32 55s15-15.8 15-27a15 15 0 0 0-30 0c0 11.2 15 27 15 27z" fill="#fcd116" stroke="#0d3a28" stroke-width="${(2/k).toFixed(2)}"/><circle cx="32" cy="28" r="6" fill="#ce1126"/></g>`;
+/* un téléphone au plan de nuit, coupé en bas (comme les présentations des applis de navigation) */
+const TEL=(id,c)=>`<svg viewBox="0 0 260 300" aria-hidden="true" focusable="false"><defs><clipPath id="${id}"><rect x="44" y="16" width="172" height="300" rx="24"/></clipPath></defs><rect x="37" y="9" width="186" height="320" rx="31" fill="#10161d" stroke="#3b4758" stroke-width="6"/><g clip-path="url(#${id})"><rect x="40" y="12" width="180" height="310" fill="#17212c"/><g fill="none" stroke-linecap="round"><path stroke="#2b3747" stroke-width="11" d="M10 96 250 74M10 188 250 166M98 0l14 330M174 0l12 330"/><path stroke="#222d3a" stroke-width="5" d="M10 140 250 122M10 246 250 228M62 0l6 330M138 0l8 330M210 0l10 330"/></g>${c}</g></svg>`;
+const IL={
+  fond:`<svg class="bv-fond" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><defs><linearGradient id="bvG" x1="0" y1="0" x2="0" y2="1"><stop offset=".42" stop-color="#0d3a28" stop-opacity="0"/><stop offset=".78" stop-color="#0d3a28"/></linearGradient></defs>
+    <g fill="none" stroke="#174d34" stroke-linecap="round"><path stroke-width="26" d="M-40 252 440 168M-40 566 440 474M92 -20l58 840M302 -20l30 840"/><path stroke-width="11" d="M-40 404 440 332M-40 706 440 622M212 -20l18 840M24 -20l16 840"/></g>
+    <path class="bv-trace" d="M122 820 140 540 306 506 292 340" fill="none" stroke="#2fd27e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="bv-onde" cx="292" cy="330" r="34" fill="#fcd116" opacity=".3"/><circle class="bv-onde d2" cx="292" cy="330" r="34" fill="#fcd116" opacity=".3"/>${PIN_IG(292,338,2.5)}
+    <rect width="400" height="800" fill="url(#bvG)"/></svg>`,
+  position:`<svg viewBox="0 0 260 250" aria-hidden="true" focusable="false"><defs><clipPath id="bvD"><circle cx="130" cy="125" r="112"/></clipPath></defs><circle cx="130" cy="125" r="112" class="bv-disque"/>
+    <g clip-path="url(#bvD)" fill="none" stroke-linecap="round" class="bv-disque-rues"><path stroke-width="18" d="M0 96 260 66M0 186 260 156M88 0l22 260M176 0l18 260"/><path stroke-width="8" d="M0 140 260 112M40 0l10 260M226 0l8 260"/></g>
+    <circle class="bv-onde" cx="104" cy="166" r="26" fill="#2a7de1" opacity=".35"/><circle cx="104" cy="166" r="11" fill="#2a7de1" stroke="#fff" stroke-width="4"/>${PIN_IG(160,118,2.1)}</svg>`
+};
+const DIAPOS=[
+  {t:'Chaque porte a son adresse',p:'Touchez la carte&nbsp;: Itina Geo vous donne l\'adresse exacte de la porte. Envoyez-la par WhatsApp en un geste.',
+   svg:TEL('bvE1',`<circle class="bv-onde" cx="130" cy="146" r="24" fill="#fcd116" opacity=".45"/>${PIN_IG(130,148,1.55)}<rect x="54" y="200" width="152" height="84" rx="16" fill="#243040"/><rect x="68" y="215" width="92" height="11" rx="5.5" fill="#eef2f7"/><rect x="68" y="233" width="66" height="8" rx="4" fill="#7f8b9a"/><rect x="68" y="252" width="80" height="20" rx="10" fill="#2fd27e"/><circle cx="182" cy="262" r="12" fill="#3b4758"/><g fill="none" stroke="#eef2f7" stroke-width="2.2" stroke-linecap="round"><circle cx="186.5" cy="257" r="2.2"/><circle cx="177.5" cy="262" r="2.2"/><circle cx="186.5" cy="267" r="2.2"/><path d="m179.5 261 5-3M179.5 263l5 3"/></g>`)},
+  {t:'Allez-y, guidé rue par rue',p:'Cherchez une adresse, un lieu ou un quartier, puis «&nbsp;Démarrer&nbsp;»&nbsp;: la voix vous annonce chaque virage.',
+   svg:TEL('bvE2',`<path d="M128 330V198h70" fill="none" stroke="#0a3d55" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/><path d="M128 330V198h70" fill="none" stroke="#33ccff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/><path d="M128 246 141 276 128 268 115 276Z" fill="#2fd27e" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/><rect x="52" y="28" width="156" height="60" rx="15" fill="#243040"/><g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M74 76V60a9 9 0 0 1 9-9h15"/><path d="m93 43 9 8-9 8"/></g><rect x="114" y="44" width="54" height="13" rx="6.5" fill="#fff"/><rect x="114" y="64" width="78" height="9" rx="4.5" fill="#7f8b9a"/>`)},
+  {t:'Signalez ce que vous voyez',p:'Embouteillage, accident, contrôle de police, travaux&nbsp;: touchez le bouton jaune. Vos trajets en tiennent compte.',
+   svg:TEL('bvE3',`<path d="M116 330V20" stroke="#0a3d55" stroke-width="20" stroke-linecap="round"/><path d="M116 330V20" stroke="#33ccff" stroke-width="12" stroke-linecap="round"/><circle cx="116" cy="112" r="17" fill="#f97316" stroke="#fff" stroke-width="3"/><path d="M116 103v10M116 120v.5" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><circle class="bv-onde" cx="180" cy="250" r="30" fill="#ffc400" opacity=".4"/><circle class="bv-onde d2" cx="180" cy="250" r="30" fill="#ffc400" opacity=".4"/><rect x="155" y="225" width="50" height="50" rx="16" fill="#ffc400"/><g transform="translate(160 230)" fill="none" stroke="#2b2100" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M20 5 36 33H4z"/><path d="M20 15v11M14.5 20.5h11"/></g>`)},
+  {t:'Même sans connexion',p:'Une fois ouvert, le plan de votre ville reste sur le téléphone&nbsp;: adresses, recherche et guidage marchent sans internet.',
+   svg:TEL('bvE4',`<g transform="translate(168 30)"><rect x="0" y="12" width="5" height="6" rx="1.2" fill="#56657a"/><rect x="8" y="8" width="5" height="10" rx="1.2" fill="#56657a"/><rect x="16" y="4" width="5" height="14" rx="1.2" fill="#56657a"/><rect x="24" y="0" width="5" height="18" rx="1.2" fill="#56657a"/><path d="M-3 -2 32 20" stroke="#ff5a5f" stroke-width="3.2" stroke-linecap="round"/></g><circle class="bv-onde" cx="130" cy="150" r="42" fill="#2fd27e" opacity=".3"/><circle cx="130" cy="150" r="42" fill="#2fd27e"/><path d="m110 151 13 13 27-29" fill="none" stroke="#04190c" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><rect x="54" y="218" width="152" height="62" rx="16" fill="#243040"/><rect x="68" y="233" width="96" height="11" rx="5.5" fill="#eef2f7"/><rect x="68" y="251" width="64" height="8" rx="4" fill="#7f8b9a"/>`)}];
+/* état de l'autorisation : 'granted' (déjà donnée : écran sauté), 'prompt', 'denied' (bloquée : on explique), 'absent' (aperçu, navigateur sans GPS) */
+function etatPosition(){
+  if(DEMO||!navigator.geolocation||window.isSecureContext===false)return Promise.resolve('absent');
+  try{if(navigator.permissions&&navigator.permissions.query)return navigator.permissions.query({name:'geolocation'}).then(x=>x.state,()=>'prompt')}catch(e){}
+  return Promise.resolve('prompt');
+}
+function ouvrirBienvenue(revoir){
+  Object.assign(BV,{ouvert:true,revoir:!!revoir,choix:revoir?REG.mode:null,diapo:0,plusTard:false});
+  BV.etat=etatPosition().then(x=>BV.pos=x);
+  const bv=$('bienvenue');bv.hidden=false;bv.classList.remove('sortie');
+  /* le reste de la page n'est plus atteignable au clavier ni par le lecteur d'écran tant que la présentation est ouverte */
+  BV.inertes=[...document.body.children].filter(x=>x!==bv&&x.tagName!=='SCRIPT'&&!x.inert);BV.inertes.forEach(x=>x.inert=true);
+  bvEcran('accueil');
+}
+function demanderPosition(){
+  /* la question du téléphone arrive maintenant, juste après l'explication ; la position obtenue sert dès l'ouverture de la carte */
+  try{navigator.geolocation.getCurrentPosition(p=>{try{localStorage.setItem(CLE_MOI,JSON.stringify({lat:p.coords.latitude,lng:p.coords.longitude,t:Date.now()}))}catch(e){}},()=>{},{enableHighAccuracy:true,timeout:20000,maximumAge:60000})}catch(e){}
+}
+function bvEcran(k){
+  const bv=$('bienvenue');bv.className='bv'+(k==='accueil'?' marque':'');bv.dataset.ecran=k;bv.onkeydown=null;
+  if(k==='accueil'){
+    bv.innerHTML=IL.fond+`<div class="bv-ecran"><div><span class="bv-nom">Itina Geo</span><h1 id="bvT" tabindex="-1">Chaque porte de Guinée a son adresse</h1><p>Trouvez-la, partagez-la et allez-y, guidé rue par rue.</p></div>
+      <div class="bv-bas"><button type="button" class="bv-go jaune" id="bvGo">Commencer</button></div></div>`;
+    $('bvGo').onclick=()=>BV.etat.then(x=>bvEcran(x==='granted'?'mode':'position'));
+  }else if(k==='position'){
+    const x=BV.pos,refus=x==='denied';
+    bv.innerHTML=`<div class="bv-ecran"><div class="bv-haut"></div><div class="bv-illu">${IL.position}</div>
+      <h1 id="bvT" tabindex="-1">${refus?'Votre position est bloquée':'Autorisez votre position exacte'}</h1>
+      <p>${refus?'Pour la débloquer&nbsp;: Réglages du téléphone, puis votre navigateur (Safari, Chrome…), puis Position&nbsp;: choisissez «&nbsp;Demander&nbsp;» ou «&nbsp;Autoriser&nbsp;». En attendant, vous pouvez chercher les adresses à la main.'
+        :x==='absent'?'Dans cet aperçu, le navigateur ne donne pas la position. Dans l\'appli, Itina Geo vous la demandera à cet écran.'
+        :'Itina Geo s\'en sert pour vous montrer sur la carte, vous donner l\'adresse où vous êtes et vous guider jusqu\'à destination. Le téléphone va vous la demander&nbsp;: répondez «&nbsp;Autoriser&nbsp;».'}</p>
+      <div class="bv-note">${I.cadenas}<span>Votre position reste sur votre téléphone&nbsp;: Itina Geo ne l'envoie à personne. Pas de publicité, pas de traceur.</span></div>
+      <div class="bv-bas"><button type="button" class="bv-go" id="bvGo">Continuer</button>${x==='prompt'?'<button type="button" class="bv-lien" id="bvPlusTard">Plus tard</button>':''}</div></div>`;
+    $('bvGo').onclick=()=>{if(x==='prompt')demanderPosition();bvEcran('mode')};
+    const pt=$('bvPlusTard');if(pt)pt.onclick=()=>{BV.plusTard=true;bvEcran('mode')};
+  }else if(k==='mode'){
+    const M=[['voiture','Voiture','Voiture, taxi, camionnette',I.voiture],['moto','Moto','Moto, taxi-moto',I.moto],['pied','À pied','Marche',I.pied]];
+    bv.innerHTML=`<div class="bv-ecran"><div class="bv-haut"></div><h1 id="bvT" tabindex="-1">Comment vous déplacez-vous&nbsp;?</h1><p>Les trajets s'adaptent à votre moyen de transport. Vous pourrez en changer à chaque trajet.</p>
+      <div class="bv-modes" role="radiogroup" aria-labelledby="bvT">${M.map(([v,t,d,ic])=>`<button type="button" class="bv-mode" role="radio" data-bvm="${v}" aria-checked="${BV.choix===v}">${ic}<span><b>${t}</b><small>${d}</small></span></button>`).join('')}</div>
+      <div class="bv-vide"></div><div class="bv-bas"><button type="button" class="bv-go" id="bvGo"${BV.choix?'':' disabled'}>Suivant</button></div></div>`;
+    bv.querySelectorAll('[data-bvm]').forEach(b=>b.onclick=()=>{BV.choix=b.dataset.bvm;REG.mode=BV.choix;RT.mode=BV.choix;garderReg();
+      bv.querySelectorAll('[data-bvm]').forEach(y=>y.setAttribute('aria-checked',y===b));$('bvGo').disabled=false});
+    $('bvGo').onclick=()=>bvEcran('tuto');
+  }else{
+    const n=DIAPOS.length;
+    bv.innerHTML=`<div class="bv-ecran"><div class="bv-haut"><button type="button" class="bv-passer" id="bvPasser">Passer</button></div>
+      <div class="bv-fen" id="bvFen"><div class="bv-piste" id="bvPiste">${DIAPOS.map((d,i)=>`<section class="bv-diapo" aria-roledescription="écran" aria-label="${i+1} sur ${n}"${i?' aria-hidden="true"':''}><div class="bv-illu">${d.svg}</div><h1${i?'':' id="bvT" tabindex="-1"'}>${d.t}</h1><p>${d.p}</p></section>`).join('')}</div></div>
+      <div class="bv-points" aria-hidden="true">${DIAPOS.map((d,i)=>`<i${i?'':' class="on"'}></i>`).join('')}</div>
+      <div class="bv-bas"><button type="button" class="bv-go" id="bvGo">Suivant</button></div></div>`;
+    const piste=$('bvPiste'),fen=$('bvFen'),pts=bv.querySelectorAll('.bv-points i'),go=$('bvGo');
+    const aller=i=>{BV.diapo=Math.max(0,Math.min(n-1,i));piste.style.transform='translateX('+(-100*BV.diapo)+'%)';
+      pts.forEach((x,j)=>x.classList.toggle('on',j===BV.diapo));piste.querySelectorAll('.bv-diapo').forEach((x,j)=>x.setAttribute('aria-hidden',j===BV.diapo?'false':'true'));
+      go.textContent=BV.diapo===n-1?'C\'est parti':'Suivant'};
+    go.onclick=()=>BV.diapo<n-1?aller(BV.diapo+1):finirBienvenue();
+    $('bvPasser').onclick=finirBienvenue;
+    /* glisser au doigt : l'écran suit le doigt, puis passe au suivant (ou revient) */
+    let x0=null,y0=0,dx=0,horiz=null;
+    fen.addEventListener('pointerdown',e=>{x0=e.clientX;y0=e.clientY;dx=0;horiz=null});
+    fen.addEventListener('pointermove',e=>{if(x0==null)return;dx=e.clientX-x0;const dy=e.clientY-y0;if(horiz==null&&(Math.abs(dx)>8||Math.abs(dy)>8))horiz=Math.abs(dx)>Math.abs(dy);
+      if(horiz){piste.classList.add('glisse');piste.style.transform='translateX(calc('+(-100*BV.diapo)+'% + '+dx+'px))'}});
+    const lacher=()=>{if(x0==null)return;piste.classList.remove('glisse');const d=horiz?dx:0;x0=null;if(d<-50)aller(BV.diapo+1);else if(d>50)aller(BV.diapo-1);else aller(BV.diapo)};
+    fen.addEventListener('pointerup',lacher);fen.addEventListener('pointercancel',lacher);
+    bv.onkeydown=e=>{if(e.key==='ArrowRight')aller(BV.diapo+1);else if(e.key==='ArrowLeft')aller(BV.diapo-1)};
+  }
+  const h=$('bvT');if(h)try{h.focus({preventScroll:true})}catch(e){}
+}
+function finirBienvenue(){
+  try{localStorage.setItem(CLE_BV,'1')}catch(e){}
+  const bv=$('bienvenue');bv.classList.add('sortie');bv.onkeydown=null;
+  setTimeout(()=>{if(BV.ouvert)return;bv.hidden=true;bv.innerHTML='';bv.className='bv'},300);
+  BV.inertes.forEach(x=>x.inert=false);BV.inertes=[];
+  BV.ouvert=false;const f=BV.apres;BV.apres=null;
+  if(f&&!BV.plusTard)f();
+  else if(BV.revoir&&ref&&SUIVI.id==null&&!guide&&!BV.plusTard)suivreMoi();
+}
+
 /* ---------- démarrage ---------- */
 accueil();
-fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;menuVilles()}).catch(()=>{});
+if(!bvVu()&&location.hash.length<2)ouvrirBienvenue(false);
+fetch('data/villes.json').then(r=>r.ok?r.json():null).then(j=>{VLIST=j&&Array.isArray(j.villes)?j.villes:null;
+  if(VLIST)try{localStorage.setItem('itina-geo-publies',JSON.stringify(VLIST.filter(v=>v&&v.code).map(v=>v.code)))}catch(e){}
+  menuVilles()}).catch(()=>{});
 CA.charger({base:VI.dossier}).then(r=>{
   ref=r;window.__ref=r;
-  const go=()=>{addLayers();appliquerAffichage();$('status').hidden=true;accueil();
+  const go=()=>{addLayers();appliquerAffichage();fondLocal();$('status').hidden=true;accueil();
     replierSources();
-    if(!openHash()&&!vue){const b=ref.bbox;sansMarge();map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:marges(),duration:0})}
+    const cible=openHash(),moi0=cible?null:lireMoi();
+    /* dernière position connue dans ce plan, ou hors de tout plan : la carte s'ouvre dessus, au niveau de la rue */
+    if(moi0&&(ref.quartierDe(moi0.lat,moi0.lng)||VILLE_IMPLICITE&&!villeDuPoint(moi0.lat,moi0.lng)))map.jumpTo({center:[moi0.lng,moi0.lat],zoom:17,padding:marges()});
+    else if(!cible&&!vue){const b=ref.bbox;sansMarge();map.fitBounds([[b[0],b[1]],[b[2],b[3]]],{padding:marges(),duration:0})}
+    /* comme Waze : la carte se cale sur ma position et me suit (pas quand un lien ouvre une adresse) */
+    if(!cible){SUIVI.ville=VILLE_IMPLICITE;if(BV.ouvert)BV.apres=suivreMoi;else if(!BV.plusTard)suivreMoi()}
     drawNums();
     if(GL)chargerConnect().then(chargerEtabs)};
   const essai=()=>{if(map.isStyleLoaded())go();else setTimeout(essai,80)};essai();
 }).catch(e=>{
   if(deMemoire){try{localStorage.removeItem(VILLE_MEMO)}catch(x){}if(window.ITINA_DEMO)location.reload();else location.replace('./?ville=conakry');return}
   const absent=/\(404\)/.test(e&&e.message||'');
+  /* lien vers un endroit dont le plan n'est pas encore publié : on rouvre un plan publié, et la fiche du lieu s'y affiche */
+  if(absent&&PT0&&!LIEU_SEUL){const q=new URLSearchParams(location.search).get('ville'),repli=q&&q!==VILLE&&aVille(q)?q:aVille(lireMemo())&&lireMemo()!==VILLE?lireMemo():'conakry';
+    if(window.ITINA_DEMO){try{localStorage.setItem(VILLE_MEMO,repli);sessionStorage.setItem('itina-lieu','1')}catch(x){}history.replaceState(null,'',location.pathname+location.hash);location.reload()}
+    else location.replace('./?ville='+encodeURIComponent(repli)+'&lieu=1'+location.hash);return}
   erreurDemarrage(absent?'Plan de '+VI.nom+' pas encore publié':'Le plan de '+VI.nom+' ne s\'ouvre pas',
     absent?'Ce plan n\'est pas encore sur ce site'+(DEMO?'.':' (dossier <code>'+esc(VI.dossier)+'</code>). L\'équipe le fabrique avec le <a href="studio.html'+SUFFIXE+'">studio</a>.')
       :'Pas de connexion, ou le plan n\'est pas encore gardé sur cet appareil. Réessayez une fois connecté.'+(e&&e.message?' ('+esc(e.message)+')':''),true)});
-window.__itinaGeo={REG,LIEUX,actifs,ajouterSignal,get RT(){return RT},get guide(){return guide},map,
+window.__itinaGeo={REG,LIEUX,actifs,ajouterSignal,get RT(){return RT},get guide(){return guide},map,BV,get GN(){return GN_OK},get GND(){return GN_DATA},get RESEAU(){return RESEAU},bienvenue:o=>ouvrirBienvenue(!!o),get BULLES(){return BULLES.length},
   get ETABS(){return ETABS},get MES(){return MES},get CONNECT(){return CONNECT},ficheEtab:id=>ficheEtab(etab(id)),chargerEtabs,ajouterLieu,phLire,get PHOTOS_BASE(){return PHOTOS_BASE}};
 })();
 </script>
