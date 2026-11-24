@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-erpgPQsWSg7L1IApO40DJ6EcDCeM4tLrYBgwzbXCOwk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-8N81oNkbegZ4+205QYDfaeSQSQ8+MXZjwJbE92v3I0I='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#12a05c">
@@ -590,7 +590,7 @@ const I={
   crayon:P('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>'),
   photo:P('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
   aide:P('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4M12 17v.4"/>'),
-  cadenas:P('<rect x="5" y="11" width="14" height="10" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')
+  cadenas:P('<rect x="5" y="11" width="14" height="10" rx="2.2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),appareils:P('<rect x="2" y="5" width="13" height="10" rx="1.6"/><path d="M1 18.5h15"/><rect x="17" y="8" width="6" height="12" rx="1.6"/><path d="M19.6 17.4h.8"/>')
 };
 /* ---------- signalements : comme sur Waze, ce que les conducteurs voient sur la route ---------- */
 const GS=(window.GuidageConakry&&GuidageConakry.SIGNALEMENTS)||{};
@@ -604,6 +604,10 @@ let SIG=lire(CLE_SIG,[]);if(!Array.isArray(SIG))SIG=[];
 const actifs=()=>{const n=Date.now();return SIG.filter(s=>s&&SIGS[s.type]&&isFinite(s.lat)&&isFinite(s.lng)&&n-(s.vu||s.t)<SIGS[s.type].ttl*3600000)};
 const garderSig=()=>{SIG=actifs().slice(-200);ecrire(CLE_SIG,SIG)};
 garderSig();
+/* signalements partagés que j'ai dits « plus là » (ou effacés) : le service ne les remontre pas sur ce téléphone */
+const CLE_MASQ='itina-geo-signalements-masques';
+let MASQ=lire(CLE_MASQ,{});if(!MASQ||typeof MASQ!=='object'||Array.isArray(MASQ))MASQ={};
+const garderMasq=()=>{const n=Date.now();for(const k in MASQ)if(!(n-MASQ[k]<8*86400000))delete MASQ[k];ecrire(CLE_MASQ,MASQ)};
 
 /* ---------- ville. Dans l'ordre : celle d'un identifiant partagé (#GN-85002-… : Labé), même si le lien dit une autre ville ;
    celle d'une position partagée (#11.31,-12.28 : la ville la plus proche, à 50 km au plus) ; ?ville=labe ; la dernière ouverte ; Conakry ---------- */
@@ -665,7 +669,7 @@ const garderReg=()=>ecrire('itina-geo-reglages',REG);
 /* lieux : domicile, travail, enregistrés, récents (sur l'appareil seulement) */
 const LIEUX=Object.assign({domicile:null,travail:null,favoris:[],recents:[]},lire('itina-geo-lieux',{}));
 for(const k of['favoris','recents'])if(!Array.isArray(LIEUX[k]))LIEUX[k]=[];
-const garderLieux=()=>ecrire('itina-geo-lieux',LIEUX);
+const garderLieux=()=>{ecrire('itina-geo-lieux',LIEUX);synchroPlus()};
 const lieuDe=a=>({t:a.ligne1,s:a.ligne2,id:a.id||null,v:VILLE,lat:+a.position.lat.toFixed(6),lng:+a.position.lng.toFixed(6)});
 const memeLieu=(x,y)=>x&&y&&(x.id&&y.id?x.id===y.id:Math.abs(x.lat-y.lat)<2e-5&&Math.abs(x.lng-y.lng)<2e-5);
 /* ville d'un lieu gardé : notée depuis le 15 novembre 2026 ; pour les plus anciens, d'après l'identifiant (GN-85… : Labé) ou la position */
@@ -767,7 +771,11 @@ function addLayers(){
   lab('noms-p',['==',['get','p'],1],16.3,['interpolate',['linear'],['zoom'],16,9.5,18,12]);
   lab('noms',['all',['==',['get','p'],0],['==',['get','m'],0]],14.8,['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14]);
   lab('noms-m',['all',['==',['get','p'],0],['==',['get','m'],1]],12.5,['interpolate',['linear'],['zoom'],12.5,10,15,12,18,15],.05);
-  map.addLayer({id:'noms-ailleurs',type:'symbol',source:'voies-ailleurs',minzoom:14.8,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14],'symbol-placement':'line','text-max-angle':38,'symbol-spacing':280,'text-padding':2,'text-rotation-alignment':'map','text-pitch-alignment':'viewport'},paint:{'text-halo-width':1.6}});
+  const labA=(id,filtre,minz,taille,ls)=>map.addLayer({id,type:'symbol',source:'voies-ailleurs',minzoom:minz,filter:filtre,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':taille,'symbol-placement':'line','text-max-angle':38,'symbol-spacing':280,'text-padding':2,'text-letter-spacing':ls||0,'text-rotation-alignment':'map','text-pitch-alignment':'viewport'},paint:{'text-halo-width':1.6}});
+  labA('noms-ailleurs',['==',['get','m'],0],14.8,['interpolate',['linear'],['zoom'],15,9.5,17,12,19,14]);
+  labA('noms-ailleurs-m',['==',['get','m'],1],12.5,['interpolate',['linear'],['zoom'],12.5,10,15,12,18,15],.05);
+  map.addSource('quartiers-ailleurs',{type:'geojson',data:FC()});
+  map.addLayer({id:'quartiers-ailleurs',type:'symbol',source:'quartiers-ailleurs',minzoom:13,maxzoom:17.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],13,10.5,16,13],'text-transform':'uppercase','text-letter-spacing':.18,'text-max-width':9,'text-padding':6},paint:{'text-halo-width':1.8,'text-opacity':.9}});
   map.addLayer({id:'quartiers',type:'symbol',source:'quartiers',minzoom:13,maxzoom:17.5,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],13,10.5,16,13],'text-transform':'uppercase','text-letter-spacing':.18,'text-max-width':9,'text-padding':6},paint:{'text-halo-width':1.8,'text-opacity':.9}});
   map.addLayer({id:'communes',type:'symbol',source:'communes',maxzoom:13.2,layout:{'text-field':['get','n'],'text-font':['NotoSansMedium'],'text-size':['interpolate',['linear'],['zoom'],9,11,12,15],'text-transform':'uppercase','text-letter-spacing':.22},paint:{'text-halo-width':2}});
   couchesEtab();
@@ -806,6 +814,11 @@ function fondLocal(){
     const F=['NotoSansMedium'],L=(o,av)=>map.addLayer(o,av);
     L({id:'gn-terre',type:'fill',source:'gn',paint:{'fill-antialias':false}},map.getLayer('plan')?'plan':'zones');
     L({id:'gn-lim',type:'line',source:'gn',maxzoom:12.5,filter:['!=',['get','c'],VILLE],paint:{'line-width':[...z,6,.4,11,1],'line-dasharray':[3,2],'line-opacity':.5}},'zones');
+    map.addSource('routes-pays',{type:'geojson',data:FC(),tolerance:.5});
+    const larg=(a,b,c2,d)=>['match',['get','h'],0,a,1,b,2,c2,d],fondu=['interpolate',['linear'],['zoom'],4,['case',['==',['get','h'],3],0,['==',['get','h'],2],.6,1],6,['case',['==',['get','h'],3],0,1],7.5,1,11.2,1,12.4,0];
+    L({id:'routes-pays-c',type:'line',source:'routes-pays',minzoom:4,maxzoom:12.5,layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':['interpolate',['linear'],['zoom'],4,larg(1.7,1.5,.8,.4),5,larg(2.2,2,1.1,.6),8,larg(4,3.6,2.4,1.6),11,larg(7,6.4,4.6,3.6)],'line-opacity':fondu}},'zones');
+    L({id:'routes-pays',type:'line',source:'routes-pays',minzoom:4,maxzoom:12.5,layout:{'line-cap':'round','line-join':'round','line-sort-key':['-',3,['get','h']]},paint:{'line-width':['interpolate',['linear'],['zoom'],4,larg(.9,.8,.35,.2),5,larg(1.2,1.1,.5,.3),8,larg(2.4,2.1,1.3,.8),11,larg(4.6,4.2,2.8,2)],'line-opacity':fondu}},'zones');
+    setTimeout(routesPays,0);
     L({id:'gn-villes',type:'symbol',source:'gn-noms',minzoom:4.2,maxzoom:10.5,filter:['==',['get','t'],'v'],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,4.2,10,6,11.5,10,14.5],'text-padding':3},paint:{'text-halo-width':1.6}},'zones');
     L({id:'gn-sp',type:'symbol',source:'gn-noms',minzoom:8.5,maxzoom:13.5,filter:['all',['==',['get','t'],'s'],['!',['all',['==',['get','c'],VILLE],['==',['get','u'],1]]]],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,8.5,10.5,12,12.5],'text-padding':6},paint:{'text-halo-width':1.4}},'zones');
     L({id:'gn-ocean',type:'symbol',source:'gn-noms',minzoom:5,maxzoom:9.5,filter:['all',['==',['get','t'],'o'],['==',['get','z'],0]],layout:{'text-field':['get','n'],'text-font':F,'text-size':[...z,5,12,9.5,15],'text-letter-spacing':.2},paint:{'text-halo-width':1.2}},'zones');
@@ -904,16 +917,32 @@ function guiderLieu(it,lat,lng,lc){
 }
 /* une seule carte du pays : regarder une autre ville publiée (zoom 11 et plus) y dessine ses rues, sans changer de plan ;
    toucher une de ses portes donne l'adresse exacte (fiche du lieu). Deux autres villes au plus en mémoire. */
-const VOIES_AUTRES=new Map();
+const VOIES_AUTRES=new Map(),QUARTIERS_AUTRES=new Map();
 function voiesAutres(code,r2){
   if(!map.getSource('voies-ailleurs')||!r2||!r2.voies)return;
-  if(!VOIES_AUTRES.has(code)){if(VOIES_AUTRES.size>=2)VOIES_AUTRES.delete(VOIES_AUTRES.keys().next().value);
+  if(!VOIES_AUTRES.has(code)){if(VOIES_AUTRES.size>=2){const k0=VOIES_AUTRES.keys().next().value;VOIES_AUTRES.delete(k0);QUARTIERS_AUTRES.delete(k0)}
+    QUARTIERS_AUTRES.set(code,(r2.quartiers||[]).filter(q=>isFinite(q.lat)&&isFinite(q.lng)).map(q=>({type:'Feature',properties:{n:safe(q.nom)+(q.cp?'\n'+q.cp:'')},geometry:{type:'Point',coordinates:[q.lng,q.lat]}})));
     VOIES_AUTRES.set(code,r2.voies.map(v=>({type:'Feature',properties:{n:safe(v.nom),m:CA._interne.MAJEUR[v.highway]?1:0,t:v.highway==='track'?1:0},geometry:{type:'MultiLineString',coordinates:v.segs.map(g=>g.map(q=>[q.lon,q.lat]))}})))}
   map.getSource('voies-ailleurs').setData(FC([...VOIES_AUTRES.values()].flat()));
+  if(map.getSource('quartiers-ailleurs'))map.getSource('quartiers-ailleurs').setData(FC([...QUARTIERS_AUTRES.values()].flat()));
 }
+/* la carte du pays : les grandes routes de toute la Guinée, d'après l'aperçu du réseau national (data/reseau/apercu.json,
+   quelques centaines de Ko, fabriqué par le studio avec le réseau). Chargé une fois, la première fois qu'on regarde le pays ou une région (zoom sous 10,5). */
+let ROUTES_PAYS=null;
+function routesPays(){
+  if(ROUTES_PAYS||!map.getSource('routes-pays')||map.getZoom()>=10.5)return;   /* seulement quand on regarde le pays ou une région, pas au zoom d'une ville */
+  ROUTES_PAYS=fetch(new URL('data/reseau/apercu.json',location.href).href,{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j||!Array.isArray(j.r)||!map.getSource('routes-pays'))return;
+    map.getSource('routes-pays').setData(FC(j.r.filter(x=>Array.isArray(x)&&Array.isArray(x[1])&&x[1].length>1).map(([h,l])=>({type:'Feature',properties:{h},geometry:{type:'LineString',coordinates:l}}))));
+  }).catch(()=>{});
+}
+map.on('moveend',()=>routesPays());
 function regarderAilleurs(){
   if(!ref||!VLIST||map.getZoom()<11)return;
   const c=map.getCenter();
+  /* les plans couvrent des préfectures entières : la commune sous le centre de la carte dit quel plan dessiner, même loin de la ville */
+  const lc=GN_DATA&&localiteDe(c.lat,c.lng),k=lc&&lc.plan;
+  if(k&&k!==VILLE&&VILLES[k]&&publie(k)){if(!VOIES_AUTRES.has(k))planAutre(k).then(r2=>voiesAutres(k,r2),()=>{});return}
   for(const v of autresVilles()){const ce=Array.isArray(v.centre)?v.centre:CENTRES[v.code];
     if(ce&&distLL([c.lat,c.lng],ce)<18000){if(!VOIES_AUTRES.has(v.code))planAutre(v.code).then(r2=>voiesAutres(v.code,r2),()=>{});return}}
 }
@@ -950,7 +979,10 @@ function peindre(){
     :['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],themeEffectif()==='dark'?'#2a3441':'#efe9dd',css('--street')]);
   p('casing-ailleurs','line-color',['case',['==',['get','m'],1],css('--major-casing'),css('--casing')]);
   p('voies-ailleurs','line-color',['case',['==',['get','m'],1],css('--major'),['==',['get','t'],1],themeEffectif()==='dark'?'#2a3441':'#efe9dd',css('--street')]);
-  p('noms-ailleurs','text-color',css('--text'));p('noms-ailleurs','text-halo-color',css('--halo'));
+  for(const id of['noms-ailleurs','noms-ailleurs-m','quartiers-ailleurs'])p(id,'text-halo-color',css('--halo'));
+  p('noms-ailleurs','text-color',css('--text'));p('noms-ailleurs-m','text-color',css('--text'));p('quartiers-ailleurs','text-color',css('--quartier'));
+  p('routes-pays','line-color',themeEffectif()==='dark'?['match',['get','h'],0,'#7088b4',1,'#7088b4','#3d4f6b']:['match',['get','h'],0,css('--major'),1,css('--major'),'#ffffff']);
+  p('routes-pays-c','line-color',['match',['get','h'],0,css('--major-casing'),1,css('--major-casing'),themeEffectif()==='dark'?'#03060a':'#b6c0cc']);
   const sombre=themeEffectif()==='dark';
   p('route-c','line-color',css('--route-c'));p('route-alt','line-color',css('--route-alt'));p('route-lueur','line-color',css('--route'));
   p('moi-f','fill-color',css('--moi'));p('moi-l','line-color',css('--moi'));allumer(null);
@@ -1169,19 +1201,20 @@ function dessinerSignaux(){
 function ficheSignal(s){
   const a=ref.adresse(s.lat,s.lng),T=SIGS[s.type];
   montrer(`<div class="sur">Signalement${FERMER}</div>
-    <div style="display:flex;gap:14px;align-items:center;margin-top:4px"><span class="sig-r" style="background:${T.c};flex:none">${svgSig(s.type)}</span><div><h2 style="margin:0">${esc(T.nom)}</h2><div class="info" style="margin:2px 0 0">Signalé ${ilya(s.t)}${s.vu&&s.vu!==s.t?' · confirmé '+ilya(s.vu):''}${s.par==='moi'?' · par vous':''}</div></div></div>
+    <div style="display:flex;gap:14px;align-items:center;margin-top:4px"><span class="sig-r" style="background:${T.c};flex:none">${svgSig(s.type)}</span><div><h2 style="margin:0">${esc(T.nom)}</h2><div class="info" style="margin:2px 0 0">Signalé ${ilya(s.t)}${s.vu&&s.vu!==s.t?' · confirmé '+ilya(s.vu):''}${s.par==='moi'?' · par vous':s.par==='autre'?' · par un conducteur':''}</div></div></div>
     <p class="l2" style="margin-top:12px">${a?esc(a.ligne1)+' · '+esc(a.ligne2):''}</p>
-    <p class="info">Toujours là ? Votre réponse met à jour ce téléphone${T.eviter.facteur===Infinity?' : vos itinéraires évitent ce passage':' : vos itinéraires comptent le temps perdu'}. Les signalements ne sont pas partagés.</p>
+    <p class="info">Toujours là ? ${CONNECT&&!DEMO?'Votre réponse aide tous les conducteurs':'Votre réponse met à jour ce téléphone'}${T.eviter.facteur===Infinity?' : vos itinéraires évitent ce passage':' : vos itinéraires comptent le temps perdu'}.${CONNECT&&!DEMO?'':' Les signalements ne sont pas partagés.'}</p>
     <div class="actions"><button class="bt vert" type="button" id="sOui">${I.ok}Toujours là</button><button class="bt" type="button" id="sNon">Plus là</button></div>`,'signal');
-  $('sOui').onclick=()=>{const x=SIG.find(y=>y.id===s.id);if(x)x.vu=Date.now();garderSig();toast('Merci ! Signalement confirmé.');accueil()};
-  $('sNon').onclick=()=>{SIG=SIG.filter(y=>y.id!==s.id);garderSig();dessinerSignaux();toast('Merci ! Signalement retiré.');accueil()};
+  $('sOui').onclick=()=>{avisSignal(s.id,true);toast('Merci ! Signalement confirmé.');accueil()};
+  $('sNon').onclick=()=>{avisSignal(s.id,false);dessinerSignaux();toast('Merci ! Signalement retiré.');accueil()};
   map.easeTo({center:[s.lng,s.lat],zoom:Math.max(map.getZoom(),16),padding:marges(),duration:500});
 }
 function ajouterSignal(type,p,enRoute){
   if(!SIGS[type]||!p)return;
-  SIG.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),type,lat:+(+p.lat).toFixed(6),lng:+(+p.lng).toFixed(6),t:Date.now(),par:'moi'});
-  garderSig();dessinerSignaux();
-  if(!enRoute)toast('Signalement gardé sur ce téléphone ('+SIGS[type].nom.toLowerCase()+') : vos itinéraires en tiennent compte.');
+  const x={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),type,lat:+(+p.lat).toFixed(6),lng:+(+p.lng).toFixed(6),t:Date.now(),par:'moi',v:VILLE};
+  SIG.push(x);garderSig();dessinerSignaux();
+  const partage=CONNECT&&!DEMO;if(partage)envoyerSignal(x);
+  if(!enRoute)toast(partage?'Merci ! Signalement envoyé ('+SIGS[type].nom.toLowerCase()+') : les autres conducteurs le voient.':'Signalement gardé sur ce téléphone ('+SIGS[type].nom.toLowerCase()+') : vos itinéraires en tiennent compte.');
 }
 /* zones à éviter pour le calcul des trajets (route coupée ou inondée : jamais ; embouteillage : plus lent) */
 const eviterListe=mode=>REG.eviter?actifs().filter(s=>mode!=='pied'||SIGS[s.type].eviter.facteur===Infinity).map(s=>Object.assign({lat:s.lat,lng:s.lng},SIGS[s.type].eviter)):[];
@@ -1203,7 +1236,7 @@ let sigPos=null;
 function ouvrirSignal(pos){
   sigPos=pos&&pos.lat!=null?pos:null;
   $('sigGrille').innerHTML=Object.entries(SIGS).map(([k,T])=>`<button type="button" class="sig-b" data-sig="${k}"><span class="sig-r" style="background:${T.c}">${svgSig(k)}</span>${esc(T.nom)}</button>`).join('');
-  $('sigTexte').textContent=(sigPos?'À l\'endroit choisi sur la carte.':mePos&&Date.now()-mePosT<120000?'À votre position.':'Choisissez, puis touchez la carte à l\'endroit de l\'événement.')+' Le signalement reste sur ce téléphone et vos itinéraires en tiennent compte.';
+  $('sigTexte').textContent=(sigPos?'À l\'endroit choisi sur la carte.':mePos&&Date.now()-mePosT<120000?'À votre position.':'Choisissez, puis touchez la carte à l\'endroit de l\'événement.')+(CONNECT&&!DEMO?' Il est partagé avec tous les conducteurs : seuls le type et l\'endroit sont envoyés.':' Le signalement reste sur ce téléphone et vos itinéraires en tiennent compte.');
   $('signal').hidden=false;
   $('sigGrille').querySelectorAll('[data-sig]').forEach(b=>b.onclick=()=>{
     const t=b.dataset.sig;$('signal').hidden=true;
@@ -1445,7 +1478,7 @@ function guider(){
     guide=GuidageConakry.ouvrir(box,ref,RT.a,{mode:RT.mode,itineraire:RT.deGps?RT.routes[RT.choix]:undefined,vue:'direct',demonstration:false,fond:!SANS_FOND,glyphs:GLYPHES,
       theme:themeEffectif()==='dark'?'sombre':'clair',signalements:REG.alertes?actifs():[],eviter:eviterListe(RT.mode),annoncesSignalements:REG.annonces,
       surSignalement:(type,p)=>ajouterSignal(type,p,true),
-      surAvis:(id,la)=>{const x=SIG.find(y=>y.id===id);if(!x)return;if(la)x.vu=Date.now();else SIG=SIG.filter(y=>y.id!==id);garderSig()},
+      surAvis:(id,la)=>avisSignal(id,la),
       surPartage:i=>envoyer('Mon heure d\'arrivée','J\'arrive vers '+heure(i.arrivee)+' à '+RT.a.ligne1+', '+RT.a.ligne2+' ('+fmtT(i.duree)+', '+fmtD(i.distance)+' avec Itina Geo).',lienDe(RT.a)),
       surFin:raison=>{guide=null;box.remove();reprendreSuivi();dessinerSignaux();if(raison==='arrive')showAddress(RT.a,'tap');else rendreTrajet(false)}});
   }catch(e){guide=null;box.remove();reprendreSuivi();toast('Le guidage ne peut pas démarrer : '+e.message)}
@@ -1649,12 +1682,13 @@ function rendreParam(ouvert){
       ${VILLE==='conakry'?inter('tram',REG.tram,'Projet de tramway','Coyah – Conakry – Kaloum'):''}<div><div style="margin-bottom:6px">Couleur des rues</div>${segs('couleur',REG.couleur,[['plan','Plan de ville'],['suivi','Suivi des noms']])}</div>`,ouvert)+
     reglage('voix','#2bb4f0',I.voix,'Voix et son',`${inter('voix',voixOn,'Guidage vocal','en français')}${inter('annonces',REG.annonces,'Annoncer les signalements','« Embouteillage dans 500 mètres »')}<p class="hint" style="margin:0">Voix en poular, malinké et soussou : bientôt, avec les enregistrements du studio.</p>`,ouvert)+
     reglage('navigation','#3b6cf6',I.nav,'Navigation',`<div><div style="margin-bottom:6px">Mode par défaut</div>${segs('mode',REG.mode,[['voiture','Voiture'],['moto','Moto'],['pied','À pied']])}</div>${inter('eviter',REG.eviter,'Éviter les routes signalées','coupées ou inondées ; temps perdu dans les embouteillages')}${inter('bis',REG.bis,'Proposer un itinéraire bis')}${inter('auto',REG.auto,'Départ automatique','le guidage part seul '+AUTO_S+' secondes après le calcul depuis votre position')}`,ouvert)+
-    reglage('alertes','#f29d0b',I.alerte,'Alertes',`${inter('alertes',REG.alertes,'Signalements sur la carte')}<div class="r-ligne"><span>Signalements en cours<small>${actifs().length} sur cet appareil</small></span><button type="button" class="bt" id="pSigVider" style="flex:none;min-height:40px">Tout effacer</button></div><p class="hint" style="margin:0">Pour l'instant les signalements restent sur ce téléphone. Branchés sur Itina Geo Connect, ils seront partagés entre tous les utilisateurs.</p>`,ouvert)+
+    reglage('alertes','#f29d0b',I.alerte,'Alertes',`${inter('alertes',REG.alertes,'Signalements sur la carte')}<div class="r-ligne"><span>Signalements en cours<small>${actifs().length} ${CONNECT&&!DEMO?'en cours':'sur cet appareil'}</small></span><button type="button" class="bt" id="pSigVider" style="flex:none;min-height:40px">Tout effacer</button></div><p class="hint" style="margin:0">${CONNECT&&!DEMO?'Les signalements sont partagés entre tous les utilisateurs d\'Itina Geo : seuls le type et l\'endroit sont envoyés, jamais votre nom ni votre position.':'Pour l\'instant les signalements restent sur ce téléphone. Branchés sur Itina Geo Connect, ils seront partagés entre tous les utilisateurs.'}</p>`,ouvert)+
     reglage('lieux','#e5383b',I.etoile,'Mes lieux',`<div class="r-ligne"><span>Domicile<small>${LIEUX.domicile?esc(LIEUX.domicile.t):'non défini'}</small></span><button type="button" class="bt" data-lieu="domicile" style="flex:none;min-height:40px">${LIEUX.domicile?'Changer':'Définir'}</button></div>
       <div class="r-ligne"><span>Travail<small>${LIEUX.travail?esc(LIEUX.travail.t):'non défini'}</small></span><button type="button" class="bt" data-lieu="travail" style="flex:none;min-height:40px">${LIEUX.travail?'Changer':'Définir'}</button></div>
       <div class="r-ligne"><span>Enregistrés et récents<small>${LIEUX.favoris.length} enregistré${LIEUX.favoris.length>1?'s':''}, ${LIEUX.recents.length} récent${LIEUX.recents.length>1?'s':''}</small></span><button type="button" class="bt" id="pHisto" style="flex:none;min-height:40px">Effacer l'historique</button></div>`,ouvert)+
-    (GL?reglage('etabs','#16a34a',I.ajout,'Mes établissements',`${MES.length?`<ul class="liste">${MES.slice().reverse().map(m=>`<li><button type="button" class="ligne" data-me="${esc(m.id)}">${rondCat(m.fiche.cat)}<span class="tx"><b>${esc(m.fiche.nom)}</b><small>${esc(VILLES[m.ville]?VILLES[m.ville].nom:m.ville)} · ${esc(etatMien(m))}</small></span></button></li>`).join('')}</ul>`:'<p style="margin:0">Aucun établissement envoyé depuis ce téléphone.</p>'}
+    (GL?reglage('etabs','#16a34a',I.ajout,'Mes établissements',`${MES.length?`<ul class="liste">${MES.slice().reverse().map(m=>`<li><button type="button" class="ligne" data-me="${esc(m.id)}">${rondCat(m.fiche.cat)}<span class="tx"><b>${esc(m.fiche.nom)}</b><small>${esc(VILLES[m.ville]?VILLES[m.ville].nom:m.ville)} · ${esc(etatMien(m))}</small></span></button></li>`).join('')}</ul>`:`<p style="margin:0">Aucun établissement envoyé depuis ${SYN?'vos appareils':'ce téléphone'}.</p>`}
       <button type="button" class="bt vert" id="pAjout">${I.ajout}Ajouter un lieu</button><p class="hint" style="margin:0">Boutiques, entreprises, écoles, hôpitaux, institutions, stations-service… Chaque fiche est vérifiée par l'équipe Itina Geo avant d'être visible par tous. Gardez le code de propriétaire reçu à l'envoi pour la modifier.</p>`,ouvert):'')+
+    reglage('appareils','#0891b2',I.appareils,'Mes appareils',corpsAppareils(),ouvert)+
     reglage('horsligne','#7c5cf0',I.nuage,'Hors ligne',DEMO?'<p style="margin:0">Dans la version en ligne du site, Itina Geo s\'installe comme une appli et marche sans internet. Ici, c\'est une version d\'essai.</p>':`<p style="margin:0">${hl?'Itina Geo est gardé sur ce téléphone : la carte, le plan et la recherche marchent sans internet.':'La carte se garde sur le téléphone après la première ouverture en ligne, pour marcher ensuite sans internet.'}</p>
       ${appli?'<p class="hint" style="margin:0">Vous utilisez l\'appli Itina Geo.</p>':installer?'<button type="button" class="bt vert" id="pInstaller">Installer l\'appli Itina Geo</button>':ios?'<p class="hint" style="margin:0">Pour l\'installer sur iPhone : bouton Partager de Safari, puis « Sur l\'écran d\'accueil ».</p>':'<p class="hint" style="margin:0">Pour l\'installer : menu du navigateur, puis « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ».</p>'}`,ouvert)+
     ((VLIST||[]).filter(v=>v&&aVille(v.code)).length>1?reglage('ville','#0d9488',I.ville,'Ville',`<ul class="liste">${VLIST.filter(v=>v&&aVille(v.code)).map(v=>`<li><a class="ligne" style="text-decoration:none" href="${lienVille(v.code)}"><span class="tx"><b>${esc(VILLES[v.code].nom)}</b></span>${v.code===VILLE?'<span class="km">ouverte</span>':''}</a></li>`).join('')}</ul>`,ouvert):'')+
@@ -1673,7 +1707,8 @@ function rendreParam(ouvert){
   P.querySelectorAll('[data-lieu]').forEach(b=>b.onclick=()=>{$('param').hidden=true;ouvrirRecherche(b.dataset.lieu)});
   P.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{const m=MES.find(x=>x.id===b.dataset.me);if(!m)return;if(m.ville!==VILLE){toast('Fiche de '+(VILLES[m.ville]?VILLES[m.ville].nom:m.ville)+' : ouvrez la carte de cette ville.');return}const x=etab(m.id);$('param').hidden=true;if(x)ficheEtab(x);else toast(etatMien(m))});
   const pa=$('pAjout');if(pa)pa.onclick=()=>ajouterLieu();
-  const v=$('pSigVider');if(v)v.onclick=()=>{SIG=[];garderSig();dessinerSignaux();rendreParam('alertes');toast('Signalements effacés.')};
+  brancherAppareils();
+  const v=$('pSigVider');if(v)v.onclick=()=>{for(const x of SIG)if(x.sid)MASQ[x.sid]=Date.now();garderMasq();SIG=[];garderSig();dessinerSignaux();rendreParam('alertes');toast('Signalements effacés.')};
   const h=$('pHisto');if(h)h.onclick=()=>{LIEUX.recents=[];garderLieux();rendreParam('lieux');toast('Historique effacé.')};
   const bvb=$('pBienvenue');if(bvb)bvb.onclick=()=>{$('param').hidden=true;ouvrirBienvenue(true)};
   const ins=$('pInstaller');if(ins)ins.onclick=async()=>{try{installer.prompt();await installer.userChoice}catch(e){}installer=null;rendreParam('horsligne')};
@@ -1691,7 +1726,7 @@ let CONNECT=null,ETAB_FICHIER=[],ETAB_SERVICE=[],ETABS=[],filtreCat=null,etabOuv
 const CLE_MES='itina-geo-mes-lieux';
 let MES=lire(CLE_MES,[]);if(!Array.isArray(MES))MES=[];
 MES=MES.filter(m=>m&&typeof m.id==='string'&&m.fiche&&typeof m.fiche==='object');
-const garderMes=()=>ecrire(CLE_MES,MES.slice(-100));
+const garderMes=()=>{ecrire(CLE_MES,MES.slice(-100));synchroPlus()};
 const etab=id=>ETABS.find(x=>x.id===id);
 const ID_ETAB=/^(L-[A-Za-z0-9-]{3,30}|osm-[nwr]\d{1,15})$/;
 const svgCat=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${(GL.CATEGORIES[k]||GL.CATEGORIES.autre).ic}</svg>`;
@@ -2052,10 +2087,10 @@ async function envoyerFiche(f,piege){
   if(CONNECT&&!DEMO){
     try{const {r,j}=await poster('/v1/proposer',{fiche:f,piege:piege||undefined});
       if(r.status===201&&j&&j.id){m.id=j.id;m.code=j.code;m.statut=j.statut;delete m.local}
-      else if(r.status===409&&j&&j.erreur){return{doublon:j.erreur.existant&&j.erreur.existant.id}}
+      else if(r.status===409&&j&&j.erreur&&j.erreur.code==='DOUBLON'){return{doublon:j.erreur.existant&&j.erreur.existant.id}}
       else if(r.status===400&&j&&j.erreur&&j.erreur.champs){return{erreurs:j.erreur.champs}}
-      else if(j&&j.erreur&&r.status<500){return{message:j.erreur.message}}
-      else throw new Error('HTTP '+r.status)}
+      else if(j&&j.erreur&&(j.erreur.code==='FICHE_INVALIDE'||r.status===429)){return{message:j.erreur.message}}
+      else throw new Error('HTTP '+r.status)}               /* service mal branché ou indisponible : gardée, elle partira plus tard */
     catch(e){m.statut='a_envoyer'}                         /* pas de réseau : la fiche partira toute seule plus tard */
   }else if(!DEMO)m.statut='a_envoyer';
   else m.code=codeLocal();
@@ -2077,15 +2112,206 @@ async function envoyerModif(l,f){
 let envoiEnCours=false;
 async function envoyerEnAttente(){
   if(!CONNECT||DEMO||envoiEnCours)return;envoiEnCours=true;
-  try{for(const m of MES.filter(x=>x.statut==='a_envoyer'&&x.ville===VILLE)){
-    try{const {r,j}=await poster('/v1/proposer',{fiche:m.fiche});
+  try{for(const m of MES.filter(x=>x.statut==='a_envoyer')){
+    try{const {r,j}=await poster('/v1/proposer',{fiche:Object.assign({ville:m.ville},m.fiche)});
       if(r.status===201&&j&&j.id){const avant=m.id;m.id=j.id;m.code=j.code;m.statut=j.statut;delete m.local;m.fiche=Object.assign({},m.fiche);delete m.fiche.contact;m.nouveauCode=true;
         const ph=await phLire(avant);if(ph.length){await phEcrire(m.id,ph);await phEcrire(avant,[])}}
-      else if(r.status>=400&&r.status<500&&r.status!==429){m.statut='retire';m.erreur=(j&&j.erreur&&j.erreur.message)||'refusée'}
-      else break;
+      else if(j&&j.erreur&&(j.erreur.code==='FICHE_INVALIDE'||j.erreur.code==='DOUBLON')){m.statut='retire';m.erreur=j.erreur.message||'refusée'}
+      else break;                                           /* service mal branché (401, 403, 404…) ou indisponible : la fiche reste, elle repartira */
     }catch(e){break}
   }}finally{envoiEnCours=false;garderMes();fusion()}
 }
+/* ---------- signalements partagés (Itina Geo Connect) : ceux de tous les conducteurs de la ville ----------
+   Seuls le type et l'endroit de l'incident partent, jamais le nom, la position ou un identifiant du téléphone. */
+let sigMinuteur=0;
+async function envoyerSignal(x){
+  const ici=()=>SIG.find(z=>z.id===x.id);
+  try{const {r,j}=await poster('/v1/signalement',{ville:x.v||VILLE,type:x.type,lat:x.lat,lng:x.lng},10000);
+    const y=ici();if(!y)return;
+    if((r.status===201||r.status===200)&&j&&typeof j.id==='string'){SIG=SIG.filter(z=>z===y||z.sid!==j.id);y.sid=j.id;delete y.attente}
+    else if(r.status>=400&&r.status<500&&r.status!==429)delete y.attente;
+    else y.attente=true;
+  }catch(e){const y=ici();if(y)y.attente=true}
+  garderSig();
+}
+async function chargerSignaux(){
+  if(!CONNECT||DEMO||document.hidden)return;
+  for(const x of SIG.filter(y=>y.attente&&!y.sid&&y.par==='moi'))await envoyerSignal(x);   /* faits sans connexion */
+  let j;try{const r=await fetch(CONNECT.lieux+'/v1/signalements?ville='+encodeURIComponent(VILLE),{signal:delai(8000)});if(!r.ok)return;j=await r.json()}catch(e){return}
+  const L=j&&Array.isArray(j.signalements)?j.signalements:null;if(!L)return;
+  const vus=new Set(),n=Date.now();
+  for(const s of L.slice(0,2000)){
+    if(!s||typeof s.id!=='string'||!/^S-[a-z2-9]{10}$/.test(s.id)||!SIGS[s.type]||!isFinite(s.lat)||!isFinite(s.lng))continue;
+    vus.add(s.id);if(MASQ[s.id])continue;
+    const t=Math.min(+s.t||n,n),vu=Math.min(Math.max(+s.vu||t,t),n),x=SIG.find(y=>y.sid===s.id);
+    if(x){if(vu>(x.vu||x.t))x.vu=vu}
+    else SIG.push({id:'p-'+s.id,sid:s.id,type:s.type,lat:+(+s.lat).toFixed(6),lng:+(+s.lng).toFixed(6),t,vu,par:'autre',v:VILLE});
+  }
+  SIG=SIG.filter(y=>!(y.sid&&(y.v||VILLE)===VILLE&&!vus.has(y.sid)));          /* fini ou retiré pour tous */
+  garderSig();dessinerSignaux();
+}
+/* « Toujours là ? » : la réponse met à jour ce téléphone et, s'il est partagé, le signalement de tous */
+function avisSignal(id,encore){
+  const x=SIG.find(y=>y.id===id);if(!x)return;
+  if(encore)x.vu=Date.now();else{SIG=SIG.filter(y=>y!==x);if(x.sid){MASQ[x.sid]=Date.now();garderMasq()}}
+  garderSig();
+  if(x.sid&&CONNECT&&!DEMO)poster('/v1/signalement/avis',{id:x.sid,ville:x.v||VILLE,encore:!!encore}).catch(()=>{});
+}
+function partageDemarrer(){
+  if(!CONNECT||DEMO)return;
+  chargerSignaux();clearInterval(sigMinuteur);sigMinuteur=setInterval(chargerSignaux,180000);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(synMin){clearTimeout(synMin);synMin=0;synchroniser()}}else{chargerSignaux();synchroPlus(1500)}});
+  if(SYN)synchroPlus(800);
+  setInterval(()=>{if(!document.hidden)synchroPlus(0)},300000);
+}
+
+/* ---------- mes appareils : synchronisation par code, sans compte (Itina Geo Connect) ----------
+   Domicile, travail, lieux enregistrés et mes établissements (avec leurs codes de propriétaire) passent d'un appareil à l'autre.
+   Chiffré sur l'appareil (AES-GCM, clé tirée du code par PBKDF2) : le service ne reçoit qu'un texte illisible et une empreinte du code.
+   Fusion à trois (dernier état commun, cet appareil, les autres) : un ajout ou un changement fait ailleurs n'efface rien ici. */
+const CLE_SYN='itina-geo-synchro',SYN_A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',SYN_RE=/^[A-HJKMNP-Z2-9]{16}$/;
+let SYN=lire(CLE_SYN,null);if(!SYN||typeof SYN!=='object'||typeof SYN.code!=='string'||!SYN_RE.test(SYN.code))SYN=null;
+let synMin=0,synVu='',synApplique=false,synEnCours=null;
+const garderSyn=()=>{if(SYN)ecrire(CLE_SYN,SYN);else try{localStorage.removeItem(CLE_SYN)}catch(e){}};
+const codeSyn=()=>{let c='';while(c.length<16){const o=new Uint8Array(24);crypto.getRandomValues(o);for(const x of o)if(x<248&&c.length<16)c+=SYN_A[x%31]}return c};
+const fmtSyn=c=>c.match(/.{4}/g).join('-');
+const lireCodeSyn=s=>{const c=String(s||'').toUpperCase().replace(/[\s.-]/g,'');return SYN_RE.test(c)?c:null};
+const canon=o=>JSON.stringify(o,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.keys(v).sort().reduce((a,x)=>(a[x]=v[x],a),{}):v);
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)};
+const SYN_CLES=new Map(),SYN_AAD=new TextEncoder().encode('itina-synchro:v1');
+async function clesSyn(code){
+  if(SYN_CLES.has(code))return SYN_CLES.get(code);
+  const te=new TextEncoder(),S=crypto.subtle;
+  const acces=[...new Uint8Array(await S.digest('SHA-256',te.encode('itina-synchro-acces:'+code)))].map(x=>x.toString(16).padStart(2,'0')).join('');
+  const k=await S.deriveKey({name:'PBKDF2',salt:te.encode('itina-synchro-chiffre:v1'),iterations:150000,hash:'SHA-256'},await S.importKey('raw',te.encode(code),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  const v={acces,k};SYN_CLES.set(code,v);return v;
+}
+async function chiffrerSyn(k,o){
+  const iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:SYN_AAD},k,new TextEncoder().encode(JSON.stringify(o))));
+  const u=new Uint8Array(12+ct.length);u.set(iv);u.set(ct,12);return b64(u);
+}
+async function dechiffrerSyn(k,s){
+  const u=Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  let o;try{o=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.subarray(0,12),additionalData:SYN_AAD},k,u.subarray(12))))}catch(e){throw new Error('Données de synchronisation illisibles.')}
+  if(!o||o.format!=='itina-synchro')throw new Error('Données de synchronisation illisibles.');
+  return o;
+}
+/* ce qui voyage : jamais l'historique (récents), jamais une fiche pas encore envoyée (elle part de son appareil) */
+const SYN_CHAMPS=['id','code','ville','fiche','statut','envoye','modif','erreur'];
+const synLieu=x=>x&&typeof x==='object'&&isFinite(x.lat)&&isFinite(x.lng)&&Math.abs(x.lat)<=90&&Math.abs(x.lng)<=180?{t:String(x.t||'').slice(0,160),s:String(x.s||'').slice(0,200),id:typeof x.id==='string'?x.id.slice(0,60):null,v:typeof x.v==='string'?x.v.slice(0,20):null,lat:+x.lat,lng:+x.lng}:null;
+const synVoyage=m=>m&&typeof m.id==='string'&&ID_ETAB.test(m.id)&&!/^L-local-/.test(m.id)&&!m.local&&m.statut!=='a_envoyer'&&m.fiche&&typeof m.fiche==='object';
+const synMien=m=>{const o={};for(const k of SYN_CHAMPS)if(m[k]!==undefined&&m[k]!==null)o[k]=m[k];return o};
+const etatSyn=()=>({format:'itina-synchro',v:1,lieux:{domicile:synLieu(LIEUX.domicile),travail:synLieu(LIEUX.travail),favoris:LIEUX.favoris.map(synLieu).filter(Boolean).slice(0,50)},mes:MES.filter(synVoyage).map(synMien)});
+const synPropre=o=>{const l=o&&o.lieux&&typeof o.lieux==='object'?o.lieux:{};
+  return{format:'itina-synchro',v:1,lieux:{domicile:synLieu(l.domicile),travail:synLieu(l.travail),favoris:(Array.isArray(l.favoris)?l.favoris:[]).map(synLieu).filter(Boolean).slice(0,50)},
+    mes:(Array.isArray(o&&o.mes)?o.mes:[]).filter(m=>synVoyage(m)&&typeof m.fiche.nom==='string'&&isFinite(m.fiche.lat)&&isFinite(m.fiche.lng)&&typeof m.ville==='string'&&/^[a-z]{2,20}$/.test(m.ville)).slice(-100).map(synMien)}};
+function fusion3(B,L,R,cle){
+  const mB=new Map(B.map(x=>[cle(x),x])),mL=new Map(L.map(x=>[cle(x),x])),mR=new Map(R.map(x=>[cle(x),x])),eq=(a,b)=>canon(a)===canon(b),g=new Map();
+  for(const k of new Set([...mB.keys(),...mL.keys(),...mR.keys()])){
+    const b=mB.get(k),l=mL.get(k),r=mR.get(k);let v=null;
+    if(l&&r)v=eq(l,r)||eq(r,b)?l:eq(l,b)?r:l;          /* changé des deux côtés : celui de cet appareil */
+    else if(l)v=b&&eq(l,b)?null:l;                     /* retiré ailleurs, pas changé ici : retiré */
+    else if(r)v=b&&eq(r,b)?null:r;                     /* retiré ici, pas changé ailleurs : retiré */
+    if(v)g.set(k,v);
+  }
+  return g;
+}
+const fusion1=(b,l,r)=>{const eq=(x,y)=>canon(x)===canon(y);return eq(l,r)||eq(r,b)?l:eq(l,b)?r:l};
+function fusionSyn(B,L,R){
+  const vide={lieux:{domicile:null,travail:null,favoris:[]},mes:[]};B=B&&B.lieux?B:vide;R=R&&R.lieux?R:vide;
+  const cleF=x=>x.id||x.lat.toFixed(5)+','+x.lng.toFixed(5),gF=fusion3(B.lieux.favoris,L.lieux.favoris,R.lieux.favoris,cleF);
+  /* ordre : mes nouveaux enregistrés d'abord, puis l'ordre commun (celui du service), pour que tous les appareils finissent pareil */
+  const fav=[],vu=new Set(),dansB=new Set(B.lieux.favoris.map(cleF)),pousser=x=>{const k=cleF(x);if(gF.has(k)&&!vu.has(k)){vu.add(k);fav.push(gF.get(k))}};
+  L.lieux.favoris.filter(x=>!dansB.has(cleF(x))).forEach(pousser);R.lieux.favoris.forEach(pousser);L.lieux.favoris.forEach(pousser);
+  const gM=fusion3(B.mes||[],L.mes||[],R.mes||[],m=>m.id);
+  return{format:'itina-synchro',v:1,lieux:{domicile:fusion1(B.lieux.domicile,L.lieux.domicile,R.lieux.domicile),travail:fusion1(B.lieux.travail,L.lieux.travail,R.lieux.travail),
+    favoris:fav.filter((x,i)=>!fav.slice(0,i).some(y=>memeLieu(x,y))).slice(0,50)},
+    mes:[...gM.values()].sort((a,b)=>(a.envoye||0)-(b.envoye||0)||(a.id<b.id?-1:1)).slice(-100)};
+}
+function appliquerSyn(M){
+  synApplique=true;
+  try{
+    if(canon(etatSyn().lieux)!==canon(M.lieux)){LIEUX.domicile=M.lieux.domicile;LIEUX.travail=M.lieux.travail;LIEUX.favoris=M.lieux.favoris.map(x=>Object.assign({},x));garderLieux();if(feuille.dataset.vue==='accueil')accueil()}
+    const parId=new Map(MES.map(m=>[m.id,m])),nouveaux=[];
+    for(const x of M.mes){const m=parId.get(x.id);if(m&&synVoyage(m)){for(const k of SYN_CHAMPS)if(!(k in x))delete m[k];Object.assign(m,JSON.parse(JSON.stringify(x)));nouveaux.push(m)}else if(!m)nouveaux.push(JSON.parse(JSON.stringify(x)))}
+    const avant=canon(MES.filter(synVoyage).map(synMien));
+    MES=MES.filter(m=>!synVoyage(m)).concat(nouveaux).sort((a,b)=>(a.envoye||0)-(b.envoye||0));
+    if(canon(MES.filter(synVoyage).map(synMien))!==avant){garderMes();if(GL&&ref)fusion()}
+  }finally{synApplique=false}
+}
+function synchroniser(opt){
+  if(!synEnCours)synEnCours=synTour(opt||{}).finally(()=>{synEnCours=null});
+  return synEnCours;
+}
+const texteEtatSyn=()=>!SYN?'':SYN.etat==='hors_ligne'?'Pas de connexion : elle reprendra toute seule.':SYN.etat==='erreur'?(SYN.msg||'Erreur'):SYN.maj?'Synchronisé '+ilya(SYN.maj):'En cours…';
+function synFin(moi,ok,msg,etat){
+  if(SYN===moi){if(ok){moi.maj=Date.now();moi.etat='ok';delete moi.msg;synVu=canon(etatSyn())}else{moi.etat=etat||'erreur';moi.msg=msg}if(moi.maj)garderSyn()}
+  const z=$('synEtat');if(z)z.textContent=texteEtatSyn();
+  return ok?{ok:true}:{ok:false,message:msg};
+}
+async function synTour(opt){
+  const moi=SYN;if(!moi||!CONNECT||DEMO)return{ok:false,message:'Le service en ligne n\'est pas branché.'};
+  try{
+    const {acces,k}=await clesSyn(moi.code);
+    let {r,j}=await poster('/v1/synchro/lire',{cle:acces},12000),R=null,v=0;
+    if(r.status===200&&j&&typeof j.donnees==='string'){R=synPropre(await dechiffrerSyn(k,j.donnees));v=j.version|0}
+    else if(r.status===404){if(opt.rejoindre)return synFin(moi,false,'Ce code n\'existe pas : vérifiez-le, ou créez-le sur l\'appareil qui a déjà vos lieux.')}
+    else return synFin(moi,false,(j&&j.erreur&&j.erreur.message)||'Service indisponible ('+r.status+').');
+    if(opt.creer&&R)return synFin(moi,false,'Ce code est déjà pris : réessayez.');
+    for(let essai=0;essai<4;essai++){
+      if(SYN!==moi)return{ok:false};
+      const M=fusionSyn(moi.base,etatSyn(),R);
+      appliquerSyn(M);
+      if(R&&canon(M)===canon(R)){moi.base=M;moi.version=v;return synFin(moi,true)}
+      let d=await chiffrerSyn(k,M);
+      while(d.length>120000&&M.mes.length){M.mes.shift();d=await chiffrerSyn(k,M)}
+      ({r,j}=await poster('/v1/synchro/ecrire',{cle:acces,donnees:d,version:v},15000));
+      if(SYN!==moi)return{ok:false};
+      if((r.status===200||r.status===201)&&j){moi.base=M;moi.version=j.version|0;return synFin(moi,true)}
+      if(r.status===409&&j&&j.erreur&&j.erreur.existant){const ex=j.erreur.existant;R=typeof ex.donnees==='string'?synPropre(await dechiffrerSyn(k,ex.donnees)):null;v=ex.version|0;continue}
+      return synFin(moi,false,(j&&j.erreur&&j.erreur.message)||'Service indisponible ('+r.status+').');
+    }
+    return synFin(moi,false,'Trop de changements en même temps : réessayez.');
+  }catch(e){return /illisibles/.test(e&&e.message)?synFin(moi,false,e.message):synFin(moi,false,'Pas de connexion.','hors_ligne')}
+}
+/* après un changement (domicile, enregistré, établissement) : envoi 4 secondes plus tard, une seule fois pour plusieurs changements */
+function synchroPlus(ms){
+  try{if(!SYN||!CONNECT||DEMO||synApplique)return;
+    if(ms==null){const e=canon(etatSyn());if(e===synVu)return;synVu=e}
+    clearTimeout(synMin);synMin=setTimeout(()=>{synMin=0;synchroniser()},ms==null?4000:ms)}catch(e){}
+}
+async function relierSyn(code,creer){
+  const avant=SYN;SYN={code,version:0,base:null,maj:0};
+  const r=await synchroniser(creer?{creer:true}:{rejoindre:true});
+  if(!r.ok){SYN=avant;garderSyn()}
+  return r;
+}
+function corpsAppareils(){
+  if(DEMO)return'<p style="margin:0">Dans la version en ligne du site, vos lieux passent d\'un appareil à l\'autre avec un code. Ici, c\'est une version d\'essai.</p>';
+  if(!CONNECT)return'<p style="margin:0">Bientôt : votre domicile, votre travail, vos lieux enregistrés et vos établissements sur tous vos appareils, avec un simple code.</p><p class="hint" style="margin:0">Le service en ligne d\'Itina Geo n\'est pas encore branché sur ce site.</p>';
+  if(!SYN)return`<p style="margin:0">Retrouvez votre domicile, votre travail, vos lieux enregistrés et vos établissements sur votre ordinateur et vos autres téléphones. Pas de compte : un code relie vos appareils.</p>
+    <div class="actions" style="margin:0;flex-wrap:wrap"><button type="button" class="bt vert" id="synCreer">${I.appareils}Créer un code</button><button type="button" class="bt" id="synJai">J'ai déjà un code</button></div>
+    <div id="synSaisie" hidden><label class="a-l" for="synCode">Code affiché sur votre autre appareil</label><input class="a-in" id="synCode" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24" placeholder="ABCD-EFGH-JKMN-PQRS">
+      <p class="a-err" id="synErr" role="alert"></p><button type="button" class="bt vert" id="synRelier">Relier cet appareil</button></div>`;
+  return`<div class="r-ligne"><span>Synchronisation<small id="synEtat">${esc(texteEtatSyn())}</small></span><button type="button" class="bt" id="synMaintenant" style="flex:none;min-height:40px">Synchroniser</button></div>
+    <div class="code-box" style="margin:0"><small>Code de vos appareils</small><b style="font-size:19px;white-space:nowrap">${fmtSyn(SYN.code)}</b><button class="bt" type="button" id="synCopie">${I.copie}Copier</button></div>
+    <p class="hint" style="margin:0">Sur l'autre appareil : Itina Geo → Réglages → Mes appareils → « J'ai déjà un code ». Gardez ce code pour vous : il ouvre vos lieux. Tout est chiffré sur l'appareil, Itina Geo ne peut pas lire vos données.</p>
+    <button type="button" class="bt" id="synArreter">Arrêter sur cet appareil</button>`;
+}
+function brancherAppareils(){
+  const ok=r=>{if(!r.ok)throw new Error(r.message||'Pas de connexion : réessayez.')};
+  const c=$('synCreer');if(c)c.onclick=async()=>{c.disabled=true;try{ok(await relierSyn(codeSyn(),true));toast('Code créé : entrez-le sur votre autre appareil.')}catch(e){toast(e.message)}rendreParam('appareils')};
+  const j=$('synJai');if(j)j.onclick=()=>{$('synSaisie').hidden=false;j.hidden=true;$('synCode').focus()};
+  const b=$('synRelier');if(b)b.onclick=async()=>{const er=$('synErr'),code=lireCodeSyn($('synCode').value);
+    if(!code){er.textContent='Code incomplet : 16 lettres et chiffres, comme ABCD-EFGH-JKMN-PQRS (jamais de O, 0, I, 1 ni L).';return}
+    b.disabled=true;er.textContent='';b.textContent='Connexion…';
+    try{ok(await relierSyn(code,false));toast('Appareil relié : vos lieux sont à jour.');rendreParam('appareils')}catch(e){er.textContent=e.message;b.disabled=false;b.textContent='Relier cet appareil'}};
+  const s=$('synMaintenant');if(s)s.onclick=async()=>{s.disabled=true;const r=await synchroniser({});toast(r.ok?'Synchronisé.':r.message||'Pas de connexion.');s.disabled=false};
+  const cp=$('synCopie');if(cp)cp.onclick=()=>copier(fmtSyn(SYN.code));
+  const a=$('synArreter');if(a)a.onclick=()=>{if(!a.dataset.sur){a.dataset.sur='1';a.textContent='Touchez encore pour arrêter (vos lieux restent ici)';return}
+    SYN=null;garderSyn();clearTimeout(synMin);synMin=0;rendreParam('appareils');toast('Synchronisation arrêtée sur cet appareil.')};
+}
+
 function merci(m,modif,nPhotos,photosSeules){
   const l=Object.assign({},m.fiche,{id:m.id});
   const txt=DEMO&&(photosSeules||modif)?'Version d\'essai : tout reste sur ce téléphone, rien n\'est envoyé.':photosSeules?'Les photos seront visibles après vérification par l\'équipe Itina Geo.':modif?'La modification sera visible après vérification par l\'équipe Itina Geo.'
@@ -2407,7 +2633,7 @@ CA.charger({base:VI.dossier}).then(r=>{
     /* comme Waze : la carte se cale sur ma position et me suit (pas quand un lien ouvre une adresse) */
     if(!cible){SUIVI.ville=VILLE_IMPLICITE;if(BV.ouvert)BV.apres=suivreMoi;else if(!BV.plusTard)suivreMoi()}
     drawNums();
-    if(GL)chargerConnect().then(chargerEtabs)};
+    chargerConnect().then(async()=>{if(GL)await chargerEtabs();partageDemarrer()})};
   const essai=()=>{if(map.isStyleLoaded())go();else setTimeout(essai,80)};essai();
 }).catch(e=>{
   if(deMemoire){try{localStorage.removeItem(VILLE_MEMO)}catch(x){}if(window.ITINA_DEMO)location.reload();else location.replace('./?ville=conakry');return}
@@ -2420,7 +2646,7 @@ CA.charger({base:VI.dossier}).then(r=>{
     absent?'Ce plan n\'est pas encore sur ce site'+(DEMO?'.':' (dossier <code>'+esc(VI.dossier)+'</code>). L\'équipe le fabrique avec le <a href="studio.html'+SUFFIXE+'">studio</a>.')
       :'Pas de connexion, ou le plan n\'est pas encore gardé sur cet appareil. Réessayez une fois connecté.'+(e&&e.message?' ('+esc(e.message)+')':''),true)});
 window.__itinaGeo={REG,LIEUX,actifs,ajouterSignal,get RT(){return RT},get guide(){return guide},map,BV,get GN(){return GN_OK},get GND(){return GN_DATA},get RESEAU(){return RESEAU},bienvenue:o=>ouvrirBienvenue(!!o),get BULLES(){return BULLES.length},
-  get ETABS(){return ETABS},get MES(){return MES},get CONNECT(){return CONNECT},ficheEtab:id=>ficheEtab(etab(id)),chargerEtabs,ajouterLieu,phLire,get PHOTOS_BASE(){return PHOTOS_BASE}};
+  get ETABS(){return ETABS},get MES(){return MES},get CONNECT(){return CONNECT},get SIG(){return SIG},get SYN(){return SYN},synchroniser,garderLieux,avisSignal,chargerSignaux,ficheEtab:id=>ficheEtab(etab(id)),chargerEtabs,ajouterLieu,phLire,get PHOTOS_BASE(){return PHOTOS_BASE}};
 })();
 </script>
 </body>

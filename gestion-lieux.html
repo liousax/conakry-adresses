@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-YaV7eaLQzouK6s8o4//Rhal2Ng2OTK1zh0KW0j6Cpv4='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-NFKYXczPNvutUIV6wnnQyfD9SWZj7FU3vL9uxPOGpcQ=' 'sha256-8l6JdX++UIVBdb3TmfWeFTvUTqMBwiSxs+ErxSwd4AE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://server.arcgisonline.com https://*.supabase.co; connect-src 'self' https://server.arcgisonline.com https://overpass-api.de https://overpass.kumi.systems https://*.supabase.co; worker-src 'self' blob:; child-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -84,7 +84,7 @@ progress{width:100%}
 const $=id=>document.getElementById(id),GL=window.GeoLieux,CA=window.ConakryAdresses;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let msgT;const msg=m=>{const x=$('msg');x.textContent=m;x.hidden=false;clearTimeout(msgT);msgT=setTimeout(()=>{x.hidden=true},4000)};
-const VILLES={conakry:{nom:'Conakry',dossier:'data/'},boke:{nom:'Boké',dossier:'data/boke/'},faranah:{nom:'Faranah',dossier:'data/faranah/'},kankan:{nom:'Kankan',dossier:'data/kankan/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},labe:{nom:'Labé',dossier:'data/labe/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'}};
+const VILLES={conakry:{nom:'Conakry',dossier:'data/'},beyla:{nom:'Beyla',dossier:'data/beyla/'},boffa:{nom:'Boffa',dossier:'data/boffa/'},boke:{nom:'Boké',dossier:'data/boke/'},coyah:{nom:'Coyah',dossier:'data/coyah/'},dabola:{nom:'Dabola',dossier:'data/dabola/'},dalaba:{nom:'Dalaba',dossier:'data/dalaba/'},dinguiraye:{nom:'Dinguiraye',dossier:'data/dinguiraye/'},dubreka:{nom:'Dubréka',dossier:'data/dubreka/'},faranah:{nom:'Faranah',dossier:'data/faranah/'},forecariah:{nom:'Forécariah',dossier:'data/forecariah/'},fria:{nom:'Fria',dossier:'data/fria/'},gaoual:{nom:'Gaoual',dossier:'data/gaoual/'},gueckedou:{nom:'Guéckédou',dossier:'data/gueckedou/'},kankan:{nom:'Kankan',dossier:'data/kankan/'},kerouane:{nom:'Kérouané',dossier:'data/kerouane/'},kindia:{nom:'Kindia',dossier:'data/kindia/'},kissidougou:{nom:'Kissidougou',dossier:'data/kissidougou/'},koubia:{nom:'Koubia',dossier:'data/koubia/'},koundara:{nom:'Koundara',dossier:'data/koundara/'},kouroussa:{nom:'Kouroussa',dossier:'data/kouroussa/'},labe:{nom:'Labé',dossier:'data/labe/'},lelouma:{nom:'Lélouma',dossier:'data/lelouma/'},lola:{nom:'Lola',dossier:'data/lola/'},macenta:{nom:'Macenta',dossier:'data/macenta/'},mali:{nom:'Mali',dossier:'data/mali/'},mamou:{nom:'Mamou',dossier:'data/mamou/'},mandiana:{nom:'Mandiana',dossier:'data/mandiana/'},nzerekore:{nom:'N\'Zérékoré',dossier:'data/nzerekore/'},pita:{nom:'Pita',dossier:'data/pita/'},siguiri:{nom:'Siguiri',dossier:'data/siguiri/'},telimele:{nom:'Télimélé',dossier:'data/telimele/'},tougue:{nom:'Tougué',dossier:'data/tougue/'},yomou:{nom:'Yomou',dossier:'data/yomou/'}};
 let VILLE=new URLSearchParams(location.search).get('ville');if(!Object.prototype.hasOwnProperty.call(VILLES,VILLE))VILLE='conakry';
 const VI=VILLES[VILLE];
 const lireS=k=>{try{return JSON.parse(sessionStorage.getItem(k)||'null')}catch(e){return null}},ecrireS=(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,JSON.stringify(v))}catch(e){}};
@@ -135,10 +135,17 @@ async function equipe(route,corps){
   if(!r.ok)throw new Error(j&&j.erreur?j.erreur.message:'Erreur '+r.status);
   return j;
 }
+/* les 34 villes : à côté de chaque nom, ce qui attend l'équipe (fiches à vérifier, signalements d'erreurs) */
+async function comptesVilles(){
+  try{const j=await equipe('liste',{statut:'en_attente'}),n={};
+    for(const l of j.lieux||[])if(l.ville)n[l.ville]=(n[l.ville]||0)+1;
+    for(const r of j.retours||[])if(r.ville)n[r.ville]=(n[r.ville]||0)+1;
+    for(const o of $('ville').options){const c=n[o.value]||0;o.textContent=VILLES[o.value].nom+(c?' · '+c+' à traiter':'')}}catch(e){}
+}
 async function charger(){
   if(!SESSION||!CFG)return;
   try{DONNEES=await equipe('liste',{ville:VILLE})}catch(e){msg(e.message);DONNEES=null}
-  rendre();
+  rendre(); comptesVilles();
 }
 
 /* ---------- listes ---------- */

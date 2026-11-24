@@ -5,7 +5,7 @@
    - les plans publiés (data/) : internet d'abord (4 s au plus), sinon la copie de l'appareil (gardés à l'installation dans la limite de 15 Mo, et chaque plan ouvert) ;
    - les autres pages du site : internet d'abord, sinon la copie de l'appareil si elles ont déjà été ouvertes ;
    - fonds de carte et OpenStreetMap : internet seulement (rien n'est copié). */
-const VERSION = '72c91a390e96';
+const VERSION = '7d4e8841c786';
 const APPLI = 'itina-geo-appli-' + VERSION, DONNEES = 'itina-geo-donnees', PAGES = 'itina-geo-pages', POLICES = 'itina-geo-polices';
 const FICHIERS = ["studio.html", "lib/studio.js", "style.css", "icone.svg", "studio-icone.svg", "studio-icone-180.png", "studio-icone-192.png", "studio-icone-512.png", "studio-icone-maskable-512.png", "studio.webmanifest", "lib/maplibre-gl.js", "lib/maplibre-gl.css", "sdk/conakry-adresses.js", "sdk/guidage.js", "sdk/lieux.js", "lib/noms.js", "lib/guinee.js", "lib/atelier-lib.js", "data/guinee.json", "sources/limites-officielles.json", "sources/kaloum-plan.json", "index.html", "geo-icone.svg", "geo-icone-180.png", "geo-icone-192.png", "geo-icone-512.png", "geo-icone-maskable-512.png", "itina-geo.webmanifest", "fonts/saira.woff2", "glyphs/NotoSansMedium/0-255.pbf", "glyphs/NotoSansMedium/256-511.pbf", "glyphs/NotoSansMedium/512-767.pbf", "glyphs/NotoSansMedium/768-1023.pbf", "glyphs/NotoSansMedium/7680-7935.pbf", "glyphs/NotoSansMedium/8192-8447.pbf"];
 const BASE = new URL('./', self.location).pathname;

@@ -436,7 +436,9 @@ class Referentiel {
     });
     /* raccords : un bout de rue qui s'arrête à quelques mètres d'une autre rue sans la toucher (deux sources de
        données qui se rejoignent, comme le plan de Kaloum et OpenStreetMap). On relie toujours ce qui est à 3 m ou
-       moins ; jusqu'à 25 m, seulement si l'on ne peut pas déjà aller de l'un à l'autre et revenir. Les adresses ne bougent pas. */
+       moins ; jusqu'à 25 m, seulement si l'on ne peut pas déjà aller de l'un à l'autre et revenir ; jusqu'à 60 m entre deux morceaux
+       de la même rue (une route coupée par la simplification des données : sans cela, le réseau national, qui n'a pas les petites
+       rues pour faire le tour, perd la route nationale à l'entrée de Conakry). Les adresses ne bougent pas. */
     const n = pts.length, voisins = Array.from({ length: n }, () => new Set()), rue = new Int32Array(n).fill(-1);
     adj.forEach((l, a) => l.forEach(e => { voisins[a].add(e[0]); voisins[e[0]].add(a); rue[a] = e[3]; rue[e[0]] = e[3]; }));
     /* morceaux du réseau où l'on peut aller et revenir (composantes fortement connexes, sens uniques compris) */
@@ -454,9 +456,9 @@ class Referentiel {
     for (let u = 0; u < n; u++) {
       if (voisins[u].size !== 1) continue;                         /* bout d'une rue qui ne touche rien */
       const p = pts[u], x0 = Math.floor(p.lon / C), y0 = Math.floor(p.lat / C); let w = -1, dw = Infinity;
-      for (let x = x0 - 1; x <= x0 + 1; x++) for (let y = y0 - 1; y <= y0 + 1; y++) for (const j of grille.get(x * 1e6 + y) || []) {
+      for (let x = x0 - 2; x <= x0 + 2; x++) for (let y = y0 - 2; y <= y0 + 2; y++) for (const j of grille.get(x * 1e6 + y) || []) {
         if (j === u || voisins[u].has(j)) continue;
-        const d = dist(p, pts[j]); if (d > 25 || d >= dw) continue;
+        const d = dist(p, pts[j]); if (d > (rue[u] >= 0 && rue[j] === rue[u] ? 60 : 25) || d >= dw) continue;
         if (d <= 3 || comp[j] !== comp[u]) { dw = d; w = j; }
       }
       if (w < 0) continue;
